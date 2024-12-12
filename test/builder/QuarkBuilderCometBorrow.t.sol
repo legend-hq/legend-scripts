@@ -70,7 +70,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
 
         QuarkBuilder builder = new QuarkBuilder();
 
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "LINK", 1e18, 0));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "LINK", 1e18, 0));
 
         builder.cometBorrow(
             borrowIntent_(1e6, "USDC", 1, collateralAmounts, collateralAssetSymbols, "USD"),

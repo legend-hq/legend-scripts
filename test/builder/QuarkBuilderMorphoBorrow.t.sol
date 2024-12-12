@@ -97,7 +97,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
 
     function testMorphoBorrowFundsUnavailable() public {
         QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "WBTC", 1e8, 0));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "WBTC", 1e8, 0));
         builder.morphoBorrow(
             borrowIntent_(1, "USDC", 1e6, "WBTC", 1e8, "USD"),
             chainAccountsList_(3e6), // holding 3 USDC in total across chains 1, 8453
@@ -537,7 +537,17 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
             morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
         });
 
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.ImpossibleToConstructQuotePay.selector, "USDC"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuarkBuilderBase.UnableToConstructActionIntent.selector,
+                false,
+                "",
+                0,
+                QuarkBuilderBase.GenerateQuotePayStatus.ImpossibleToConstruct,
+                "USDC",
+                0.5e6
+            )
+        );
         builder.morphoBorrow(
             borrowIntent_(1, "WETH", 1e18, "WBTC", 0, "USDC"),
             chainAccountsFromChainPortfolios(chainPortfolios),

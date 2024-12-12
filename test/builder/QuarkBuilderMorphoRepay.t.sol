@@ -66,7 +66,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
     function testMorphoRepayFundsUnavailable() public {
         QuarkBuilder builder = new QuarkBuilder();
 
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 1e6, 0));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 1e6, 0));
 
         builder.morphoRepay(
             repayIntent_(1, "USDC", 1e6, "WBTC", 1e8, "USD"),
@@ -93,7 +93,17 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
         });
 
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.ImpossibleToConstructQuotePay.selector, "USDC"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuarkBuilderBase.UnableToConstructActionIntent.selector,
+                false,
+                "",
+                0,
+                QuarkBuilderBase.GenerateQuotePayStatus.ImpossibleToConstruct,
+                "USDC",
+                0.5e6
+            )
+        );
         builder.morphoRepay(
             repayIntent_(8453, "WETH", 1e18, "cbETH", 1e18, "USDC"),
             chainAccountsFromChainPortfolios(chainPortfolios),

@@ -55,7 +55,7 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
 
     function testMorphoSupplyInsufficientFunds() public {
         QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 2e6, 0e6));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 2e6, 0e6));
         builder.morphoVaultSupply(
             MorphoVaultActionsBuilder.MorphoVaultSupplyIntent({
                 amount: 2e6,
@@ -78,7 +78,17 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
         networkOperationFees[0] =
             Quotes.NetworkOperationFee({opType: Quotes.OP_TYPE_BASELINE, chainId: 1, price: 1000e8});
 
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.ImpossibleToConstructQuotePay.selector, "USDC"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuarkBuilderBase.UnableToConstructActionIntent.selector,
+                false,
+                "",
+                0,
+                QuarkBuilderBase.GenerateQuotePayStatus.ImpossibleToConstruct,
+                "USDC",
+                1_000e6
+            )
+        );
         builder.morphoVaultSupply(
             MorphoVaultActionsBuilder.MorphoVaultSupplyIntent({
                 amount: 1e6,
@@ -122,7 +132,7 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
             morphoVaultPositions: emptyMorphoVaultPositions_()
         });
 
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 2e6, 0));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 2e6, 0));
         builder.morphoVaultSupply(
             // there is no bridge to brige from 7777, so we cannot get to our funds
             MorphoVaultActionsBuilder.MorphoVaultSupplyIntent({

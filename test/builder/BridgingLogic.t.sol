@@ -210,7 +210,7 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
             TransferActionsBuilder.TransferIntent({
                 assetSymbol: "USDC",
                 chainId: 8453,
-                amount: 5e6,
+                amount: 4e6,
                 sender: address(0xb0b),
                 recipient: address(0xceecee),
                 blockTimestamp: BLOCK_TIMESTAMP,
@@ -255,8 +255,8 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
                     address(0xb0b), // recipient
                     address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48), // inputToken
                     address(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913), // outputToken
-                    0x2e14e0, // inputAmount
-                    0x1e8480, // outputAmount
+                    2.01e6, // inputAmount
+                    1e6, // outputAmount
                     8453, // destinationChainId
                     address(0), // exclusiveRelayer
                     uint32(BLOCK_TIMESTAMP) - 30 seconds, // quoteTimestamp
@@ -296,8 +296,8 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
         );
         assertEq(
             result.quarkOperations[1].scriptCalldata,
-            abi.encodeCall(TransferActions.transferERC20Token, (usdc_(8453), address(0xceecee), 5e6)),
-            "calldata is TransferActions.transferERC20Token(USDC_8453, address(0xceecee), 5e6);"
+            abi.encodeCall(TransferActions.transferERC20Token, (usdc_(8453), address(0xceecee), 4e6)),
+            "calldata is TransferActions.transferERC20Token(USDC_8453, address(0xceecee), 4e6);"
         );
         assertEq(
             result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
@@ -320,8 +320,8 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
                     price: USDC_PRICE,
                     token: USDC_1,
                     assetSymbol: "USDC",
-                    inputAmount: 0x2e14e0,
-                    outputAmount: 0x1e8480,
+                    inputAmount: 2.01e6,
+                    outputAmount: 1e6,
                     chainId: 1,
                     recipient: address(0xb0b),
                     destinationChainId: 8453,
@@ -341,7 +341,7 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
             result.actions[1].actionContext,
             abi.encode(
                 Actions.TransferActionContext({
-                    amount: 5e6,
+                    amount: 4e6,
                     price: USDC_PRICE,
                     token: USDC_8453,
                     assetSymbol: "USDC",

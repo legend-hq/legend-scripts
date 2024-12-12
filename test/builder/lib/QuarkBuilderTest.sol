@@ -96,7 +96,7 @@ contract QuarkBuilderTest {
 
     function quote_() internal pure returns (Quotes.Quote memory) {
         Quotes.NetworkOperationFee memory networkOperationFeeBase =
-            Quotes.NetworkOperationFee({chainId: 8453, opType: Quotes.OP_TYPE_BASELINE, price: 3e6});
+            Quotes.NetworkOperationFee({chainId: 8453, opType: Quotes.OP_TYPE_BASELINE, price: 0.3e8});
 
         Quotes.NetworkOperationFee memory networkOperationFeeMainnet =
             Quotes.NetworkOperationFee({chainId: 1, opType: Quotes.OP_TYPE_BASELINE, price: 3e8});

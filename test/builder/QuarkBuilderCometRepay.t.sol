@@ -75,7 +75,7 @@ contract QuarkBuilderCometRepayTest is Test, QuarkBuilderTest {
 
         QuarkBuilder builder = new QuarkBuilder();
 
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 1e6, 0));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 1e6, 0));
         builder.cometRepay(
             repayIntent_(1, cometUsdc_(1), "USDC", 1e6, collateralAssetSymbols, collateralAmounts), // attempting to repay 1 USDC
             chainAccountsList_(0e6), // but user has 0 USDC
@@ -102,7 +102,17 @@ contract QuarkBuilderCometRepayTest is Test, QuarkBuilderTest {
         });
 
         // Need 0.5e6 USDC to pay the quote but Alice only has 0.4e6 USDC
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.ImpossibleToConstructQuotePay.selector, "USDC"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuarkBuilderBase.UnableToConstructActionIntent.selector,
+                false,
+                "",
+                0,
+                QuarkBuilderBase.GenerateQuotePayStatus.ImpossibleToConstruct,
+                "USDC",
+                3e6
+            )
+        );
         builder.cometRepay(
             repayIntent_(1, cometWeth_(1), "WETH", 1e18, collateralAssetSymbols, collateralAmounts),
             chainAccountsFromChainPortfolios(chainPortfolios),

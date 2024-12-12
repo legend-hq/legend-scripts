@@ -254,7 +254,17 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
         networkOperationFees[2] =
             Quotes.NetworkOperationFee({opType: Quotes.OP_TYPE_BASELINE, chainId: 7777, price: 100e8});
 
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.ImpossibleToConstructQuotePay.selector, "USDC"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuarkBuilderBase.UnableToConstructActionIntent.selector,
+                false,
+                "",
+                0,
+                QuarkBuilderBase.GenerateQuotePayStatus.ImpossibleToConstruct,
+                "USDC",
+                200e6
+            )
+        );
         builder.morphoClaimRewards(
             morphoClaimRewardsIntent_(
                 1,

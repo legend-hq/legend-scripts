@@ -1,9 +1,10 @@
-@testable import Acceptance
 @preconcurrency import BigInt
 @preconcurrency import Eth
 import Foundation
 import SwiftKeccak
 import Testing
+
+@testable import Acceptance
 
 let allTests: [AcceptanceTest] = [
     .init(
@@ -35,32 +36,60 @@ let allTests: [AcceptanceTest] = [
                 ])))
     ),
     .init(
-        name: "Alice transfers MAX USDC to Bob on Arbitrum",
+        name: "Alice attempts transfers MAX USDC to Bob on Arbitrum",
         given: [
             .tokenBalance(.alice, .amt(100, .usdc), .arbitrum),
             .quote(.basic),
         ],
         when: .transfer(from: .alice, to: .bob, amount: .amt(100, .usdc), on: .arbitrum),
         expect: .revert(
-            .unableToConstructQuotePay(
-                Token.usdc.symbol,
-                toWei(tokenAmount: TokenAmount.amt(0.04, .usdc))
+            .unableToConstructActionIntent(
+                false, "", 0, 2, Token.usdc.symbol, toWei(tokenAmount: TokenAmount.amt(0.04, .usdc))
             )
         )
     ),
     .init(
-        name: "Alice transfers MAX USDC to Bob on Arbitrum via Bridge",
+        name: "Alice attempts to transfers perceived MAX USDC to Bob on Arbitrum via Bridge",
         given: [
             .tokenBalance(.alice, .amt(50, .usdc), .arbitrum),
             .tokenBalance(.alice, .amt(50, .usdc), .base),
             .quote(.basic),
+            .acrossQuote(.amt(1, .usdc), 0.01),
         ],
         when: .transfer(from: .alice, to: .bob, amount: .amt(100, .usdc), on: .arbitrum),
         expect: .revert(
-            .unableToConstructQuotePay(
+            .unableToConstructActionIntent(
+                true,
+                Token.usdc.symbol,
+                toWei(tokenAmount: TokenAmount.amt(1.5, .usdc)),
+                2,
                 Token.usdc.symbol,
                 toWei(tokenAmount: TokenAmount.amt(0.06, .usdc))
             )
+        )
+    ),
+    .init(
+        name: "Alice transfers USDC to Bob on Arbitrum via Bridge",
+        given: [
+            .tokenBalance(.alice, .amt(50, .usdc), .arbitrum),
+            .tokenBalance(.alice, .amt(50, .usdc), .base),
+            .quote(.basic),
+            .acrossQuote(.amt(1, .usdc), 0.01),
+        ],
+        when: .transfer(from: .alice, to: .bob, amount: .amt(98, .usdc), on: .arbitrum),
+        expect: .success(
+            .multi([
+                .multicall([
+                    .bridge(
+                        bridge: "Across",
+                        srcNetwork: .base,
+                        destinationNetwork: .arbitrum,
+                        tokenAmount: .amt(49.48, .usdc)
+                    ),
+                    .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
+                ]),
+                .transferErc20(tokenAmount: .amt(98, .usdc), recipient: .bob),
+            ])
         )
     ),
     .init(
@@ -76,7 +105,8 @@ let allTests: [AcceptanceTest] = [
         expect: .success(
             .single(
                 .multicall([
-                    .supplyToComet(tokenAmount: .amt(0.5, .weth), market: .cusdcv3, network: .ethereum),
+                    .supplyToComet(
+                        tokenAmount: .amt(0.5, .weth), market: .cusdcv3, network: .ethereum),
                     .quotePay(payment: .amt(0.000025000001, .weth), payee: .stax, quote: .basic),
                 ])
             )
@@ -96,7 +126,8 @@ let allTests: [AcceptanceTest] = [
         expect: .success(
             .single(
                 .multicall([
-                    .supplyToComet(tokenAmount: .amt(0.5, .eth), market: .cusdcv3, network: .ethereum),
+                    .supplyToComet(
+                        tokenAmount: .amt(0.5, .eth), market: .cusdcv3, network: .ethereum),
                     .quotePay(payment: .amt(0.000025000001, .eth), payee: .stax, quote: .basic),
                 ])
             )
@@ -104,7 +135,8 @@ let allTests: [AcceptanceTest] = [
         skip: true
     ),
     .init(
-        name: "WIP: Alice repays 75 USDC of a 100 USDC borrow against 0.3 WETH on cUSDCv3 on Ethereum",
+        name:
+            "WIP: Alice repays 75 USDC of a 100 USDC borrow against 0.3 WETH on cUSDCv3 on Ethereum",
         given: [
             .tokenBalance(.alice, .amt(0.5, .weth), .ethereum),
             .cometSupply(.alice, .amt(0.3, .weth), .cusdcv3, .ethereum),
@@ -114,7 +146,7 @@ let allTests: [AcceptanceTest] = [
         when: .transfer(from: .alice, to: .bob, amount: .amt(50, .usdc), on: .arbitrum),
         // FIXME: this should not revert! borrowed funds should be added to token balance
         expect: .revert(
-            .fundsUnavailable(
+            .badInputInsufficientFunds(
                 Token.usdc.symbol,
                 toWei(tokenAmount: .amt(50, .usdc)),
                 toWei(tokenAmount: .amt(0, .usdc))
@@ -127,7 +159,8 @@ let tests = allTests.filter { !$0.skip }
 let filteredTests = tests.contains { $0.only } ? tests.filter { $0.only } : tests
 
 enum Call: CustomStringConvertible, Equatable {
-    case bridge(bridge: String, srcNetwork: Network, destinationNetwork: Network, tokenAmount: TokenAmount)
+    case bridge(
+        bridge: String, srcNetwork: Network, destinationNetwork: Network, tokenAmount: TokenAmount)
     case transferErc20(tokenAmount: TokenAmount, recipient: Account)
     case supplyToComet(tokenAmount: TokenAmount, market: Comet, network: Network)
     case quotePay(payment: TokenAmount, payee: Account, quote: Quote)
@@ -174,20 +207,33 @@ enum Call: CustomStringConvertible, Equatable {
         }
 
         if scriptAddress == getScriptAddress(TransferActions.creationCode) {
-            if let (token, recipient, amount) = try? TransferActions.transferERC20TokenDecode(input: calldata) {
-                return .transferErc20(tokenAmount: Token.getTokenAmount(amount: amount, network: network, address: token), recipient: Account.from(address: recipient))
+            if let (token, recipient, amount) = try? TransferActions.transferERC20TokenDecode(
+                input: calldata)
+            {
+                return .transferErc20(
+                    tokenAmount: Token.getTokenAmount(
+                        amount: amount, network: network, address: token),
+                    recipient: Account.from(address: recipient))
             }
         }
 
         if scriptAddress == getScriptAddress(QuotePay.creationCode) {
-            if let (payee, paymentToken, quotedAmount, quoteId) = try? QuotePay.payDecode(input: calldata) {
-                return .quotePay(payment: Token.getTokenAmount(amount: quotedAmount, network: network, address: paymentToken), payee: Account.from(address: payee), quote: Quote.findQuote(quoteId: quoteId, prices: [:], fees: [:]))
+            if let (payee, paymentToken, quotedAmount, quoteId) = try? QuotePay.payDecode(
+                input: calldata)
+            {
+                return .quotePay(
+                    payment: Token.getTokenAmount(
+                        amount: quotedAmount, network: network, address: paymentToken),
+                    payee: Account.from(address: payee),
+                    quote: Quote.findQuote(quoteId: quoteId, prices: [:], fees: [:]))
             }
         }
 
         if scriptAddress == getScriptAddress(Multicall.creationCode) {
             if let (callContracts, callDatas) = try? Multicall.runDecode(input: calldata) {
-                let calls = zip(callContracts, callDatas).map { Call.tryDecodeCall(scriptAddress: $0, calldata: $1, network: network) }
+                let calls = zip(callContracts, callDatas).map {
+                    Call.tryDecodeCall(scriptAddress: $0, calldata: $1, network: network)
+                }
                 return .multicall(calls)
             }
         }
@@ -195,15 +241,22 @@ enum Call: CustomStringConvertible, Equatable {
         if scriptAddress == getScriptAddress(CometSupplyActions.creationCode) {
             if let (comet, asset, amount) = try? CometSupplyActions.supplyDecode(input: calldata) {
                 return .supplyToComet(
-                    tokenAmount: Token.getTokenAmount(amount: amount, network: network, address: asset),
+                    tokenAmount: Token.getTokenAmount(
+                        amount: amount, network: network, address: asset),
                     market: Comet.from(network: network, address: comet),
                     network: network
                 )
-            } else if let (comet, to, asset, amount) = try? CometSupplyActions.supplyToDecode(input: calldata) {
+            } else if let (comet, to, asset, amount) = try? CometSupplyActions.supplyToDecode(
+                input: calldata)
+            {
                 print("supplyTo(\(comet) to: \(to) \(asset) \(amount))")
-            } else if let (comet, from, to, asset, amount) = try? CometSupplyActions.supplyFromDecode(input: calldata) {
+            } else if let (comet, from, to, asset, amount) =
+                try? CometSupplyActions.supplyFromDecode(input: calldata)
+            {
                 print("supplyFrom(\(comet) from: \(from) to: \(to) \(asset) \(amount))")
-            } else if let (comet, assets, amounts) = try? CometSupplyActions.supplyMultipleAssetsDecode(input: calldata) {
+            } else if let (comet, assets, amounts) =
+                try? CometSupplyActions.supplyMultipleAssetsDecode(input: calldata)
+            {
                 print("supplyMultipleAssets(\(comet) \(assets) \(amounts))")
             }
         }
@@ -246,7 +299,8 @@ enum Call: CustomStringConvertible, Equatable {
     var descriptionExt: String {
         switch self {
         case let .multicall(calls):
-            return "multicall:\n\(calls.map { "\n\t\t- \($0.descriptionExt)" }.joined(separator: "\n"))\n"
+            return
+                "multicall:\n\(calls.map { "\n\t\t- \($0.descriptionExt)" }.joined(separator: "\n"))\n"
         default:
             return description
         }
@@ -274,14 +328,14 @@ func getScriptAddress(_ creationCode: Hex) -> EthAddress {
     // 3. salt (32 bytes of 0 in this case)
     // 4. keccak256 hash of initialization code
     var packed = Data()
-    packed.append(Data([0xFF])) // prefix byte
-    packed.append(codeJarAddress.data) // deploying address
-    packed.append(Data(repeating: 0, count: 32)) // salt
-    packed.append(SwiftKeccak.keccak256(creationCode.data)) // hash of init code
+    packed.append(Data([0xFF]))  // prefix byte
+    packed.append(codeJarAddress.data)  // deploying address
+    packed.append(Data(repeating: 0, count: 32))  // salt
+    packed.append(SwiftKeccak.keccak256(creationCode.data))  // hash of init code
 
     // Take keccak256 hash and extract last 20 bytes for address
     let hash = SwiftKeccak.keccak256(packed)
-    return EthAddress(Hex(hash.subdata(in: 12 ..< 32)))!
+    return EthAddress(Hex(hash.subdata(in: 12..<32)))!
 }
 
 enum Account: Hashable, Equatable {
@@ -549,6 +603,7 @@ enum Given {
     case quote(Quote)
     case cometSupply(Account, TokenAmount, Comet, Network)
     case cometBorrow(Account, TokenAmount, Comet, Network)
+    case acrossQuote(TokenAmount, Double)
 }
 
 indirect enum When {
@@ -628,6 +683,7 @@ class Context {
     var paymentToken: Token?
     var tokenPositions: [Network: [Token: [Account: Float]]]
     var cometPositions: [Network: [Comet: [Account: (Float, Float, [Token: Float])]]]
+    var ffis: EVM.FFIMap = [:]
 
     let allNetworks: [Network] = [.ethereum, .base, .arbitrum]
 
@@ -641,7 +697,7 @@ class Context {
                         nonceSecret: Hex(
                             "0x5555555555555555555555555555555555555555555555555555555555555555"
                         )
-                    ),
+                    )
                 ],
                 assetPositionsList: reifyTokenPositions(network: network),
                 cometPositions: reifyCometPositions(network: network),
@@ -663,28 +719,52 @@ class Context {
     func given(_ given: Given) {
         switch given {
         case let .tokenBalance(account, amount, network):
-            let currentPosition = tokenPositions[network, default: [:]][amount.token, default: [:]][account] ?? 0.0
-            tokenPositions[network, default: [:]][amount.token, default: [:]][account] = currentPosition + amount.amount
+            let currentPosition =
+                tokenPositions[network, default: [:]][amount.token, default: [:]][account] ?? 0.0
+            tokenPositions[network, default: [:]][amount.token, default: [:]][account] =
+                currentPosition + amount.amount
         case let .cometSupply(account, amount, comet, network):
             if amount.token == comet.baseAsset {
-                let (currSupply, currBorrow, collaterals) = cometPositions[network, default: [:]][comet, default: [:]][account] ?? (0.0, 0.0, [:])
-                cometPositions[network, default: [:]][comet, default: [:]][account] = (currSupply + amount.amount, currBorrow, collaterals)
+                let (currSupply, currBorrow, collaterals) =
+                    cometPositions[network, default: [:]][comet, default: [:]][account] ?? (
+                        0.0, 0.0, [:]
+                    )
+                cometPositions[network, default: [:]][comet, default: [:]][account] = (
+                    currSupply + amount.amount, currBorrow, collaterals
+                )
             } else {
-                let (currSupply, currBorrow, collaterals) = cometPositions[network, default: [:]][comet, default: [:]][account] ?? (0.0, 0.0, [:])
+                let (currSupply, currBorrow, collaterals) =
+                    cometPositions[network, default: [:]][comet, default: [:]][account] ?? (
+                        0.0, 0.0, [:]
+                    )
                 var updatedCollaterals = collaterals
                 updatedCollaterals[amount.token, default: 0.0] += amount.amount
-                cometPositions[network, default: [:]][comet, default: [:]][account] = (currSupply, currBorrow, updatedCollaterals)
+                cometPositions[network, default: [:]][comet, default: [:]][account] = (
+                    currSupply, currBorrow, updatedCollaterals
+                )
             }
         case let .cometBorrow(account, amount, comet, network):
             if amount.token == comet.baseAsset {
-                let (currSupply, currBorrow, collaterals) = cometPositions[network, default: [:]][comet, default: [:]][account] ?? (0.0, 0.0, [:])
-                cometPositions[network, default: [:]][comet, default: [:]][account] = (currSupply, currBorrow + amount.amount, collaterals)
+                let (currSupply, currBorrow, collaterals) =
+                    cometPositions[network, default: [:]][comet, default: [:]][account] ?? (
+                        0.0, 0.0, [:]
+                    )
+                cometPositions[network, default: [:]][comet, default: [:]][account] = (
+                    currSupply, currBorrow + amount.amount, collaterals
+                )
             } else {
                 fatalError("Cannot borrow non-base asset")
             }
         case let .quote(quote):
             prices = quote.prices
             fees = quote.fees
+        case let .acrossQuote(gasFee, feePct):
+            ffis[EthAddress("0x0000000000000000000000000000000000FF1010")] = { _ in
+                return .ok(
+                    ABI.Value.tuple2(
+                        .uint256(toWei(tokenAmount: gasFee)), .uint256(BigUInt(feePct * 1e18))
+                    ).encoded)
+            }
         }
     }
 
@@ -692,7 +772,8 @@ class Context {
         QuarkBuilder.QuarkBuilderBase.BuilderResult, QuarkBuilder.RevertReason
     > {
         let assetQuotes = prices.map {
-            QuarkBuilder.Quotes.AssetQuote.init(symbol: $0.key.symbol, price: BigUInt($0.value * 1e8))
+            QuarkBuilder.Quotes.AssetQuote.init(
+                symbol: $0.key.symbol, price: BigUInt($0.value * 1e8))
         }
 
         let networkOperationFees = fees.map {
@@ -717,17 +798,19 @@ class Context {
                     chainId: BigUInt(network.chainId),
                     comet: market.address(network: network),
                     sender: from.address,
-                    preferAcross: false,
+                    preferAcross: true,
                     paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
                 ),
                 chainAccountsList: chainAccounts,
                 quote: .init(
-                    quoteId: Hex("0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
                     issuedAt: 0,
                     expiresAt: BigUInt(Date(timeIntervalSinceNow: 1_000_000).timeIntervalSince1970),
                     assetQuotes: assetQuotes,
                     networkOperationFees: networkOperationFees
-                )
+                ),
+                withFunctions: ffis
             )
 
         case let .transfer(from, to, amount, network):
@@ -738,8 +821,8 @@ class Context {
                     amount: toWei(tokenAmount: amount),
                     sender: from.address,
                     recipient: to.address,
-                    blockTimestamp: 0,
-                    preferAcross: false,
+                    blockTimestamp: BigUInt(1_000_000),
+                    preferAcross: true,
                     paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
                 ),
                 chainAccountsList: chainAccounts,
@@ -747,7 +830,7 @@ class Context {
                     quoteId: Hex(
                         "0x00000000000000000000000000000000000000000000000000000000000000CC"),
                     issuedAt: 0,
-                    expiresAt: BigUInt(Date(timeIntervalSinceNow: 1_000_000).timeIntervalSince1970),
+                    expiresAt: BigUInt(1_200_000),
                     assetQuotes: prices.map {
                         .init(symbol: $0.key.symbol, price: BigUInt($0.value * 1e8))
                     },
@@ -759,7 +842,7 @@ class Context {
                         )
                     }
                 ),
-                withFunctions: [:]
+                withFunctions: ffis
             )
         }
     }
@@ -772,7 +855,8 @@ class Context {
                 decimals: BigUInt(token.decimals),
                 usdPrice: BigUInt(token.defaultUsdPrice),
                 accountBalances: Account.knownCases.map { account in
-                    let amount = tokenPositions[network, default: [:]][token, default: [:]][account] ?? 0.0
+                    let amount =
+                        tokenPositions[network, default: [:]][token, default: [:]][account] ?? 0.0
                     return QuarkBuilder.Accounts.AccountBalance(
                         account: account.address,
                         balance: BigUInt(amount * pow(10, Float(token.decimals)))
@@ -796,14 +880,20 @@ class Context {
                 basePosition: QuarkBuilder.Accounts.CometBasePosition(
                     asset: comet.baseAsset.address(network: network),
                     accounts: accountPositions.map { account, _ in account.address },
-                    borrowed: accountPositions.map { _, position in toWei(tokenAmount: TokenAmount(amount: position.1, token: comet.baseAsset)) },
-                    supplied: accountPositions.map { _, position in toWei(tokenAmount: TokenAmount(amount: position.0, token: comet.baseAsset)) }
+                    borrowed: accountPositions.map { _, position in
+                        toWei(tokenAmount: TokenAmount(amount: position.1, token: comet.baseAsset))
+                    },
+                    supplied: accountPositions.map { _, position in
+                        toWei(tokenAmount: TokenAmount(amount: position.0, token: comet.baseAsset))
+                    }
                 ),
                 collateralPositions: collateralPositions.map { token, accountAmounts in
                     QuarkBuilder.Accounts.CometCollateralPosition(
                         asset: token.address(network: network),
                         accounts: accountAmounts.map { account, amount in account.address },
-                        balances: accountAmounts.map { account, amount in toWei(tokenAmount: TokenAmount(amount: amount, token: token)) }
+                        balances: accountAmounts.map { account, amount in
+                            toWei(tokenAmount: TokenAmount(amount: amount, token: token))
+                        }
                     )
                 }
             )
@@ -833,7 +923,9 @@ func customFatalError(_ message: String, file: String = #file, line: Int = #line
 
 func buildResultToCalls(builderResult: QuarkBuilder.QuarkBuilderBase.BuilderResult) -> [Call] {
     return zip(builderResult.quarkOperations, builderResult.actions).map { operation, action in
-        Call.tryDecodeCall(scriptAddress: operation.scriptAddress, calldata: operation.scriptCalldata, network: Network.fromChainId(BigInt(action.chainId)))
+        Call.tryDecodeCall(
+            scriptAddress: operation.scriptAddress, calldata: operation.scriptCalldata,
+            network: Network.fromChainId(BigInt(action.chainId)))
     }
 }
 
@@ -852,35 +944,50 @@ func testAcceptanceTests(test: AcceptanceTest) async throws {
     do {
         result = try await context.when(test.when)
     } catch let queryError as EVM.QueryError {
-        result = .failure(QuarkBuilder.RevertReason.unknownRevert("QueryError", String(describing: queryError)))
+        result = .failure(
+            QuarkBuilder.RevertReason.unknownRevert("QueryError", String(describing: queryError)))
     }
 
     switch (test.expect, result) {
     case let (.revert(expectedRevertReason), .failure(revertReason)):
-        #expect(revertReason == expectedRevertReason, "\n\(colorize("Expected Revert:", with: .yellow))\n\t\(colorize(String(describing: expectedRevertReason), with: .reset))\n\n\n\(colorize("Quark Builder Result:", with: .yellow))\n\t\(colorize(String(describing: revertReason), with: .reset))\n\n")
+        #expect(
+            revertReason == expectedRevertReason,
+            "\n\(colorize("Expected Revert:", with: .yellow))\n\t\(colorize(String(describing: expectedRevertReason), with: .reset))\n\n\n\(colorize("Quark Builder Result:", with: .yellow))\n\t\(colorize(String(describing: revertReason), with: .reset))\n\n"
+        )
     case let (.revert(expectedRevertReason), .success(builderResult)):
         let calls = buildResultToCalls(builderResult: builderResult)
-        #expect(Bool(false), "\n\(colorize("Expected Revert:", with: .yellow))\n\t\(colorize(String(describing: expectedRevertReason), with: .reset))\n\n\n\(colorize("Quark Builder Result:", with: .yellow))\n\t\(calls.descriptionExt)\n\n")
+        #expect(
+            Bool(false),
+            "\n\(colorize("Expected Revert:", with: .yellow))\n\t\(colorize(String(describing: expectedRevertReason), with: .reset))\n\n\n\(colorize("Quark Builder Result:", with: .yellow))\n\t\(calls.descriptionExt)\n\n"
+        )
     case let (.success(callExpect), .failure(revertReason)):
-        let expectedCalls = switch callExpect {
-        case let .single(expectedCall):
-            [expectedCall]
-        case let .multi(expectedCalls):
-            expectedCalls
-        }
+        let expectedCalls =
+            switch callExpect {
+            case let .single(expectedCall):
+                [expectedCall]
+            case let .multi(expectedCalls):
+                expectedCalls
+            }
 
-        #expect(Bool(false), "\n\(colorize("Expected Result:", with: .yellow))\n\t\(expectedCalls.descriptionExt)\n\n\n\(colorize("Quark Builder Failure:", with: .yellow))\n\t\(colorize(String(describing: revertReason), with: .red))\n\n")
+        #expect(
+            Bool(false),
+            "\n\(colorize("Expected Result:", with: .yellow))\n\t\(expectedCalls.descriptionExt)\n\n\n\(colorize("Quark Builder Failure:", with: .yellow))\n\t\(colorize(String(describing: revertReason), with: .red))\n\n"
+        )
     case let (.success(callExpect), .success(builderResult)):
         // #expect(builderResult.eip712Data.domainSeparator == EIP712Helper.DomainSeparator(name: "Quark", version: "1")) // TODO: Check domain separator?
         // #expect(builderResult.paymentCurrency == "USDC") // TODO: Check payment currency?
 
         let calls = buildResultToCalls(builderResult: builderResult)
-        let expectedCalls = switch callExpect {
-        case let .single(expectedCall):
-            [expectedCall]
-        case let .multi(expectedCalls):
-            expectedCalls
-        }
-        #expect(expectedCalls == calls, "\n\(colorize("Expected Result:", with: .yellow))\n\t\(expectedCalls.descriptionExt)\n\n\n\(colorize("Quark Builder Result:", with: .yellow))\n\t\(calls.descriptionExt)\n\n")
+        let expectedCalls =
+            switch callExpect {
+            case let .single(expectedCall):
+                [expectedCall]
+            case let .multi(expectedCalls):
+                expectedCalls
+            }
+        #expect(
+            expectedCalls == calls,
+            "\n\(colorize("Expected Result:", with: .yellow))\n\t\(expectedCalls.descriptionExt)\n\n\n\(colorize("Quark Builder Result:", with: .yellow))\n\t\(calls.descriptionExt)\n\n"
+        )
     }
 }

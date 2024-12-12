@@ -114,7 +114,7 @@ contract QuarkBuilderRecurringSwapTest is Test, QuarkBuilderTest {
 
     function testInsufficientFunds() public {
         QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 3000e6, 0e6));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 3000e6, 0));
         builder.recurringSwap(
             buyWeth_({
                 chainId: 1,
@@ -159,7 +159,9 @@ contract QuarkBuilderRecurringSwapTest is Test, QuarkBuilderTest {
 
     function testNotEnoughFundsOnTargetChain() public {
         QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 80e6, 45e6));
+        vm.expectRevert(
+            abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFundsForRecurring.selector, "USDC", 80e6, 45e6)
+        );
         builder.recurringSwap(
             buyWeth_({
                 chainId: 1,
@@ -184,7 +186,7 @@ contract QuarkBuilderRecurringSwapTest is Test, QuarkBuilderTest {
         networkOperationFees[0] = Quotes.NetworkOperationFee({opType: Quotes.OP_TYPE_BASELINE, chainId: 1, price: 3e8});
 
         // The 30e6 is the suggested amount (total available funds) to swap
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 35e6, 30e6));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 35e6, 30e6));
         builder.recurringSwap(
             buyWeth_({
                 chainId: 1,

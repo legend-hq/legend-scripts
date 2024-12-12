@@ -82,7 +82,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
 
     function testCometSupplyInsufficientFunds() public {
         QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 2e6, 0e6));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 2e6, 0e6));
         builder.cometSupply(
             cometSupply_(1, 2e6, "USD"),
             chainAccountsList_(0e6), // but we are holding 0 USDC in total across 1, 8453
@@ -92,7 +92,17 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
 
     function testCometSupplyMaxCostTooHigh() public {
         QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.ImpossibleToConstructQuotePay.selector, "USDC"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuarkBuilderBase.UnableToConstructActionIntent.selector,
+                false,
+                "",
+                0,
+                QuarkBuilderBase.GenerateQuotePayStatus.ImpossibleToConstruct,
+                "USDC",
+                1_000e6
+            )
+        );
         builder.cometSupply(
             cometSupply_(1, 1e6),
             chainAccountsList_(2e6), // holding 2 USDC in total across 1, 8453
@@ -102,7 +112,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
 
     function testCometSupplyFundsUnavailable() public {
         QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 2e6, 0));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 2e6, 0));
         builder.cometSupply(
             // there is no bridge to chain 7777, so we cannot get to our funds
             cometSupply_(7777, 2e6, "USD"), // transfer 2 USDC on chain 7777 to 0xc0b

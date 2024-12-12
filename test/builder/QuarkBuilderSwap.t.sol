@@ -104,7 +104,9 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
 
     function testSwapInsufficientFunds() public {
         QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 3000e6, 0e6));
+        vm.expectRevert(
+            abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 3000e6, 0e6)
+        );
         builder.swap(
             buyWeth_(1, usdc_(1), 3000e6, 1e18, address(0xa11ce), BLOCK_TIMESTAMP, "USD"), // swap 3000 USDC on chain 1 to 1 WETH
             chainAccountsList_(0e6), // but we are holding 0 USDC in total across 1, 8453
@@ -114,12 +116,22 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
 
     function testSwapMaxCostTooHigh() public {
         QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.ImpossibleToConstructQuotePay.selector, "USDC"));
 
         Quotes.NetworkOperationFee[] memory networkOperationFees = new Quotes.NetworkOperationFee[](1);
         networkOperationFees[0] =
             Quotes.NetworkOperationFee({opType: Quotes.OP_TYPE_BASELINE, chainId: 1, price: 1000e8});
 
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuarkBuilderBase.UnableToConstructActionIntent.selector,
+                false,
+                "",
+                0,
+                QuarkBuilderBase.GenerateQuotePayStatus.ImpossibleToConstruct,
+                "USDC",
+                1_000e6
+            )
+        );
         builder.swap(
             buyWeth_(1, usdc_(1), 30e6, 0.01e18, address(0xa11ce), BLOCK_TIMESTAMP, "USDC"), // swap 30 USDC on chain 1 to 0.01 WETH
             chainAccountsList_(60e6), // holding 60 USDC in total across chains 1, 8453
@@ -130,7 +142,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
     function testSwapFundsOnUnbridgeableChains() public {
         QuarkBuilder builder = new QuarkBuilder();
         // FundsUnavailable("USDC", 2e6, 0e6): Requested 2e6, Available 0e6
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 30e6, 0e6));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 30e6, 0e6));
         builder.swap(
             // there is no bridge to chain 7777, so we cannot get to our funds
             buyWeth_(7777, usdc_(7777), 30e6, 0.01e18, address(0xa11ce), BLOCK_TIMESTAMP, "USD"), // swap 30 USDC on chain 1 to 0.01 WETH
@@ -146,7 +158,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         networkOperationFees[0] = Quotes.NetworkOperationFee({opType: Quotes.OP_TYPE_BASELINE, chainId: 1, price: 3e8});
 
         // The 30e6 is the suggested amount (total available funds) to swap
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 35e6, 30e6));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 35e6, 30e6));
         builder.swap(
             buyWeth_(1, usdc_(1), 35e6, 0.01e18, address(0xa11ce), BLOCK_TIMESTAMP, "USDC"), // swap 30 USDC on chain 1 to 0.01 WETH
             chainAccountsList_(60e6), // holding 60 USDC in total across 1, 8453
@@ -992,7 +1004,9 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         // there will be insufficient funds for the transfer.
 
         // The `FundsAvailable` error tells us that 3000 USDC was asked to be swap, but only 1999 USDC was available.
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 3000e6, 2000e6));
+        vm.expectRevert(
+            abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 3000e6, 2000e6)
+        );
         builder.swap(
             buyWeth_(8453, usdc_(8453), 3000e6, 1e18, address(0xc0b), BLOCK_TIMESTAMP, "USDC"), // swap 3000 USDC on chain 8453 to 1 WETH
             chainAccountsList_(4000e6), // holding 4000 USDC in total across chains 1, 8453

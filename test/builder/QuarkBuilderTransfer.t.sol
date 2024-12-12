@@ -117,7 +117,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         intent.paymentAssetSymbol = "USD";
 
         QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 10e6, 0e6));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 10e6, 0e6));
         builder.transfer(
             intent, // transfer 10 USDC on chain 1 to 0xc0b
             chainAccountsList_(0e6), // but we are holding 0 USDC in total across 1, 8453
@@ -127,7 +127,17 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
 
     function testTransferMaxCostTooHigh() public {
         QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.ImpossibleToConstructQuotePay.selector, "USDC"));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuarkBuilderBase.UnableToConstructActionIntent.selector,
+                false,
+                "",
+                0,
+                QuarkBuilderBase.GenerateQuotePayStatus.ImpossibleToConstruct,
+                "USDC",
+                1_000e6
+            )
+        );
         builder.transfer(
             transferUsdc_(1, 1e6, address(0xc0b), BLOCK_TIMESTAMP), // transfer 1 USDC on chain 1 to 0xc0b
             chainAccountsList_(2e6), // holding 2 USDC in total across 1, 8453
@@ -141,7 +151,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
 
         QuarkBuilder builder = new QuarkBuilder();
         // FundsUnavailable("USDC", 2e6, 0e6): Requested 2e6, Available 0e6
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 2e6, 0e6));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 2e6, 0e6));
         builder.transfer(
             // there is no bridge to chain 7777, so we cannot get to our funds
             intent,
@@ -153,7 +163,9 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
     function testTransferFundsUnavailableErrorGivesSuggestionForAvailableFunds() public {
         QuarkBuilder builder = new QuarkBuilder();
         // The 100e6 is the suggested amount (total available funds) to transfer
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 105e6, 100e6));
+        vm.expectRevert(
+            abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 105e6, 100e6)
+        );
         builder.transfer(
             transferUsdc_(1, 105e6, address(0xc0b), BLOCK_TIMESTAMP), // transfer 100 USDC on chain 1 to 0xc0b
             chainAccountsList_(200e6), // holding 200 USDC in total across 1, 8453
@@ -165,7 +177,17 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         QuarkBuilder builder = new QuarkBuilder();
         // User has enough to transfer, but not enough for the QuotePay because no quote is given on chain 8453 and all
         // the funds are used on chain 1 for the transfer
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.UnableToConstructQuotePay.selector, "USDC", 3e6));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                QuarkBuilderBase.UnableToConstructActionIntent.selector,
+                false,
+                "",
+                0,
+                QuarkBuilderBase.GenerateQuotePayStatus.UnableToConstruct,
+                "USDC",
+                3e6
+            )
+        );
         builder.transfer(
             transferUsdc_(1, 100e6, address(0xc0b), BLOCK_TIMESTAMP), // transfer 100 USDC on chain 1 to 0xc0b
             chainAccountsList_(200e6), // holding 200 USDC in total across 1, 8453
@@ -818,7 +840,9 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         // Request amount = 17 USDC - 0.5 USDC (max cost on main) - 0.1 USDC (max cost on Base) - 0.1 USDC (max cost on RandomL2) = 16.3 USDC
         // Actual amount = 8 USDC (available on main) + 4 USDC (available on Base) = 12 USDC
         // Missing amount = 16.3 USDC - 12 USDC = 14.3 USDC
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 16.3e6, 12e6));
+        vm.expectRevert(
+            abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 16.3e6, 12e6)
+        );
         builder.transfer(
             transferUsdc_(8453, type(uint256).max, address(0xb0b), address(0xceecee), BLOCK_TIMESTAMP), // transfer max USDC on chain 8453 to 0xceecee
             chainAccountsList, // holding 8 USDC on chains 1, 4 USDC on 8453, 5 USDC on 7777
@@ -833,7 +857,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         // there will be insufficient funds for the transfer.
 
         // The `FundsAvailable` error tells us that 5 USDC was asked to be transferred, but only 3 USDC was available.
-        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.FundsUnavailable.selector, "USDC", 5e6, 3e6));
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 5e6, 3e6));
         builder.transfer(
             transferUsdc_(8453, 5e6, address(0xceecee), BLOCK_TIMESTAMP), // transfer 5 USDC on chain 8453 to 0xceecee
             chainAccountsList_(6e6), // holding 6 USDC in total across chains 1, 8453

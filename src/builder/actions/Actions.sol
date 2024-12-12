@@ -82,7 +82,6 @@ library Actions {
     error BridgingUnsupportedForAsset();
     error InvalidAssetForBridge();
     error InvalidAssetForWrappingAction();
-    error NotEnoughFundsToBridge(string assetSymbol, uint256 requiredAmount, uint256 amountLeftToBridge);
 
     /* ===== Input Types ===== */
 
@@ -493,7 +492,7 @@ library Actions {
         BridgeOperationInfo memory bridgeInfo,
         Accounts.ChainAccounts[] memory chainAccountsList,
         PaymentInfo.Payment memory payment
-    ) internal pure returns (IQuarkWallet.QuarkOperation[] memory, Action[] memory) {
+    ) internal pure returns (IQuarkWallet.QuarkOperation[] memory, Action[] memory, uint256, uint256, uint256) {
         /*
          * at most one bridge operation per non-destination chain,
          * and at most one transferIntent operation on the destination chain.
@@ -523,7 +522,8 @@ library Actions {
             amountLeftToBridge -= counterpartTokenAmountToUse;
         }
 
-        uint256 bridgeActionCount = 0;
+        uint256 unbridgeableBalance = 0;
+        uint256 totalBridgeFees = 0;
         // Iterate chainAccountList and find chains that can provide enough funds to bridge.
         // One optimization is to allow the client to provide optimal routes.
         for (uint256 i = 0; i < chainAccountsList.length; ++i) {
@@ -540,6 +540,8 @@ library Actions {
 
             // Skip if there is no bridge route for the current chain to the target chain
             if (!BridgeRoutes.canBridge(srcChainAccounts.chainId, bridgeInfo.dstChainId, bridgeInfo.assetSymbol)) {
+                unbridgeableBalance +=
+                    Accounts.getBalanceOnChain(bridgeInfo.assetSymbol, srcChainAccounts.chainId, chainAccountsList);
                 continue;
             }
 
@@ -553,9 +555,8 @@ library Actions {
                     ? amountLeftToBridge
                     : srcAccountBalances[j].balance;
                 if (amountToBridge > 0) {
-                    amountLeftToBridge -= amountToBridge;
-
-                    (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = bridgeAsset(
+                    (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action, uint256 outputAmount) =
+                    bridgeAsset(
                         BridgeAsset({
                             chainAccountsList: chainAccountsList,
                             assetSymbol: bridgeInfo.assetSymbol,
@@ -573,21 +574,23 @@ library Actions {
                         bridgeInfo.preferAcross
                     );
 
+                    amountLeftToBridge -= outputAmount;
+                    totalBridgeFees += (amountToBridge - outputAmount);
+
                     List.addAction(actions, action);
                     List.addQuarkOperation(quarkOperations, operation);
-                    bridgeActionCount++;
                 }
             }
         }
 
-        if (amountLeftToBridge > 0) {
-            revert NotEnoughFundsToBridge(
-                bridgeInfo.assetSymbol, bridgeInfo.amountNeededOnDst - balanceOnDstChain, amountLeftToBridge
-            );
-        }
-
         // Convert actions and quark operations to arrays
-        return (List.toQuarkOperationArray(quarkOperations), List.toActionArray(actions));
+        return (
+            List.toQuarkOperationArray(quarkOperations),
+            List.toActionArray(actions),
+            amountLeftToBridge,
+            unbridgeableBalance,
+            totalBridgeFees
+        );
     }
 
     function bridgeAsset(
@@ -595,7 +598,7 @@ library Actions {
         PaymentInfo.Payment memory payment,
         bool useQuotecall,
         bool preferAcross
-    ) internal pure returns (IQuarkWallet.QuarkOperation memory, Action memory) {
+    ) internal pure returns (IQuarkWallet.QuarkOperation memory, Action memory, uint256) {
         bool acrossCanBridge = Across.canBridge(bridge.srcChainId, bridge.destinationChainId, bridge.assetSymbol);
         bool cctpCanBridge = CCTP.canBridge(bridge.srcChainId, bridge.destinationChainId, bridge.assetSymbol);
 
@@ -620,7 +623,7 @@ library Actions {
     function bridgeCCTP(BridgeAsset memory bridge, PaymentInfo.Payment memory payment, bool useQuotecall)
         internal
         pure
-        returns (IQuarkWallet.QuarkOperation memory, Action memory)
+        returns (IQuarkWallet.QuarkOperation memory, Action memory, uint256)
     {
         console.log("Bridging via CCTP", bridge.assetSymbol);
 
@@ -676,15 +679,17 @@ library Actions {
             totalPlays: 1
         });
 
-        return (quarkOperation, action);
+        return (quarkOperation, action, bridge.amount);
     }
 
     function bridgeAcross(BridgeAsset memory bridge, PaymentInfo.Payment memory payment, bool useQuotecall)
         internal
         pure
-        returns (IQuarkWallet.QuarkOperation memory, Action memory)
+        returns (IQuarkWallet.QuarkOperation memory, Action memory, uint256)
     {
         console.log("Bridging via Across", bridge.assetSymbol);
+        console.log("Bridging from", bridge.srcChainId);
+        console.log("Bridging to", bridge.destinationChainId);
 
         Accounts.ChainAccounts memory srcChainAccounts =
             Accounts.findChainAccounts(bridge.srcChainId, bridge.chainAccountsList);
@@ -716,6 +721,14 @@ library Actions {
         // The quote should consist of a fixed gas fee and variable fee. To calculate the input
         // amount, we scale the bridge.amount by the variable fee and add the fixed gas fee to it.
         uint256 inputAmount = bridge.amount * (1e18 + variableFeePct) / 1e18 + gasFee;
+        uint256 outputAmount = bridge.amount;
+
+        // if inputAmount exceeds balance on chain revert to balance on chain and compute output amount
+        uint256 sumSrcBalance = Accounts.sumBalances(srcAssetPositions);
+        if (inputAmount > sumSrcBalance) {
+            inputAmount = sumSrcBalance;
+            outputAmount = sumSrcBalance * (1e18 - variableFeePct) / 1e18 - gasFee;
+        }
 
         // Construct QuarkOperation
         IQuarkWallet.QuarkOperation memory quarkOperation = IQuarkWallet.QuarkOperation({
@@ -728,7 +741,7 @@ library Actions {
                 srcAssetPositions.asset,
                 dstAssetPositions.asset,
                 inputAmount,
-                bridge.amount,
+                outputAmount,
                 bridge.recipient,
                 bridge.blockTimestamp,
                 // TODO: Determine when to set this to true. Probably requires reading QuarkState
@@ -745,7 +758,7 @@ library Actions {
             assetSymbol: srcAssetPositions.symbol,
             chainId: bridge.srcChainId,
             inputAmount: inputAmount,
-            outputAmount: bridge.amount,
+            outputAmount: outputAmount,
             recipient: bridge.recipient,
             destinationChainId: bridge.destinationChainId,
             bridgeType: BRIDGE_TYPE_ACROSS
@@ -762,7 +775,7 @@ library Actions {
             totalPlays: 1
         });
 
-        return (quarkOperation, action);
+        return (quarkOperation, action, outputAmount);
     }
 
     function cometBorrow(CometBorrowInput memory borrowInput, PaymentInfo.Payment memory payment)
@@ -931,7 +944,8 @@ library Actions {
         bytes memory scriptCalldata;
         if (Strings.stringEqIgnoreCase(cometSupply.assetSymbol, "ETH")) {
             // XXX handle wrapping ETH
-        } else {
+        }
+        else {
             scriptCalldata = abi.encodeWithSelector(
                 CometSupplyActions.supply.selector, cometSupply.comet, assetPositions.asset, cometSupply.amount
             );
@@ -989,7 +1003,8 @@ library Actions {
         bytes memory scriptCalldata;
         if (Strings.stringEqIgnoreCase(cometWithdraw.assetSymbol, "ETH")) {
             // XXX handle unwrapping ETH
-        } else {
+        }
+        else {
             scriptCalldata = abi.encodeWithSelector(
                 CometWithdrawActions.withdraw.selector, cometWithdraw.comet, assetPositions.asset, cometWithdraw.amount
             );
