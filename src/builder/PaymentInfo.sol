@@ -46,25 +46,42 @@ library PaymentInfo {
             // (Unfortunately the off-the-shelf chainlink's pricefeed only has USDC / ETH, which also need a our own proxy pricefeed to convert it to ETH / USDC)
             priceFeed: 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
         });
+        // Base
         paymentTokens[1] = PaymentToken({
             chainId: 8453,
             symbol: "USDC",
             token: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
             priceFeed: 0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70
         });
+        // Arbitrum
+        paymentTokens[2] = PaymentToken({
+            chainId: 42161,
+            symbol: "USDC",
+            token: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831,
+            priceFeed: 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612
+        });
 
         // Testnet
-        paymentTokens[2] = PaymentToken({
+        // Sepolia
+        paymentTokens[3] = PaymentToken({
             chainId: 11155111,
             symbol: "USDC",
             token: 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238,
             priceFeed: 0x694AA1769357215DE4FAC081bf1f309aDC325306
         });
-        paymentTokens[3] = PaymentToken({
+        // Base Sepolia
+        paymentTokens[4] = PaymentToken({
             chainId: 84532,
             symbol: "USDC",
             token: 0x036CbD53842c5426634e7929541eC2318f3dCF7e,
             priceFeed: 0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1
+        });
+        // Arbitrum Sepolia
+        paymentTokens[5] = PaymentToken({
+            chainId: 421614,
+            symbol: "USDC",
+            token: 0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d,
+            priceFeed: 0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165
         });
         return paymentTokens;
     }
