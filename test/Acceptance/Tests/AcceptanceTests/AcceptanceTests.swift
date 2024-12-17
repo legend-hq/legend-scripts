@@ -8,7 +8,7 @@ import Testing
 
 let allTests: [AcceptanceTest] = transferTests +
     cometBorrowTests +
-    cometSupplyTests + 
+    cometSupplyTests +
     cometRepayTests
 
 let tests = allTests.filter { !$0.skip }
@@ -16,7 +16,7 @@ let filteredTests = tests.contains { $0.only } ? tests.filter { $0.only } : test
 
 enum Call: CustomStringConvertible, Equatable {
     case bridge(
-        bridge: String, srcNetwork: Network, destinationNetwork: Network, tokenAmount: TokenAmount)
+        bridge: String, srcNetwork: Network, destinationNetwork: Network, inputTokenAmount: TokenAmount, outputTokenAmount: TokenAmount)
     case transferErc20(tokenAmount: TokenAmount, recipient: Account)
     case supplyToComet(tokenAmount: TokenAmount, market: Comet, network: Network)
     case supplyMultipleAssetsAndBorrowFromComet(
@@ -52,9 +52,9 @@ enum Call: CustomStringConvertible, Equatable {
                 _,
                 _,
                 inputToken,
-                _,
+                outputToken,
                 inputAmount,
-                _,
+                outputAmount,
                 destinationChainId,
                 _,
                 _,
@@ -67,10 +67,15 @@ enum Call: CustomStringConvertible, Equatable {
                     bridge: "Across",
                     srcNetwork: network,
                     destinationNetwork: Network.fromChainId(BigInt(destinationChainId)),
-                    tokenAmount: Token.getTokenAmount(
+                    inputTokenAmount: Token.getTokenAmount(
                         amount: inputAmount,
                         network: network,
                         address: inputToken
+                    ),
+                    outputTokenAmount: Token.getTokenAmount(
+                        amount: outputAmount,
+                        network: Network.fromChainId(BigInt(destinationChainId)),
+                        address: outputToken
                     )
                 )
             }
@@ -176,9 +181,9 @@ enum Call: CustomStringConvertible, Equatable {
 
     var description: String {
         switch self {
-        case let .bridge(bridge, chainId, destinationChainId, tokenAmount):
+        case let .bridge(bridge, chainId, destinationChainId, inputTokenAmount, outputTokenAmount):
             return
-                "bridge(\(bridge), \(tokenAmount.amount) \(tokenAmount.token.symbol) from \(chainId.description) to \(destinationChainId.description))"
+                "bridge(\(bridge), \(inputTokenAmount.amount) \(inputTokenAmount.token.symbol) to receive \(outputTokenAmount.amount) \(outputTokenAmount.token.symbol) from \(chainId.description) to \(destinationChainId.description))"
         case let .transferErc20(tokenAmount, recipient):
             return
                 "transferErc20(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(recipient.description))"
