@@ -263,7 +263,6 @@ library Actions {
         uint256 dstChainId;
         address recipient;
         uint256 blockTimestamp;
-        bool useQuotecall;
         bool preferAcross;
     }
 
@@ -574,7 +573,6 @@ library Actions {
                             blockTimestamp: bridgeInfo.blockTimestamp
                         }),
                         payment,
-                        bridgeInfo.useQuotecall,
                         bridgeInfo.preferAcross
                     );
 
@@ -597,34 +595,33 @@ library Actions {
         );
     }
 
-    function bridgeAsset(
-        BridgeAsset memory bridge,
-        PaymentInfo.Payment memory payment,
-        bool useQuotecall,
-        bool preferAcross
-    ) internal pure returns (IQuarkWallet.QuarkOperation memory, Action memory, uint256, uint256) {
+    function bridgeAsset(BridgeAsset memory bridge, PaymentInfo.Payment memory payment, bool preferAcross)
+        internal
+        pure
+        returns (IQuarkWallet.QuarkOperation memory, Action memory, uint256, uint256)
+    {
         bool acrossCanBridge = Across.canBridge(bridge.srcChainId, bridge.destinationChainId, bridge.assetSymbol);
         bool cctpCanBridge = CCTP.canBridge(bridge.srcChainId, bridge.destinationChainId, bridge.assetSymbol);
 
         // Choose order of actions based on user bridge preference.
         if (preferAcross) {
             if (acrossCanBridge) {
-                return bridgeAcross(bridge, payment, useQuotecall);
+                return bridgeAcross(bridge, payment);
             } else if (cctpCanBridge) {
-                return bridgeCCTP(bridge, payment, useQuotecall);
+                return bridgeCCTP(bridge, payment);
             }
         } else {
             if (cctpCanBridge) {
-                return bridgeCCTP(bridge, payment, useQuotecall);
+                return bridgeCCTP(bridge, payment);
             } else if (acrossCanBridge) {
-                return bridgeAcross(bridge, payment, useQuotecall);
+                return bridgeAcross(bridge, payment);
             }
         }
 
         revert BridgingUnsupportedForAsset();
     }
 
-    function bridgeCCTP(BridgeAsset memory bridge, PaymentInfo.Payment memory payment, bool useQuotecall)
+    function bridgeCCTP(BridgeAsset memory bridge, PaymentInfo.Payment memory payment)
         internal
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory, uint256, uint256)
@@ -678,7 +675,7 @@ library Actions {
             actionType: ACTION_TYPE_BRIDGE,
             actionContext: abi.encode(bridgeActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, useQuotecall),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -686,7 +683,7 @@ library Actions {
         return (quarkOperation, action, bridge.amount, bridge.amount);
     }
 
-    function bridgeAcross(BridgeAsset memory bridge, PaymentInfo.Payment memory payment, bool useQuotecall)
+    function bridgeAcross(BridgeAsset memory bridge, PaymentInfo.Payment memory payment)
         internal
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory, uint256, uint256)
@@ -774,7 +771,7 @@ library Actions {
             actionType: ACTION_TYPE_BRIDGE,
             actionContext: abi.encode(bridgeActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, useQuotecall),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -848,7 +845,7 @@ library Actions {
             actionType: ACTION_TYPE_BORROW,
             actionContext: abi.encode(borrowActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, false),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -921,7 +918,7 @@ library Actions {
             actionType: ACTION_TYPE_REPAY,
             actionContext: abi.encode(repayActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, false),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -978,7 +975,7 @@ library Actions {
             actionType: ACTION_TYPE_SUPPLY,
             actionContext: abi.encode(cometSupplyActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, false),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -1036,7 +1033,7 @@ library Actions {
             actionType: ACTION_TYPE_WITHDRAW,
             actionContext: abi.encode(cometWithdrawActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, false),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -1044,7 +1041,7 @@ library Actions {
         return (quarkOperation, action);
     }
 
-    function transferAsset(TransferAsset memory transfer, PaymentInfo.Payment memory payment, bool useQuotecall)
+    function transferAsset(TransferAsset memory transfer, PaymentInfo.Payment memory payment)
         internal
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
@@ -1098,7 +1095,7 @@ library Actions {
             actionType: ACTION_TYPE_TRANSFER,
             actionContext: abi.encode(transferActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, useQuotecall),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -1165,7 +1162,7 @@ library Actions {
             actionType: ACTION_TYPE_MORPHO_BORROW,
             actionContext: abi.encode(borrowActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, false),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -1232,7 +1229,7 @@ library Actions {
             actionType: ACTION_TYPE_MORPHO_REPAY,
             actionContext: abi.encode(morphoRepayActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, false),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -1240,11 +1237,11 @@ library Actions {
         return (quarkOperation, action);
     }
 
-    function morphoVaultSupply(
-        MorphoVaultSupply memory vaultSupply,
-        PaymentInfo.Payment memory payment,
-        bool useQuotecall
-    ) internal pure returns (IQuarkWallet.QuarkOperation memory, Action memory) {
+    function morphoVaultSupply(MorphoVaultSupply memory vaultSupply, PaymentInfo.Payment memory payment)
+        internal
+        pure
+        returns (IQuarkWallet.QuarkOperation memory, Action memory)
+    {
         bytes[] memory scriptSources = new bytes[](1);
         scriptSources[0] = type(MorphoVaultActions).creationCode;
 
@@ -1289,7 +1286,7 @@ library Actions {
             actionType: ACTION_TYPE_MORPHO_VAULT_SUPPLY,
             actionContext: abi.encode(vaultSupplyActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, useQuotecall),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -1346,7 +1343,7 @@ library Actions {
             actionType: ACTION_TYPE_MORPHO_VAULT_WITHDRAW,
             actionContext: abi.encode(vaultWithdrawActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, false),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -1411,7 +1408,7 @@ library Actions {
             actionType: ACTION_TYPE_MORPHO_CLAIM_REWARDS,
             actionContext: abi.encode(claimRewardsActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, false),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -1465,8 +1462,7 @@ library Actions {
             actionType: ACTION_TYPE_QUOTE_PAY,
             actionContext: abi.encode(quotePayActionContext),
             quotePayActionContext: abi.encode(quotePayActionContext),
-            // TODO: Update this (paymentMethodForPayment)
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, true),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -1477,7 +1473,7 @@ library Actions {
     function wrapOrUnwrapAsset(
         WrapOrUnwrapAsset memory wrapOrUnwrap,
         PaymentInfo.Payment memory payment,
-        bool useQuotecall
+        bool isRecurring
     ) internal pure returns (IQuarkWallet.QuarkOperation memory, Action memory) {
         bytes[] memory scriptSources = new bytes[](1);
         scriptSources[0] = type(WrapperActions).creationCode;
@@ -1518,7 +1514,7 @@ library Actions {
                 : ACTION_TYPE_WRAP,
             actionContext: abi.encode(wrapOrUnwrapActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, useQuotecall),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: isRecurring}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -1526,7 +1522,7 @@ library Actions {
         return (quarkOperation, action);
     }
 
-    function zeroExSwap(ZeroExSwap memory swap, PaymentInfo.Payment memory payment, bool useQuotecall)
+    function zeroExSwap(ZeroExSwap memory swap, PaymentInfo.Payment memory payment)
         internal
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
@@ -1597,7 +1593,7 @@ library Actions {
             actionType: ACTION_TYPE_SWAP,
             actionContext: abi.encode(swapActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, useQuotecall),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
@@ -1605,7 +1601,7 @@ library Actions {
         return (quarkOperation, action);
     }
 
-    function recurringSwap(RecurringSwapParams memory swap, PaymentInfo.Payment memory payment, bool useQuotecall)
+    function recurringSwap(RecurringSwapParams memory swap, PaymentInfo.Payment memory payment)
         internal
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
@@ -1698,7 +1694,7 @@ library Actions {
             actionType: ACTION_TYPE_RECURRING_SWAP,
             actionContext: abi.encode(recurringSwapActionContext),
             quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment(payment, useQuotecall),
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: true}),
             nonceSecret: localVars.accountSecret.nonceSecret,
             totalPlays: RECURRING_SWAP_TOTAL_PLAYS
         });

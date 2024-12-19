@@ -47,7 +47,6 @@ contract CometActionsBuilder is QuarkBuilderBase {
         // XXX confirm that the user is not withdrawing beyond their limits
 
         bool isMaxRepay = repayIntent.amount == type(uint256).max;
-        bool useQuotecall = false; // never use Quotecall
 
         uint256 repayAmount;
         if (isMaxRepay) {
@@ -87,9 +86,6 @@ contract CometActionsBuilder is QuarkBuilderBase {
                 assetSymbolIns: repayIntent.collateralAssetSymbols,
                 blockTimestamp: repayIntent.blockTimestamp,
                 chainId: repayIntent.chainId,
-                useQuotecall: useQuotecall,
-                bridgeEnabled: true,
-                autoWrapperEnabled: true,
                 preferAcross: repayIntent.preferAcross
             });
         }
@@ -168,9 +164,6 @@ contract CometActionsBuilder is QuarkBuilderBase {
                 assetSymbolOuts: borrowIntent.collateralAssetSymbols,
                 blockTimestamp: borrowIntent.blockTimestamp,
                 chainId: borrowIntent.chainId,
-                useQuotecall: false,
-                bridgeEnabled: true,
-                autoWrapperEnabled: true,
                 preferAcross: borrowIntent.preferAcross
             });
         }
@@ -254,9 +247,6 @@ contract CometActionsBuilder is QuarkBuilderBase {
                     assetSymbolOuts: assetSymbolOuts,
                     blockTimestamp: cometSupplyIntent.blockTimestamp,
                     chainId: cometSupplyIntent.chainId,
-                    useQuotecall: isMaxSupply,
-                    bridgeEnabled: true,
-                    autoWrapperEnabled: true,
                     preferAcross: cometSupplyIntent.preferAcross
                 }),
                 chainAccountsList: chainAccountsList,
@@ -341,9 +331,6 @@ contract CometActionsBuilder is QuarkBuilderBase {
                     assetSymbolOuts: assetSymbolOuts,
                     blockTimestamp: cometWithdrawIntent.blockTimestamp,
                     chainId: cometWithdrawIntent.chainId,
-                    useQuotecall: false,
-                    bridgeEnabled: true,
-                    autoWrapperEnabled: true,
                     preferAcross: cometWithdrawIntent.preferAcross
                 }),
                 chainAccountsList: chainAccountsList,

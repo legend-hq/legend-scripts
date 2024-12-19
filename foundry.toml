@@ -17,5 +17,9 @@ via_ir = true
 optimizer = true
 optimizer_runs = 100000000
 
+[profile.quark_builder]
+via_ir = true
+optimizer = false
+
 [fmt]
 ignore = ["src/vendor/**/*"]

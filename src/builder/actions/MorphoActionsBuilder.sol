@@ -73,9 +73,6 @@ contract MorphoActionsBuilder is QuarkBuilderBase {
                 assetSymbolOuts: assetSymbolOuts,
                 blockTimestamp: borrowIntent.blockTimestamp,
                 chainId: borrowIntent.chainId,
-                useQuotecall: false, // never use quotecall
-                bridgeEnabled: true,
-                autoWrapperEnabled: true,
                 preferAcross: borrowIntent.preferAcross
             });
         }
@@ -170,9 +167,6 @@ contract MorphoActionsBuilder is QuarkBuilderBase {
                     assetSymbolOuts: assetSymbolOuts,
                     blockTimestamp: repayIntent.blockTimestamp,
                     chainId: repayIntent.chainId,
-                    useQuotecall: false, // never use quotecall
-                    bridgeEnabled: true,
-                    autoWrapperEnabled: true,
                     preferAcross: repayIntent.preferAcross
                 }),
                 chainAccountsList: chainAccountsList,
@@ -257,9 +251,6 @@ contract MorphoActionsBuilder is QuarkBuilderBase {
                 assetSymbolOuts: assetSymbolOuts,
                 blockTimestamp: claimIntent.blockTimestamp,
                 chainId: claimIntent.chainId,
-                useQuotecall: false, // never use quotecall
-                bridgeEnabled: true,
-                autoWrapperEnabled: true,
                 preferAcross: claimIntent.preferAcross
             });
         }

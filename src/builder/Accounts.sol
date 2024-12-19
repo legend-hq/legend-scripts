@@ -251,22 +251,22 @@ library Accounts {
 
             // Account for max cost if the payment token is the transfer token
             // Simply subtract the max cost from the available asset batch
-            if (payment.isToken && Strings.stringEqIgnoreCase(payment.currency, tokenSymbol)) {
+            if (Strings.stringEqIgnoreCase(payment.currency, tokenSymbol)) {
                 // Use subtractFlooredAtZero to prevent errors from underflowing
-                balance =
-                    Math.subtractFlooredAtZero(balance, PaymentInfo.findMaxCost(payment, chainAccountsList[i].chainId));
+                balance = Math.subtractFlooredAtZero(
+                    balance, PaymentInfo.findCostForChain(payment, chainAccountsList[i].chainId)
+                );
             }
 
             // If the wrapped token is the payment token, subtract the max cost
             if (
-                payment.isToken
-                    && Strings.stringEqIgnoreCase(
-                        payment.currency,
-                        TokenWrapper.getWrapperCounterpartSymbol(chainAccountsList[i].chainId, tokenSymbol)
-                    )
+                Strings.stringEqIgnoreCase(
+                    payment.currency,
+                    TokenWrapper.getWrapperCounterpartSymbol(chainAccountsList[i].chainId, tokenSymbol)
+                )
             ) {
                 counterpartBalance = Math.subtractFlooredAtZero(
-                    counterpartBalance, PaymentInfo.findMaxCost(payment, chainAccountsList[i].chainId)
+                    counterpartBalance, PaymentInfo.findCostForChain(payment, chainAccountsList[i].chainId)
                 );
             }
 

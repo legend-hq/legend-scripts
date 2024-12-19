@@ -85,8 +85,7 @@ contract SwapActionsBuilder is QuarkBuilderBase {
                     isExactOut: swapIntent.isExactOut,
                     blockTimestamp: swapIntent.blockTimestamp
                 }),
-                payment,
-                isMaxSwap
+                payment
             );
 
             ActionIntent memory actionIntent;
@@ -110,9 +109,6 @@ contract SwapActionsBuilder is QuarkBuilderBase {
                     assetSymbolOuts: assetSymbolOuts,
                     blockTimestamp: swapIntent.blockTimestamp,
                     chainId: swapIntent.chainId,
-                    useQuotecall: isMaxSwap,
-                    bridgeEnabled: true,
-                    autoWrapperEnabled: true,
                     preferAcross: swapIntent.preferAcross
                 });
             }
@@ -180,8 +176,7 @@ contract SwapActionsBuilder is QuarkBuilderBase {
                 sender: swapIntent.sender,
                 blockTimestamp: swapIntent.blockTimestamp
             }),
-            payment,
-            false
+            payment
         );
 
         ActionIntent memory actionIntent;
@@ -205,9 +200,6 @@ contract SwapActionsBuilder is QuarkBuilderBase {
                 assetSymbolOuts: assetSymbolOuts,
                 blockTimestamp: swapIntent.blockTimestamp,
                 chainId: swapIntent.chainId,
-                useQuotecall: false,
-                bridgeEnabled: false,
-                autoWrapperEnabled: false,
                 preferAcross: swapIntent.preferAcross
             });
         }

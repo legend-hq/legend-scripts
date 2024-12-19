@@ -136,25 +136,17 @@ library QuarkOperationHelper {
     function wrapOperationsWithTokenPayment(
         IQuarkWallet.QuarkOperation[] memory quarkOperations,
         Actions.Action[] memory actions,
-        PaymentInfo.Payment memory payment,
-        bool useQuotecall
+        PaymentInfo.Payment memory payment
     ) internal pure returns (IQuarkWallet.QuarkOperation[] memory) {
         IQuarkWallet.QuarkOperation[] memory wrappedQuarkOperations =
             new IQuarkWallet.QuarkOperation[](quarkOperations.length);
         for (uint256 i = 0; i < quarkOperations.length; ++i) {
-            wrappedQuarkOperations[i] = useQuotecall
-                ? QuotecallWrapper.wrap(
-                    quarkOperations[i],
-                    actions[i].chainId,
-                    payment.currency,
-                    PaymentInfo.findMaxCost(payment, actions[i].chainId)
-                )
-                : PaycallWrapper.wrap(
-                    quarkOperations[i],
-                    actions[i].chainId,
-                    payment.currency,
-                    PaymentInfo.findMaxCost(payment, actions[i].chainId)
-                );
+            wrappedQuarkOperations[i] = PaycallWrapper.wrap(
+                quarkOperations[i],
+                actions[i].chainId,
+                payment.currency,
+                PaymentInfo.findCostForChain(payment, actions[i].chainId)
+            );
         }
         return wrappedQuarkOperations;
     }

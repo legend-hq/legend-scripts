@@ -39,7 +39,6 @@ contract MorphoVaultActionsBuilder is QuarkBuilderBase {
 
         // Initialize supply max flag
         bool isMaxSupply = supplyIntent.amount == type(uint256).max;
-        bool useQuotecall = isMaxSupply;
         // Convert supplyIntent to user aggregated balance
         if (isMaxSupply) {
             supplyIntent.amount = Accounts.totalAvailableAsset(supplyIntent.assetSymbol, chainAccountsList, payment);
@@ -55,8 +54,7 @@ contract MorphoVaultActionsBuilder is QuarkBuilderBase {
                 chainId: supplyIntent.chainId,
                 sender: supplyIntent.sender
             }),
-            payment,
-            useQuotecall
+            payment
         );
 
         IQuarkWallet.QuarkOperation[] memory quarkOperationsArray;
@@ -79,9 +77,6 @@ contract MorphoVaultActionsBuilder is QuarkBuilderBase {
                     assetSymbolOuts: assetSymbolOuts,
                     blockTimestamp: supplyIntent.blockTimestamp,
                     chainId: supplyIntent.chainId,
-                    useQuotecall: useQuotecall,
-                    bridgeEnabled: true,
-                    autoWrapperEnabled: true,
                     preferAcross: supplyIntent.preferAcross
                 }),
                 chainAccountsList: chainAccountsList,
@@ -159,9 +154,6 @@ contract MorphoVaultActionsBuilder is QuarkBuilderBase {
                 assetSymbolOuts: assetSymbolOuts,
                 blockTimestamp: withdrawIntent.blockTimestamp,
                 chainId: withdrawIntent.chainId,
-                useQuotecall: false,
-                bridgeEnabled: true,
-                autoWrapperEnabled: true,
                 preferAcross: withdrawIntent.preferAcross
             });
         }

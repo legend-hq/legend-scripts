@@ -215,4 +215,9 @@ library Across {
         return bridgedAmount > 0
             && (Strings.stringEqIgnoreCase(assetSymbol, "ETH") || Strings.stringEqIgnoreCase(assetSymbol, "WETH"));
     }
+
+    function isEthOrWethBridgeAction(string memory assetSymbol, uint256 bridgedAmount) internal pure returns (bool) {
+        return bridgedAmount > 0
+            && (Strings.stringEqIgnoreCase(assetSymbol, "ETH") || Strings.stringEqIgnoreCase(assetSymbol, "WETH"));
+    }
 }

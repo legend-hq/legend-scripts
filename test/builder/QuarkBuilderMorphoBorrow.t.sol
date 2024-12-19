@@ -371,7 +371,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
         assertEq(result.actions[0].actionType, "MORPHO_BORROW", "action type is 'MORPHO_BORROW'");
-        assertEq(result.actions[0].paymentMethod, "PAY_CALL", "payment method is 'PAY_CALL'");
+        assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
@@ -491,7 +491,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
         assertEq(result.actions[0].actionType, "MORPHO_BORROW", "action type is 'MORPHO_MORPHO_BORROW'");
-        assertEq(result.actions[0].paymentMethod, "PAY_CALL", "payment method is 'PAY_CALL'");
+        assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(

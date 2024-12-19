@@ -424,7 +424,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
         assertEq(result.actions[0].actionType, "SUPPLY", "action type is 'SUPPLY'");
-        assertEq(result.actions[0].paymentMethod, "PAY_CALL", "payment method is 'PAY_CALL'");
+        assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
@@ -821,7 +821,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
         assertEq(result.actions[0].actionType, "BRIDGE", "action type is 'BRIDGE'");
-        assertEq(result.actions[0].paymentMethod, "QUOTE_CALL", "payment method is 'QUOTE_CALL'");
+        assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
@@ -845,7 +845,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         assertEq(result.actions[1].chainId, 8453, "operation is on chainid 8453");
         assertEq(result.actions[1].quarkAccount, address(0xb0b), "0xb0b sends the funds");
         assertEq(result.actions[1].actionType, "SUPPLY", "action type is 'SUPPLY'");
-        assertEq(result.actions[1].paymentMethod, "PAY_CALL", "payment method is 'PAY_CALL'");
+        assertEq(result.actions[1].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[1].nonceSecret, BOB_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[1].totalPlays, 1, "total plays is 1");
         assertEq(
@@ -951,7 +951,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
         assertEq(result.actions[0].actionType, "BRIDGE", "action type is 'BRIDGE'");
-        assertEq(result.actions[0].paymentMethod, "PAY_CALL", "payment method is 'PAY_CALL'");
+        assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
@@ -975,7 +975,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         assertEq(result.actions[1].chainId, 8453, "operation is on chainid 8453");
         assertEq(result.actions[1].quarkAccount, address(0xb0b), "0xb0b sends the funds");
         assertEq(result.actions[1].actionType, "SUPPLY", "action type is 'SUPPLY'");
-        assertEq(result.actions[1].paymentMethod, "PAY_CALL", "payment method is 'PAY_CALL'");
+        assertEq(result.actions[1].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[1].nonceSecret, BOB_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[1].totalPlays, 1, "total plays is 1");
         assertEq(

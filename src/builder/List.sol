@@ -76,6 +76,18 @@ library List {
         return addItem(list, abi.encode(operation));
     }
 
+    function addQuarkOperations(DynamicArray memory list, IQuarkWallet.QuarkOperation[] memory operations)
+        internal
+        pure
+        returns (DynamicArray memory)
+    {
+        for (uint256 i = 0; i < operations.length; i++) {
+            addQuarkOperation(list, operations[i]);
+        }
+
+        return list;
+    }
+
     function getQuarkOperation(DynamicArray memory list, uint256 index)
         internal
         pure
@@ -116,6 +128,18 @@ library List {
         returns (DynamicArray memory)
     {
         return addItem(list, abi.encode(action));
+    }
+
+    function addActions(DynamicArray memory list, Actions.Action[] memory actions)
+        internal
+        pure
+        returns (DynamicArray memory)
+    {
+        for (uint256 i = 0; i < actions.length; i++) {
+            addAction(list, actions[i]);
+        }
+
+        return list;
     }
 
     function getAction(DynamicArray memory list, uint256 index) internal pure returns (Actions.Action memory) {

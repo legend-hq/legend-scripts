@@ -34,13 +34,12 @@ contract QuotesTest is Test, QuarkBuilderTest {
         string memory symbol = "USDC";
         PaymentInfo.Payment memory result = Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, symbol);
 
-        assertEq(result.isToken, true, "isToken is set to true");
         assertEq(result.currency, symbol, "currency is set to passed in symbol");
         assertEq(result.quoteId, quote.quoteId, "quoteId is set to quiteId from quote");
         assertEq(
-            result.maxCosts[0].chainId, networkOperationFee.chainId, "chainId is set to networkOperationFee chainId"
+            result.chainCosts[0].chainId, networkOperationFee.chainId, "chainId is set to networkOperationFee chainId"
         );
-        assertEq(result.maxCosts[0].amount, 3e4, "amount is set to networkOperationFee in units of token");
+        assertEq(result.chainCosts[0].amount, 3e4, "amount is set to networkOperationFee in units of token");
     }
 
     function testConvertingQuotesToPaymentForUsd() public {
@@ -67,9 +66,8 @@ contract QuotesTest is Test, QuarkBuilderTest {
         string memory symbol = "USD";
         PaymentInfo.Payment memory result = Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, symbol);
 
-        assertEq(result.isToken, false, "isToken is set to false");
         assertEq(result.currency, symbol, "currency is set to passed in symbol");
         assertEq(result.quoteId, quote.quoteId, "quoteId is set to quiteId from quote");
-        assertEq(result.maxCosts.length, 0, "maxCosts are not set");
+        assertEq(result.chainCosts.length, 0, "chainCosts are not set");
     }
 }

@@ -8,6 +8,7 @@ import {Accounts} from "src/builder/Accounts.sol";
 import {CodeJarHelper} from "src/builder/CodeJarHelper.sol";
 import {Paycall} from "src/Paycall.sol";
 import {Quotecall} from "src/Quotecall.sol";
+import {BuilderPackHelper} from "src/builder/BuilderPackHelper.sol";
 import {PaymentInfo} from "src/builder/PaymentInfo.sol";
 import {QuarkBuilder} from "src/builder/QuarkBuilder.sol";
 import {Quotes} from "src/builder/Quotes.sol";
@@ -70,30 +71,6 @@ contract QuarkBuilderTest {
      * a function call is used to mock some data, we suffix all of our fixture-generating
      * functions with a single underscore, like so: transferIntent_(...).
      */
-    function paymentUsdc_() internal pure returns (PaymentInfo.Payment memory) {
-        return paymentUsdc_(new PaymentInfo.PaymentMaxCost[](0));
-    }
-
-    function paymentUsdc_(PaymentInfo.PaymentMaxCost[] memory maxCosts)
-        internal
-        pure
-        returns (PaymentInfo.Payment memory)
-    {
-        return PaymentInfo.Payment({isToken: true, currency: "usdc", quoteId: QUOTE_ID, maxCosts: maxCosts});
-    }
-
-    function paymentUsd_() internal pure returns (PaymentInfo.Payment memory) {
-        return paymentUsd_(new PaymentInfo.PaymentMaxCost[](0));
-    }
-
-    function paymentUsd_(PaymentInfo.PaymentMaxCost[] memory maxCosts)
-        internal
-        pure
-        returns (PaymentInfo.Payment memory)
-    {
-        return PaymentInfo.Payment({isToken: false, currency: "usd", quoteId: bytes32(""), maxCosts: maxCosts});
-    }
-
     function quote_() internal pure returns (Quotes.Quote memory) {
         Quotes.NetworkOperationFee memory networkOperationFeeBase =
             Quotes.NetworkOperationFee({chainId: 8453, opType: Quotes.OP_TYPE_BASELINE, price: 0.3e8});
@@ -229,10 +206,10 @@ contract QuarkBuilderTest {
         return quarkSecrets;
     }
 
-    function maxCosts_(uint256 chainId, uint256 amount) internal pure returns (PaymentInfo.PaymentMaxCost[] memory) {
-        PaymentInfo.PaymentMaxCost[] memory maxCosts = new PaymentInfo.PaymentMaxCost[](1);
-        maxCosts[0] = PaymentInfo.PaymentMaxCost({chainId: chainId, amount: amount});
-        return maxCosts;
+    function chainCosts(uint256 chainId, uint256 amount) internal pure returns (PaymentInfo.ChainCost[] memory) {
+        PaymentInfo.ChainCost[] memory chainCosts_ = new PaymentInfo.ChainCost[](1);
+        chainCosts_[0] = PaymentInfo.ChainCost({chainId: chainId, amount: amount});
+        return chainCosts_;
     }
 
     function assetPositionLists_(uint256 chainId, address[] memory accounts, uint256[] memory balances)
@@ -314,6 +291,22 @@ contract QuarkBuilderTest {
         return assetPositionsList;
     }
 
+    function assetPositionsListUsdc_(uint256 chainId, address account, uint256 balance)
+        internal
+        pure
+        returns (Accounts.AssetPositions[] memory)
+    {
+        Accounts.AssetPositions[] memory assetPositionsList = new Accounts.AssetPositions[](1);
+        assetPositionsList[0] = Accounts.AssetPositions({
+            asset: usdc_(chainId),
+            symbol: "USDC",
+            decimals: 6,
+            usdPrice: USDC_PRICE,
+            accountBalances: accountBalances_(account, balance)
+        });
+        return assetPositionsList;
+    }
+
     function accountsBalances_(address[] memory accounts, uint256[] memory balances)
         internal
         pure
@@ -358,10 +351,15 @@ contract QuarkBuilderTest {
     }
 
     function usdc_(uint256 chainId) internal pure returns (address) {
-        if (chainId == 1) return USDC_1;
-        if (chainId == 8453) return USDC_8453;
         if (chainId == 7777) return USDC_7777; // Mock with random chain's USDC
-        revert("no mock usdc for that chain id bye");
+
+        (string memory result, address assetAddress) = BuilderPackHelper.knownAssetAddress("USDC", chainId);
+
+        if (Strings.isError(result)) {
+            revert("no mock usdc for that chain id bye");
+        }
+
+        return assetAddress;
     }
 
     function usdt_(uint256 chainId) internal pure returns (address) {
