@@ -55,7 +55,7 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
         });
 
         QuarkBuilder.BuilderResult memory result = builder.transfer(
-            TransferActionsBuilder.TransferIntent({
+            QuarkBuilderBase.TransferIntent({
                 assetSymbol: "WETH",
                 chainId: 8453,
                 amount: 1e18,
@@ -207,7 +207,7 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
         QuarkBuilder builder = new QuarkBuilder();
         // Note: There are 3e6 USDC on each chain, so the Builder should attempt to bridge 2 USDC to chain 8453
         QuarkBuilder.BuilderResult memory result = builder.transfer(
-            TransferActionsBuilder.TransferIntent({
+            QuarkBuilderBase.TransferIntent({
                 assetSymbol: "USDC",
                 chainId: 8453,
                 amount: 4e6,

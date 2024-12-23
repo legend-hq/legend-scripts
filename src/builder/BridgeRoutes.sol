@@ -201,23 +201,4 @@ library Across {
             )
         );
     }
-
-    // Returns whether or not an asset is bridged non-deterministically. This applies to WETH/ETH, where Across will send either ETH or WETH
-    // to the target address depending on if address is an EOA or contract.
-    function isNonDeterministicBridgeAction(HashMap.Map memory assetsBridged, string memory assetSymbol)
-        internal
-        pure
-        returns (bool)
-    {
-        uint256 bridgedAmount = HashMap.contains(assetsBridged, abi.encode(assetSymbol))
-            ? HashMap.getUint256(assetsBridged, abi.encode(assetSymbol))
-            : 0;
-        return bridgedAmount > 0
-            && (Strings.stringEqIgnoreCase(assetSymbol, "ETH") || Strings.stringEqIgnoreCase(assetSymbol, "WETH"));
-    }
-
-    function isEthOrWethBridgeAction(string memory assetSymbol, uint256 bridgedAmount) internal pure returns (bool) {
-        return bridgedAmount > 0
-            && (Strings.stringEqIgnoreCase(assetSymbol, "ETH") || Strings.stringEqIgnoreCase(assetSymbol, "WETH"));
-    }
 }
