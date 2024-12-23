@@ -185,7 +185,8 @@ let cometBorrowTests: [AcceptanceTest] = [
                         bridge: "Across",
                         srcNetwork: .ethereum,
                         destinationNetwork: .base,
-                        tokenAmount: .amt(2.2, .usdc)
+                        inputTokenAmount: .amt(2.2, .usdc),
+                        outputTokenAmount: .amt(1.178, .usdc)
                     ),
                     .quotePay(payment: .amt(0.3, .usdc), payee: .stax, quote: .basic),
                 ]),
