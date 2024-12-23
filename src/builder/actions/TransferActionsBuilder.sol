@@ -20,133 +20,38 @@ import {List} from "src/builder/List.sol";
 import {QuarkBuilderBase} from "src/builder/QuarkBuilderBase.sol";
 
 contract TransferActionsBuilder is QuarkBuilderBase {
-    struct TransferIntent {
-        uint256 chainId;
-        string assetSymbol;
-        uint256 amount;
-        address sender;
-        address recipient;
-        uint256 blockTimestamp;
-        bool preferAcross;
-        string paymentAssetSymbol;
-    }
-
     function transfer(
-        TransferIntent memory transferIntent,
+        QuarkBuilderBase.TransferIntent memory intent,
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory) {
         PaymentInfo.Payment memory payment =
-            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, transferIntent.paymentAssetSymbol);
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        List.DynamicArray memory actions = List.newList();
-        List.DynamicArray memory quarkOperations = List.newList();
-        bool hasBridgeError = false;
+        uint256[] memory amountOuts = new uint256[](1);
+        amountOuts[0] = intent.amount;
+        string[] memory assetSymbolOuts = new string[](1);
+        assetSymbolOuts[0] = intent.assetSymbol;
+        uint256[] memory amountIns = new uint256[](0);
+        string[] memory assetSymbolIns = new string[](0);
 
-        (
-            IQuarkWallet.QuarkOperation[] memory bridgeOperationsArray,
-            Actions.Action[] memory bridgeActions,
-            uint256 finalAmountOnDst,
-            uint256 bridgeFees,
-            uint256 supplementalBalance
-        ) = getBridgeOperationsForAsset({
-            chainId: transferIntent.chainId,
-            assetSymbol: transferIntent.assetSymbol,
-            amount: transferIntent.amount,
-            recipient: transferIntent.sender,
-            blockTimestamp: transferIntent.blockTimestamp,
-            preferAcross: transferIntent.preferAcross,
+        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
+        constructOperationsAndActions({
+            actionIntent: ConstructActionIntent({
+                actor: intent.sender,
+                amountIns: amountIns,
+                assetSymbolIns: assetSymbolIns,
+                amountOuts: amountOuts,
+                assetSymbolOuts: assetSymbolOuts,
+                actionType: Actions.ACTION_TYPE_TRANSFER,
+                intent: abi.encode(intent),
+                blockTimestamp: intent.blockTimestamp,
+                chainId: intent.chainId,
+                preferAcross: intent.preferAcross
+            }),
             chainAccountsList: chainAccountsList,
             payment: payment
         });
-
-        List.addQuarkOperations(quarkOperations, bridgeOperationsArray);
-        List.addActions(actions, bridgeActions);
-
-        // Convert transferIntent to user aggregated balance
-        if (transferIntent.amount == type(uint256).max) {
-            transferIntent.amount =
-                Accounts.totalAvailableAsset(transferIntent.assetSymbol, chainAccountsList, payment) - bridgeFees;
-        } else {
-            hasBridgeError = finalAmountOnDst != transferIntent.amount;
-        }
-
-        checkAndInsertWrapOrUnwrapAction({
-            actions: actions,
-            quarkOperations: quarkOperations,
-            chainAccountsList: chainAccountsList,
-            payment: payment,
-            assetSymbol: transferIntent.assetSymbol,
-            amountNeeded: finalAmountOnDst,
-            supplementalBalance: supplementalBalance,
-            chainId: transferIntent.chainId,
-            account: transferIntent.sender,
-            blockTimestamp: transferIntent.blockTimestamp,
-            isRecurring: false
-        });
-
-        // Then, transfer `amount` of `assetSymbol` to `recipient`
-        (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.transferAsset(
-            Actions.TransferAsset({
-                chainAccountsList: chainAccountsList,
-                assetSymbol: transferIntent.assetSymbol,
-                amount: transferIntent.amount,
-                chainId: transferIntent.chainId,
-                sender: transferIntent.sender,
-                recipient: transferIntent.recipient,
-                blockTimestamp: transferIntent.blockTimestamp
-            }),
-            payment
-        );
-
-        List.addQuarkOperation(quarkOperations, operation);
-        List.addAction(actions, action);
-
-        string memory quotePayResult = Strings.OK;
-        uint256 totalQuoteAmount;
-
-        if (!PaymentInfo.isOffchainPayment(payment)) {
-            (
-                IQuarkWallet.QuarkOperation memory quotePayOperation,
-                Actions.Action memory quotePayAction,
-                string memory result,
-                uint256 totalQuoteAmount_
-            ) = generateQuotePayOperation(
-                PaymentBalanceAssertionArgs({
-                    actions: List.toActionArray(actions),
-                    chainAccountsList: chainAccountsList,
-                    targetChainId: transferIntent.chainId,
-                    account: transferIntent.sender,
-                    blockTimestamp: transferIntent.blockTimestamp,
-                    payment: payment
-                })
-            );
-
-            quotePayResult = result;
-            totalQuoteAmount = totalQuoteAmount_;
-
-            List.addQuarkOperation(quarkOperations, quotePayOperation);
-            List.addAction(actions, quotePayAction);
-        }
-
-        if (hasBridgeError || !Strings.isOk(quotePayResult)) {
-            revert UnableToConstructActionIntent(
-                hasBridgeError,
-                transferIntent.assetSymbol,
-                bridgeFees,
-                quotePayResult,
-                payment.currency,
-                totalQuoteAmount
-            );
-        }
-
-        // Convert to array
-        IQuarkWallet.QuarkOperation[] memory quarkOperationsArray = List.toQuarkOperationArray(quarkOperations);
-        Actions.Action[] memory actionsArray = List.toActionArray(actions);
-
-        // Merge operations that are from the same chain into one Multicall operation
-        (quarkOperationsArray, actionsArray) =
-            QuarkOperationHelper.mergeSameChainOperations(quarkOperationsArray, actionsArray);
 
         return BuilderResult({
             version: VERSION,
