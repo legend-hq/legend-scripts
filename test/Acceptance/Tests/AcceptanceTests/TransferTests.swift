@@ -83,7 +83,8 @@ let transferTests: [AcceptanceTest] = [
                     bridge: "Across",
                     srcNetwork: .base,
                     destinationNetwork: .arbitrum,
-                    tokenAmount: .amt(50, .usdc)
+                    inputTokenAmount: .amt(50, .usdc),
+                    outputTokenAmount: .amt(48.5, .usdc)
                 ),
                 .multicall([
                     .transferErc20(tokenAmount: .amt(98.44, .usdc), recipient: .bob),
@@ -155,11 +156,41 @@ let transferTests: [AcceptanceTest] = [
                         bridge: "Across",
                         srcNetwork: .base,
                         destinationNetwork: .arbitrum,
-                        tokenAmount: .amt(49.48, .usdc)
+                        inputTokenAmount: .amt(49.48, .usdc),
+                        outputTokenAmount: .amt(48.00, .usdc)
                     ),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                 ]),
                 .transferErc20(tokenAmount: .amt(98, .usdc), recipient: .bob),
+            ])
+        )
+    ),
+    .init(
+        name: "Alice transfers WETH to Bob on Arbitrum via Across [Pay with WETH]",
+        given: [
+            .tokenBalance(.alice, .amt(0.5, .weth), .base),
+            .quote(.basic),
+            .acrossQuote(.amt(0.01, .weth), 0.01),
+        ],
+        when: .payWith(
+            currency: .weth,
+            .transfer(from: .alice, to: .bob, amount: .amt(0.3, .weth), on: .arbitrum)
+        ),
+        expect: .success(
+            .multi([
+                .multicall([
+                    .bridge(
+                        bridge: "Across",
+                        srcNetwork: .base,
+                        destinationNetwork: .arbitrum,
+                        inputTokenAmount: .amt(0.313, .weth),
+                        outputTokenAmount: .amt(0.3, .weth)
+                    ),
+                    // Total quote = 0.02 + 0.04 = 0.06
+                    // Amount in terms of ETH = 0.06 / 4000 = 0.000015
+                    .quotePay(payment: .amt(0.000015000000000037, .weth), payee: .stax, quote: .basic),
+                ]),
+                .transferErc20(tokenAmount: .amt(0.3, .weth), recipient: .bob),
             ])
         )
     ),
