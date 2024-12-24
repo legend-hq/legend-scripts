@@ -8,8 +8,9 @@ import Testing
 
 let allTests: [AcceptanceTest] = transferTests +
     cometBorrowTests +
+    cometRepayTests +
     cometSupplyTests +
-    cometRepayTests
+    cometWithdrawTests
 
 let tests = allTests.filter { !$0.skip }
 let filteredTests = tests.contains { $0.only } ? tests.filter { $0.only } : tests
@@ -33,6 +34,7 @@ enum Call: CustomStringConvertible, Equatable {
     )
     case quotePay(payment: TokenAmount, payee: Account, quote: Quote)
     case multicall(_ calls: [Call])
+    case withdrawFromComet(tokenAmount: TokenAmount, market: Comet, network: Network)
     case wrapAsset(_ token: Token)
     case unknownFunctionCall(String, String, ABI.Value)
     case unknownScriptCall(EthAddress, Hex)
@@ -136,6 +138,17 @@ enum Call: CustomStringConvertible, Equatable {
             }
         }
 
+        if scriptAddress == getScriptAddress(CometWithdrawActions.creationCode) {
+            if let (comet, asset, amount) = try? CometWithdrawActions.withdrawDecode(input: calldata) {
+                return .withdrawFromComet(
+                    tokenAmount: Token.getTokenAmount(
+                        amount: amount, network: network, address: asset),
+                    market: Comet.from(network: network, address: comet),
+                    network: network
+                )
+            }
+        }
+
         if scriptAddress == getScriptAddress(CometRepayAndWithdrawMultipleAssets.creationCode) {
             if let (comet, assets, amounts, baseAsset, repayAmount) = try? CometRepayAndWithdrawMultipleAssets.runDecode(input: calldata) {
                 let collateralAmounts = zip(amounts, assets).map { Token.getTokenAmount(amount: $0, network: network, address: $1) }
@@ -208,6 +221,9 @@ enum Call: CustomStringConvertible, Equatable {
                 "\(collateralAmount.amount) \(collateralAmount.token.symbol)"
             }.joined(separator: ",")
             return "repayAndWithdrawMultipleAssetsFromComet(repay \(repayAmount.amount) \(repayAmount.token.symbol), and withdraw [\(withdrawString)] from \(market.description) on \(network.description))"
+        case let .withdrawFromComet(tokenAmount, market, network):
+            return
+                "withdrawFromComet(\(tokenAmount.amount) \(tokenAmount.token.symbol) from \(market.description) on \(network.description))"
         case let .multicall(calls):
             return "multicall(\(calls.map { $0.description }.joined(separator: ", ")))"
         case let .wrapAsset(token):
@@ -583,9 +599,10 @@ enum Given {
 
 indirect enum When {
     case transfer(from: Account, to: Account, amount: TokenAmount, on: Network)
-    case cometSupply(from: Account, market: Comet, amount: TokenAmount, on: Network)
     case cometBorrow(from: Account, market: Comet, borrowAmount: TokenAmount, collateralAmounts: [TokenAmount], on: Network)
     case cometRepay(from: Account, market: Comet, repayAmount: TokenAmount, collateralAmounts: [TokenAmount], on: Network)
+    case cometSupply(from: Account, market: Comet, amount: TokenAmount, on: Network)
+    case cometWithdraw(from: Account, market: Comet, amount: TokenAmount, on: Network)
     case payWith(currency: Token, When)
 
     var sender: Account {
@@ -597,6 +614,8 @@ indirect enum When {
         case let .cometBorrow(from, _, _, _, _):
             return from
         case let .cometRepay(from, _, _, _, _):
+            return from
+        case let .cometWithdraw(from, _, _, _):
             return from
         case let .payWith(_, intent):
             return intent.sender
@@ -837,6 +856,29 @@ class Context {
                     chainId: BigUInt(network.chainId),
                     comet: market.address(network: network),
                     sender: from.address,
+                    preferAcross: true,
+                    paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                ),
+                chainAccountsList: chainAccounts,
+                quote: .init(
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    issuedAt: 0,
+                    expiresAt: BigUInt(Date(timeIntervalSinceNow: 1_000_000).timeIntervalSince1970),
+                    assetQuotes: assetQuotes,
+                    networkOperationFees: networkOperationFees
+                ),
+                withFunctions: ffis
+            )
+        case let .cometWithdraw(from, market, amount, network):
+            return try await QuarkBuilder.cometWithdraw(
+                cometWithdrawIntent: .init(
+                    amount: amount.amount,
+                    assetSymbol: amount.token.symbol,
+                    blockTimestamp: 0,
+                    chainId: BigUInt(network.chainId),
+                    comet: market.address(network: network),
+                    withdrawer: from.address,
                     preferAcross: true,
                     paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
                 ),
