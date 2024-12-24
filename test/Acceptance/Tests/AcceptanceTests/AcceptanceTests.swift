@@ -8,7 +8,7 @@ import Testing
 
 let allTests: [AcceptanceTest] = transferTests +
     cometBorrowTests +
-    cometSupplyTests + 
+    cometSupplyTests +
     cometRepayTests
 
 let tests = allTests.filter { !$0.skip }
@@ -16,7 +16,8 @@ let filteredTests = tests.contains { $0.only } ? tests.filter { $0.only } : test
 
 enum Call: CustomStringConvertible, Equatable {
     case bridge(
-        bridge: String, srcNetwork: Network, destinationNetwork: Network, tokenAmount: TokenAmount)
+        bridge: String, srcNetwork: Network, destinationNetwork: Network, tokenAmount: TokenAmount
+    )
     case transferErc20(tokenAmount: TokenAmount, recipient: Account)
     case supplyToComet(tokenAmount: TokenAmount, market: Comet, network: Network)
     case supplyMultipleAssetsAndBorrowFromComet(
@@ -42,7 +43,7 @@ enum Call: CustomStringConvertible, Equatable {
         ("TransferActions", TransferActions.creationCode, TransferActions.functions),
         ("Multicall", Multicall.creationCode, Multicall.functions),
         ("QuotePay", QuotePay.creationCode, QuotePay.functions),
-        ("WrapperActions", WrapperActions.creationCode, WrapperActions.functions)
+        ("WrapperActions", WrapperActions.creationCode, WrapperActions.functions),
     ]
 
     static func tryDecodeCall(scriptAddress: EthAddress, calldata: Hex, network: Network) -> Call {
@@ -82,8 +83,10 @@ enum Call: CustomStringConvertible, Equatable {
             {
                 return .transferErc20(
                     tokenAmount: Token.getTokenAmount(
-                        amount: amount, network: network, address: token),
-                    recipient: Account.from(address: recipient))
+                        amount: amount, network: network, address: token
+                    ),
+                    recipient: Account.from(address: recipient)
+                )
             }
         }
 
@@ -93,9 +96,11 @@ enum Call: CustomStringConvertible, Equatable {
             {
                 return .quotePay(
                     payment: Token.getTokenAmount(
-                        amount: quotedAmount, network: network, address: paymentToken),
+                        amount: quotedAmount, network: network, address: paymentToken
+                    ),
                     payee: Account.from(address: payee),
-                    quote: Quote.findQuote(quoteId: quoteId, prices: [:], fees: [:]))
+                    quote: Quote.findQuote(quoteId: quoteId, prices: [:], fees: [:])
+                )
             }
         }
 
@@ -112,7 +117,8 @@ enum Call: CustomStringConvertible, Equatable {
             if let (comet, asset, amount) = try? CometSupplyActions.supplyDecode(input: calldata) {
                 return .supplyToComet(
                     tokenAmount: Token.getTokenAmount(
-                        amount: amount, network: network, address: asset),
+                        amount: amount, network: network, address: asset
+                    ),
                     market: Comet.from(network: network, address: comet),
                     network: network
                 )
@@ -157,7 +163,7 @@ enum Call: CustomStringConvertible, Equatable {
         }
 
         if scriptAddress == getScriptAddress(WrapperActions.creationCode) {
-            if let (_) = try? WrapperActions.wrapAllETHDecode(input: calldata) {
+            if let _ = try? WrapperActions.wrapAllETHDecode(input: calldata) {
                 return .wrapAsset(.eth)
             }
         }
@@ -189,7 +195,7 @@ enum Call: CustomStringConvertible, Equatable {
             return
                 "supplyToComet(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(market.description) on \(network.description))"
         case let .supplyMultipleAssetsAndBorrowFromComet(borrowAmount, collateralAmounts, market, network):
-            let collateralsString = collateralAmounts.map {collateralAmount in
+            let collateralsString = collateralAmounts.map { collateralAmount in
                 "\(collateralAmount.amount) \(collateralAmount.token.symbol)"
             }.joined(separator: ",")
             return "supplyMultipleAssetsAndBorrowFromComet(supply [\(collateralsString)] and borrow \(borrowAmount.amount) \(borrowAmount.token.symbol) from \(market.description) on \(network.description) )"
@@ -199,7 +205,7 @@ enum Call: CustomStringConvertible, Equatable {
             market,
             network
         ):
-            let withdrawString = collateralAmounts.map {collateralAmount in
+            let withdrawString = collateralAmounts.map { collateralAmount in
                 "\(collateralAmount.amount) \(collateralAmount.token.symbol)"
             }.joined(separator: ",")
             return "repayAndWithdrawMultipleAssetsFromComet(repay \(repayAmount.amount) \(repayAmount.token.symbol), and withdraw [\(withdrawString)] from \(market.description) on \(network.description))"
@@ -246,14 +252,14 @@ func getScriptAddress(_ creationCode: Hex) -> EthAddress {
     // 3. salt (32 bytes of 0 in this case)
     // 4. keccak256 hash of initialization code
     var packed = Data()
-    packed.append(Data([0xFF]))  // prefix byte
-    packed.append(codeJarAddress.data)  // deploying address
-    packed.append(Data(repeating: 0, count: 32))  // salt
-    packed.append(SwiftKeccak.keccak256(creationCode.data))  // hash of init code
+    packed.append(Data([0xFF])) // prefix byte
+    packed.append(codeJarAddress.data) // deploying address
+    packed.append(Data(repeating: 0, count: 32)) // salt
+    packed.append(SwiftKeccak.keccak256(creationCode.data)) // hash of init code
 
     // Take keccak256 hash and extract last 20 bytes for address
     let hash = SwiftKeccak.keccak256(packed)
-    return EthAddress(Hex(hash.subdata(in: 12..<32)))!
+    return EthAddress(Hex(hash.subdata(in: 12 ..< 32)))!
 }
 
 enum Account: Hashable, Equatable {
@@ -318,12 +324,14 @@ enum Comet: Hashable, Equatable {
         // eventually this should be migrated to use builderpack instead.
         case (.ethereum, .cusdcv3):
             return EthAddress("0xc3d688B66703497DAA19211EEdff47f25384cdc3")
-        case (.base, .cusdcv3):
-            return EthAddress("0xb125E6687d4313864e53df431d5425969c15Eb2F")
         case (.ethereum, .cwethv3):
             return EthAddress("0xA17581A9E3356d9A858b789D68B4d866e593aE94")
+        case (.base, .cusdcv3):
+            return EthAddress("0xb125E6687d4313864e53df431d5425969c15Eb2F")
         case (.base, .cwethv3):
             return EthAddress("0x46e6b214b524310239732D51387075E0e70970bf")
+        case (.arbitrum, .cusdcv3):
+            return EthAddress("0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf")
         case (_, .cusdcv3):
             fatalError("no market .cusdcv3 for network \(network.description)")
         case (_, .cwethv3):
@@ -362,6 +370,8 @@ enum Comet: Hashable, Equatable {
             return .cusdcv3
         case (.base, "0x46e6b214b524310239732D51387075E0e70970bf"):
             return .cwethv3
+        case (.arbitrum, "0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf"):
+            return .cusdcv3
         case _:
             return .unknownComet(address)
         }
@@ -440,7 +450,7 @@ enum Token: Hashable, Equatable {
             .eth: EthAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"),
             .weth: EthAddress("0x4200000000000000000000000000000000000006"),
             .usdc: EthAddress("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"),
-            .link: EthAddress("0x514910771af9ca656af840dff83e8264ecf986ca"),  // Link is not actually deployed on Base
+            .link: EthAddress("0x514910771af9ca656af840dff83e8264ecf986ca"), // Link is not actually deployed on Base
             .usdt: EthAddress("0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2"),
         ],
         .arbitrum: [
@@ -673,7 +683,7 @@ class Context {
                         nonceSecret: Hex(
                             "0x5555555555555555555555555555555555555555555555555555555555555555"
                         )
-                    )
+                    ),
                 ],
                 assetPositionsList: reifyTokenPositions(network: network),
                 cometPositions: reifyCometPositions(network: network),
@@ -736,7 +746,7 @@ class Context {
             fees = quote.fees
         case let .acrossQuote(gasFee, feePct):
             ffis[EthAddress("0x0000000000000000000000000000000000FF1010")] = { _ in
-                return .ok(
+                .ok(
                     ABI.Value.tuple2(
                         .uint256(gasFee.amount), .uint256(BigUInt(feePct * 1e18))
                     ).encoded)
@@ -748,12 +758,13 @@ class Context {
         QuarkBuilder.QuarkBuilderBase.BuilderResult, QuarkBuilder.RevertReason
     > {
         let assetQuotes = prices.map {
-            QuarkBuilder.Quotes.AssetQuote.init(
-                symbol: $0.key.symbol, price: BigUInt($0.value * 1e8))
+            QuarkBuilder.Quotes.AssetQuote(
+                symbol: $0.key.symbol, price: BigUInt($0.value * 1e8)
+            )
         }
 
         let networkOperationFees = fees.map {
-            QuarkBuilder.Quotes.NetworkOperationFee.init(
+            QuarkBuilder.Quotes.NetworkOperationFee(
                 chainId: BigUInt($0.key.chainId),
                 opType: "BASELINE",
                 price: BigUInt($0.value * 1e8)
@@ -764,9 +775,10 @@ class Context {
         case let .payWith(token, intent):
             paymentToken = token
             return try await self.when(intent)
+
         case let .cometBorrow(from, market, borrowAmount, collateralAmounts, network):
             return try await QuarkBuilder.cometBorrow(
-                borrowIntent: .init(
+                intent: .init(
                     amount: borrowAmount.amount,
                     assetSymbol: borrowAmount.token.symbol,
                     blockTimestamp: 0,
@@ -793,12 +805,13 @@ class Context {
                 ),
                 withFunctions: ffis
             )
+
         case let .cometRepay(from, market, repayAmount, collateralAmounts, network):
             return try await QuarkBuilder.cometRepay(
-                repayIntent: .init(
+                intent: .init(
                     amount: repayAmount.amount,
                     assetSymbol: repayAmount.token.symbol,
-                    blockTimestamp: 0,
+                    blockTimestamp: BigUInt(1_000_000),
                     chainId: BigUInt(network.chainId),
                     collateralAmounts: collateralAmounts.map {
                         $0.amount
@@ -825,10 +838,10 @@ class Context {
 
         case let .cometSupply(from, market, amount, network):
             return try await QuarkBuilder.cometSupply(
-                cometSupplyIntent: .init(
+                intent: .init(
                     amount: amount.amount,
                     assetSymbol: amount.token.symbol,
-                    blockTimestamp: 0,
+                    blockTimestamp: BigUInt(1_000_000),
                     chainId: BigUInt(network.chainId),
                     comet: market.address(network: network),
                     sender: from.address,
@@ -849,7 +862,7 @@ class Context {
 
         case let .transfer(from, to, amount, network):
             return try await QuarkBuilder.transfer(
-                transferIntent: .init(
+                intent: .init(
                     chainId: BigUInt(network.chainId),
                     assetSymbol: amount.token.symbol,
                     amount: amount.amount,
@@ -920,7 +933,7 @@ class Context {
                 collateralPositions: collateralPositions.map { token, accountAmounts in
                     QuarkBuilder.Accounts.CometCollateralPosition(
                         asset: token.address(network: network),
-                        accounts: accountAmounts.map { account, amount in account.address },
+                        accounts: accountAmounts.map { account, _ in account.address },
                         balances: accountAmounts.map { _, amount in amount }
                     )
                 }
@@ -953,7 +966,8 @@ func buildResultToCalls(builderResult: QuarkBuilder.QuarkBuilderBase.BuilderResu
     return zip(builderResult.quarkOperations, builderResult.actions).map { operation, action in
         Call.tryDecodeCall(
             scriptAddress: operation.scriptAddress, calldata: operation.scriptCalldata,
-            network: Network.fromChainId(BigInt(action.chainId)))
+            network: Network.fromChainId(BigInt(action.chainId))
+        )
     }
 }
 

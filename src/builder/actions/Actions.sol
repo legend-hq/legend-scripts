@@ -1702,8 +1702,8 @@ library Actions {
         return (quarkOperation, action);
     }
 
-    function isRecurringAction(Action memory action) internal pure returns (bool) {
-        return Strings.stringEqIgnoreCase(action.actionType, ACTION_TYPE_RECURRING_SWAP);
+    function isRecurringAction(string memory actionType) internal pure returns (bool) {
+        return Strings.stringEqIgnoreCase(actionType, ACTION_TYPE_RECURRING_SWAP);
     }
 
     function findActionsOfType(Action[] memory actions, string memory actionType)

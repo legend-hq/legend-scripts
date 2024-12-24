@@ -29,7 +29,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
         string memory collateralAssetSymbol,
         uint256 collateralAmount,
         string memory paymentAssetSymbol
-    ) internal pure returns (MorphoActionsBuilder.MorphoRepayIntent memory) {
+    ) internal pure returns (QuarkBuilderBase.MorphoRepayIntent memory) {
         return repayIntent_({
             chainId: chainId,
             assetSymbol: assetSymbol,
@@ -49,8 +49,8 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
         uint256 collateralAmount,
         address repayer,
         string memory paymentAssetSymbol
-    ) internal pure returns (MorphoActionsBuilder.MorphoRepayIntent memory) {
-        return MorphoActionsBuilder.MorphoRepayIntent({
+    ) internal pure returns (QuarkBuilderBase.MorphoRepayIntent memory) {
+        return QuarkBuilderBase.MorphoRepayIntent({
             amount: amount,
             assetSymbol: assetSymbol,
             blockTimestamp: BLOCK_TIMESTAMP,

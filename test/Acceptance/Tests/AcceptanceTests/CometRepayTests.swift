@@ -6,7 +6,7 @@ let cometRepayTests: [AcceptanceTest] = [
         given: [
             .tokenBalance(.alice, .amt(2, .usdc), .ethereum),
             .cometSupply(.alice, .amt(1, .link), .cusdcv3, .ethereum),
-            .quote(.basic)
+            .quote(.basic),
         ],
         when: .cometRepay(
             from: .alice,
@@ -54,7 +54,8 @@ let cometRepayTests: [AcceptanceTest] = [
             .tokenBalance(.alice, .amt(1, .weth), .ethereum),
             .quote(
                 .custom(
-                    quoteId: Hex("0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
                     prices: Dictionary(
                         uniqueKeysWithValues: Token.knownCases.map { token in
                             (token, token.defaultUsdPrice)
@@ -62,7 +63,7 @@ let cometRepayTests: [AcceptanceTest] = [
                     ),
                     fees: [.ethereum: 0.5]
                 )
-            )
+            ),
         ],
         when: .cometRepay(
             from: .alice,
@@ -87,7 +88,7 @@ let cometRepayTests: [AcceptanceTest] = [
         given: [
             .tokenBalance(.alice, .amt(1, .usdc), .ethereum),
             .tokenBalance(.alice, .amt(1, .eth), .ethereum),
-            .quote(.basic)
+            .quote(.basic),
         ],
         when: .cometRepay(
             from: .alice,
@@ -115,7 +116,7 @@ let cometRepayTests: [AcceptanceTest] = [
         name: "testCometRepayPayFromWithdraw",
         given: [
             .tokenBalance(.alice, .amt(1, .weth), .ethereum),
-            .quote(.basic)
+            .quote(.basic),
         ],
         when: .cometRepay(
             from: .alice,
@@ -144,7 +145,7 @@ let cometRepayTests: [AcceptanceTest] = [
         given: [
             .tokenBalance(.alice, .amt(50, .usdc), .ethereum),
             .cometBorrow(.alice, .amt(10, .usdc), .cusdcv3, .ethereum),
-            .quote(.basic)
+            .quote(.basic),
         ],
         when: .cometRepay(
             from: .alice,
@@ -167,14 +168,42 @@ let cometRepayTests: [AcceptanceTest] = [
             )
         )
     ),
-    // @skip: QuarkBuilder reverts with `Panic` 
+    .init(
+        name: "testCometRepayMaxBalanceWithQuotePay",
+        given: [
+            .tokenBalance(.alice, .amt(10, .usdc), .ethereum),
+            .cometBorrow(.alice, .amt(50, .usdc), .cusdcv3, .ethereum),
+            .quote(.basic),
+        ],
+        when: .cometRepay(
+            from: .alice,
+            market: .cusdcv3,
+            repayAmount: .max(.usdc),
+            collateralAmounts: [],
+            on: .ethereum
+        ),
+        expect: .success(
+            .single(
+                .multicall([
+                    .repayAndWithdrawMultipleAssetsFromComet(
+                        repayAmount: .amt(9.9, .usdc),
+                        collateralAmounts: [],
+                        market: .cusdcv3,
+                        network: .ethereum
+                    ),
+                    .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
+                ])
+            )
+        )
+    ),
     .init(
         name: "testCometRepayWithBridge",
         given: [
             .tokenBalance(.alice, .amt(4, .usdc), .ethereum),
             .quote(
                 .custom(
-                    quoteId: Hex("0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
                     prices: Dictionary(
                         uniqueKeysWithValues: Token.knownCases.map { token in
                             (token, token.defaultUsdPrice)
@@ -199,7 +228,7 @@ let cometRepayTests: [AcceptanceTest] = [
                         bridge: "Across",
                         srcNetwork: .ethereum,
                         destinationNetwork: .base,
-                        tokenAmount: .amt(2, .usdc)
+                        tokenAmount: .amt(3.02, .usdc)
                     ),
                     .quotePay(payment: .amt(0.3, .usdc), payee: .stax, quote: .basic),
                 ]),
@@ -210,10 +239,8 @@ let cometRepayTests: [AcceptanceTest] = [
                     network: .base
                 ),
             ])
-        ),
-        skip: true
+        )
     ),
-    // @skip: QuarkBuilder reverts with `Panic` 
     .init(
         name: "testCometRepayMaxWithBridge",
         given: [
@@ -221,7 +248,8 @@ let cometRepayTests: [AcceptanceTest] = [
             .cometBorrow(.alice, .amt(10, .usdc), .cusdcv3, .base),
             .quote(
                 .custom(
-                    quoteId: Hex("0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
                     prices: Dictionary(
                         uniqueKeysWithValues: Token.knownCases.map { token in
                             (token, token.defaultUsdPrice)
@@ -230,7 +258,7 @@ let cometRepayTests: [AcceptanceTest] = [
                     fees: [.ethereum: 0.1, .base: 0.1]
                 )
             ),
-            .acrossQuote(.amt(1, .usdc), 0.01)
+            .acrossQuote(.amt(1, .usdc), 0.01),
         ],
         when: .cometRepay(
             from: .alice,
@@ -246,7 +274,8 @@ let cometRepayTests: [AcceptanceTest] = [
                         bridge: "Across",
                         srcNetwork: .ethereum,
                         destinationNetwork: .base,
-                        tokenAmount: .amt(10.01, .usdc)
+                        // 10 Borrow -> Repay amount is 10 * 1.01 -> Bridge amount 10.01 * 1.01 + 1 -> 11.1101
+                        tokenAmount: .amt(11.1101, .usdc)
                     ),
                     .quotePay(payment: .amt(0.2, .usdc), payee: .stax, quote: .basic),
                 ]),
@@ -257,7 +286,52 @@ let cometRepayTests: [AcceptanceTest] = [
                     network: .base
                 ),
             ])
+        )
+    ),
+    .init(
+        name: "testCometRepayMaxBalanceWithBridge",
+        given: [
+            .tokenBalance(.alice, .amt(10, .usdc), .ethereum),
+            .cometBorrow(.alice, .amt(50, .usdc), .cusdcv3, .base),
+            .quote(
+                .custom(
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    prices: Dictionary(
+                        uniqueKeysWithValues: Token.knownCases.map { token in
+                            (token, token.defaultUsdPrice)
+                        }
+                    ),
+                    fees: [.ethereum: 0.1, .base: 0.1]
+                )
+            ),
+            .acrossQuote(.amt(1, .usdc), 0.01),
+        ],
+        when: .cometRepay(
+            from: .alice,
+            market: .cusdcv3,
+            repayAmount: .max(.usdc),
+            collateralAmounts: [],
+            on: .base
         ),
-        skip: true
+        expect: .success(
+            .multi([
+                .bridge(
+                    bridge: "Across",
+                    srcNetwork: .ethereum,
+                    destinationNetwork: .base,
+                    tokenAmount: .amt(10, .usdc)
+                ),
+                .multicall([
+                    .repayAndWithdrawMultipleAssetsFromComet(
+                        repayAmount: .amt(8.7, .usdc),
+                        collateralAmounts: [],
+                        market: .cusdcv3,
+                        network: .base
+                    ),
+                    .quotePay(payment: .amt(0.2, .usdc), payee: .stax, quote: .basic),
+                ]),
+            ])
+        )
     ),
 ]

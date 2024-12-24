@@ -67,6 +67,131 @@ contract QuarkBuilderBase {
         uint256 quoteAmount
     );
 
+    /* ===== Intents ===== */
+
+    struct TransferIntent {
+        uint256 chainId;
+        string assetSymbol;
+        uint256 amount;
+        address sender;
+        address recipient;
+        uint256 blockTimestamp;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    struct CometRepayIntent {
+        uint256 amount;
+        string assetSymbol;
+        uint256 blockTimestamp;
+        uint256 chainId;
+        uint256[] collateralAmounts;
+        string[] collateralAssetSymbols;
+        address comet;
+        address repayer;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    struct CometBorrowIntent {
+        uint256 amount;
+        string assetSymbol;
+        uint256 blockTimestamp;
+        address borrower;
+        uint256 chainId;
+        uint256[] collateralAmounts;
+        string[] collateralAssetSymbols;
+        address comet;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    struct CometSupplyIntent {
+        uint256 amount;
+        string assetSymbol;
+        uint256 blockTimestamp;
+        uint256 chainId;
+        address comet;
+        address sender;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    struct CometWithdrawIntent {
+        uint256 amount;
+        string assetSymbol;
+        uint256 blockTimestamp;
+        uint256 chainId;
+        address comet;
+        address withdrawer;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    struct MorphoBorrowIntent {
+        uint256 amount;
+        string assetSymbol;
+        uint256 blockTimestamp;
+        address borrower;
+        uint256 chainId;
+        uint256 collateralAmount;
+        string collateralAssetSymbol;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    struct MorphoRepayIntent {
+        uint256 amount;
+        string assetSymbol;
+        uint256 blockTimestamp;
+        address repayer;
+        uint256 chainId;
+        uint256 collateralAmount;
+        string collateralAssetSymbol;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    struct MorphoRewardsClaimIntent {
+        uint256 blockTimestamp;
+        address claimer;
+        uint256 chainId;
+        address[] accounts;
+        uint256[] claimables;
+        address[] distributors;
+        address[] rewards;
+        bytes32[][] proofs;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    struct MorphoVaultSupplyIntent {
+        uint256 amount;
+        string assetSymbol;
+        uint256 blockTimestamp;
+        address sender;
+        uint256 chainId;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    // struct ZeroExSwapIntent {
+    //     uint256 chainId;
+    //     address entryPoint;
+    //     bytes swapData;
+    //     address sellToken;
+    //     uint256 sellAmount;
+    //     address buyToken;
+    //     uint256 buyAmount;
+    //     address feeToken;
+    //     uint256 feeAmount;
+    //     address sender;
+    //     bool isExactOut;
+    //     uint256 blockTimestamp;
+    //     bool preferAcross;
+    //     string paymentAssetSymbol;
+    // }
+
     /**
      * @dev Intent for an action to be executed by the Quark Wallet
      * @param actor The address of the actor who is initiating the action
@@ -134,7 +259,7 @@ contract QuarkBuilderBase {
 
             if (needsBridgedFunds(assetSymbolOut, actionIntent.amountOuts[i], actionIntent.chainId, chainAccountsList))
             {
-                if (Actions.isRecurringAction(action)) {
+                if (Actions.isRecurringAction(action.actionType)) {
                     uint256 balanceOnChain =
                         getBalanceOnChainIncludingCounterpart(assetSymbolOut, actionIntent.chainId, chainAccountsList);
                     uint256 amountNeededOnChain = actionIntent.amountOuts[i];
@@ -191,32 +316,32 @@ contract QuarkBuilderBase {
             }
         }
 
-        for (uint256 i = 0; i < actionIntent.assetSymbolOuts.length; ++i) {
-            string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
-            uint256 supplementalBalance = HashMap.contains(assetsBridged, abi.encode(assetSymbolOut))
-                ? HashMap.getUint256(assetsBridged, abi.encode(assetSymbolOut))
-                : 0;
-            // Note: Right now, ETH/WETH is only bridged via Across. Across has a weird quirk where it will send ETH to EOAs and
-            // WETH to contracts. Since the QuarkBuilder cannot know if a QuarkWallet is deployed before the operation is actually
-            // executed on-chain, we need to assume there is no supplemental balance that arrives on the destination chain.
-            if (Across.isNonDeterministicBridgeAction(assetsBridged, assetSymbolOut)) {
-                supplementalBalance = 0;
-            }
+        // for (uint256 i = 0; i < actionIntent.assetSymbolOuts.length; ++i) {
+        //     string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
+        //     uint256 supplementalBalance = HashMap.contains(assetsBridged, abi.encode(assetSymbolOut))
+        //         ? HashMap.getUint256(assetsBridged, abi.encode(assetSymbolOut))
+        //         : 0;
+        //     // Note: Right now, ETH/WETH is only bridged via Across. Across has a weird quirk where it will send ETH to EOAs and
+        //     // WETH to contracts. Since the QuarkBuilder cannot know if a QuarkWallet is deployed before the operation is actually
+        //     // executed on-chain, we need to assume there is no supplemental balance that arrives on the destination chain.
+        //     if (Across.isNonDeterministicBridgeAction(assetsBridged, assetSymbolOut)) {
+        //         supplementalBalance = 0;
+        //     }
 
-            checkAndInsertWrapOrUnwrapAction({
-                actions: actions,
-                quarkOperations: quarkOperations,
-                chainAccountsList: chainAccountsList,
-                payment: payment,
-                assetSymbol: assetSymbolOut,
-                amountNeeded: actionIntent.amountOuts[i],
-                supplementalBalance: supplementalBalance,
-                chainId: actionIntent.chainId,
-                account: actionIntent.actor,
-                blockTimestamp: actionIntent.blockTimestamp,
-                isRecurring: Actions.isRecurringAction(action)
-            });
-        }
+        //     checkAndInsertWrapOrUnwrapAction({
+        //         actions: actions,
+        //         quarkOperations: quarkOperations,
+        //         chainAccountsList: chainAccountsList,
+        //         payment: payment,
+        //         assetSymbol: assetSymbolOut,
+        //         amountNeeded: actionIntent.amountOuts[i],
+        //         supplementalBalance: supplementalBalance,
+        //         chainId: actionIntent.chainId,
+        //         account: actionIntent.actor,
+        //         blockTimestamp: actionIntent.blockTimestamp,
+        //         isRecurring: Actions.isRecurringAction(action)
+        //     });
+        // }
 
         // Insert action and operation that will be wrapped with this
         List.addAction(actions, action);
@@ -226,7 +351,7 @@ contract QuarkBuilderBase {
         uint256 totalQuoteAmount;
 
         // Generate a QuotePay operation if the payment method is with tokens and the action is non-recurring
-        if (!PaymentInfo.isOffchainPayment(payment) && !Actions.isRecurringAction(action)) {
+        if (!PaymentInfo.isOffchainPayment(payment) && !Actions.isRecurringAction(action.actionType)) {
             (
                 IQuarkWallet.QuarkOperation memory quotePayOperation,
                 Actions.Action memory quotePayAction,
@@ -266,7 +391,7 @@ contract QuarkBuilderBase {
             QuarkOperationHelper.mergeSameChainOperations(quarkOperationsArray, actionsArray);
 
         // Wrap operations around Paycall if payment is with token and the action is recurring
-        if (!PaymentInfo.isOffchainPayment(payment) && Actions.isRecurringAction(action)) {
+        if (!PaymentInfo.isOffchainPayment(payment) && Actions.isRecurringAction(action.actionType)) {
             assertSufficientPaymentTokensForPaycall(
                 PaymentBalanceAssertionArgs({
                     actions: List.toActionArray(actions),
@@ -286,88 +411,477 @@ contract QuarkBuilderBase {
         }
     }
 
+    struct ConstructActionIntent {
+        address actor;
+        uint256[] amountOuts;
+        string[] assetSymbolOuts;
+        uint256[] amountIns;
+        string[] assetSymbolIns;
+        string actionType;
+        bytes intent;
+        uint256 blockTimestamp;
+        uint256 chainId;
+        bool preferAcross;
+    }
+
     /**
-     * @dev Construct bridge operations or no-op if no bridging is needed
+     * @dev Constructs Quark Operations and Actions for an action intent.
+     *      The constructed operations will include bridging and wrapping of assets if needed.
      */
-    function getBridgeOperationsForAsset(
-        uint256 chainId,
-        string memory assetSymbol,
-        uint256 amount,
-        address recipient,
-        uint256 blockTimestamp,
-        bool preferAcross,
+    function constructOperationsAndActions(
+        ConstructActionIntent memory actionIntent,
         Accounts.ChainAccounts[] memory chainAccountsList,
         PaymentInfo.Payment memory payment
     )
         internal
         pure
-        returns (
-            IQuarkWallet.QuarkOperation[] memory quarkOperationsArray,
-            Actions.Action[] memory actionsArray,
-            uint256 finalAmountOnDst,
-            uint256 fees,
-            uint256 supplementalBalance
-        )
+        returns (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray)
     {
+        // Sanity check on ActionIntent
+        if (
+            actionIntent.amountOuts.length != actionIntent.assetSymbolOuts.length
+                || actionIntent.amountIns.length != actionIntent.assetSymbolIns.length
+        ) {
+            revert InvalidInput();
+        }
+
         List.DynamicArray memory actions = List.newList();
         List.DynamicArray memory quarkOperations = List.newList();
 
-        uint256 aggregateBalance = getAggregateAssetBalance(chainId, assetSymbol, chainAccountsList);
-        uint256 amountNeededOnDst = amount == type(uint256).max ? aggregateBalance : amount;
+        string memory bridgeErrorSymbol;
 
-        // Assert that there are enough of the intent token to complete the action
-        if (aggregateBalance < amountNeededOnDst) {
-            // Bad Input :: the specified amount exceeds the cumulative balance
-            revert BadInputInsufficientFunds(assetSymbol, amountNeededOnDst, aggregateBalance);
+        // Track the amount of each asset that will be bridged to the destination chain
+        HashMap.Map memory amountsOnDst = HashMap.newMap();
+        HashMap.Map memory bridgeFees = HashMap.newMap();
+
+        for (uint256 i = 0; i < actionIntent.assetSymbolOuts.length; ++i) {
+            string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
+
+            bool isMaxBridge = actionIntent.amountOuts[i] == type(uint256).max;
+            uint256 aggregateAssetBalance =
+                getAggregateAssetBalance(actionIntent.chainId, assetSymbolOut, chainAccountsList);
+            uint256 amountNeededOnDst = isMaxBridge ? aggregateAssetBalance : actionIntent.amountOuts[i];
+
+            // Assert that there are enough of the intent token to complete the action
+            if (aggregateAssetBalance < amountNeededOnDst) {
+                // Bad Input :: the specified amount exceeds the cumulative balance
+                revert BadInputInsufficientFunds(assetSymbolOut, amountNeededOnDst, aggregateAssetBalance);
+            }
+
+            if (needsBridgedFunds(assetSymbolOut, amountNeededOnDst, actionIntent.chainId, chainAccountsList)) {
+                if (Actions.isRecurringAction(actionIntent.actionType)) {
+                    uint256 balanceOnChain =
+                        getBalanceOnChainIncludingCounterpart(assetSymbolOut, actionIntent.chainId, chainAccountsList);
+                    uint256 costOnChain = PaymentInfo.isOffchainPayment(payment)
+                        ? 0
+                        : PaymentInfo.findCostForChain(payment, actionIntent.chainId);
+                    uint256 availableAssetBalance = balanceOnChain >= costOnChain ? balanceOnChain - costOnChain : 0;
+
+                    revert BadInputInsufficientFundsForRecurring(
+                        assetSymbolOut, amountNeededOnDst, availableAssetBalance
+                    );
+                }
+
+                (
+                    IQuarkWallet.QuarkOperation[] memory bridgeQuarkOperations,
+                    Actions.Action[] memory bridgeActions,
+                    uint256 amountLeftToBridge,
+                    uint256 unbridgeableBalance,
+                    uint256 totalBridgeFees
+                ) = Actions.constructBridgeOperations(
+                    Actions.BridgeOperationInfo({
+                        assetSymbol: assetSymbolOut,
+                        amountNeededOnDst: amountNeededOnDst,
+                        dstChainId: actionIntent.chainId,
+                        recipient: actionIntent.actor,
+                        blockTimestamp: actionIntent.blockTimestamp,
+                        preferAcross: actionIntent.preferAcross
+                    }),
+                    chainAccountsList,
+                    payment
+                );
+
+                if (amountLeftToBridge > 0 && unbridgeableBalance > 0) {
+                    // Bad Input :: the specified amount exceeds the bridgeable balance
+                    revert BadInputUnbridgeableFunds(assetSymbolOut, amountNeededOnDst, amountLeftToBridge);
+                }
+
+                // Track how much is actually bridged for each asset
+                HashMap.addOrPutUint256(
+                    amountsOnDst, abi.encode(assetSymbolOut), amountNeededOnDst - amountLeftToBridge
+                );
+                // Track how much fees for bridge
+                HashMap.addOrPutUint256(bridgeFees, abi.encode(assetSymbolOut), totalBridgeFees);
+
+                for (uint256 j = 0; j < bridgeQuarkOperations.length; ++j) {
+                    List.addQuarkOperation(quarkOperations, bridgeQuarkOperations[j]);
+                    List.addAction(actions, bridgeActions[j]);
+                }
+
+                if (amountLeftToBridge > 0 && !isMaxBridge) {
+                    bridgeErrorSymbol = assetSymbolOut;
+                    break;
+                }
+            } else {
+                HashMap.addOrPutUint256(amountsOnDst, abi.encode(assetSymbolOut), amountNeededOnDst);
+            }
         }
 
-        if (needsBridgedFunds(assetSymbol, amount, chainId, chainAccountsList)) {
+        for (uint256 i = 0; i < actionIntent.assetSymbolOuts.length; ++i) {
+            string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
+            uint256 amountOnDst = HashMap.getOrDefaultUint256(amountsOnDst, abi.encode(assetSymbolOut), 0);
+
+            checkAndInsertWrapOrUnwrapAction({
+                actions: actions,
+                quarkOperations: quarkOperations,
+                chainAccountsList: chainAccountsList,
+                payment: payment,
+                assetSymbol: assetSymbolOut,
+                amountNeeded: amountOnDst,
+                chainId: actionIntent.chainId,
+                account: actionIntent.actor,
+                blockTimestamp: actionIntent.blockTimestamp,
+                isRecurring: Actions.isRecurringAction(actionIntent.actionType)
+            });
+        }
+
+        (
+            string memory constructResult,
+            IQuarkWallet.QuarkOperation memory actionQuarkOperation,
+            Actions.Action memory action
+        ) = constructOperationAndAction(
+            chainAccountsList,
+            payment,
+            bridgeFees,
+            getUniqueChainIdsForActions(List.toActionArray(actions)),
+            actionIntent.actionType,
+            actionIntent.intent
+        );
+
+        if (Strings.isError(constructResult)) {
+            revert InvalidActionType();
+        }
+
+        List.addAction(actions, action);
+        List.addQuarkOperation(quarkOperations, actionQuarkOperation);
+
+        string memory quotePayResult = Strings.OK;
+        uint256 totalQuoteAmount;
+
+        // Generate a QuotePay operation if the payment method is with tokens and the action is non-recurring
+        if (!PaymentInfo.isOffchainPayment(payment) && !Actions.isRecurringAction(actionIntent.actionType)) {
             (
-                IQuarkWallet.QuarkOperation[] memory bridgeQuarkOperations,
-                Actions.Action[] memory bridgeActions,
-                uint256 amountLeftToBridge,
-                uint256 unbridgeableBalance,
-                uint256 totalBridgeFees
-            ) = Actions.constructBridgeOperations(
-                Actions.BridgeOperationInfo({
-                    assetSymbol: assetSymbol,
-                    amountNeededOnDst: amountNeededOnDst,
-                    dstChainId: chainId,
-                    recipient: recipient,
-                    blockTimestamp: blockTimestamp,
-                    preferAcross: preferAcross
-                }),
-                chainAccountsList,
-                payment
+                IQuarkWallet.QuarkOperation memory quotePayOperation,
+                Actions.Action memory quotePayAction,
+                string memory result,
+                uint256 totalQuoteAmount_
+            ) = generateQuotePayOperation(
+                PaymentBalanceAssertionArgs({
+                    actions: List.toActionArray(actions),
+                    chainAccountsList: chainAccountsList,
+                    targetChainId: actionIntent.chainId,
+                    account: actionIntent.actor,
+                    blockTimestamp: actionIntent.blockTimestamp,
+                    payment: payment
+                })
             );
 
-            if (amountLeftToBridge > 0 && unbridgeableBalance > 0) {
-                // Bad Input :: the specified amount exceeds the bridgeable balance
-                revert BadInputUnbridgeableFunds(assetSymbol, amount, amountLeftToBridge);
-            }
+            quotePayResult = result;
+            totalQuoteAmount = totalQuoteAmount_;
 
-            finalAmountOnDst = amountNeededOnDst - amountLeftToBridge;
-
-            for (uint256 j = 0; j < bridgeQuarkOperations.length; ++j) {
-                List.addQuarkOperation(quarkOperations, bridgeQuarkOperations[j]);
-                List.addAction(actions, bridgeActions[j]);
-            }
-
-            if (amountLeftToBridge > 0) {
-                fees = totalBridgeFees;
-            }
-        } else {
-            finalAmountOnDst = amountNeededOnDst;
+            List.addAction(actions, quotePayAction);
+            List.addQuarkOperation(quarkOperations, quotePayOperation);
         }
 
-        supplementalBalance = Across.isEthOrWethBridgeAction(assetSymbol, finalAmountOnDst) ? 0 : finalAmountOnDst;
+        bool hasBridgeError = !Strings.stringEqIgnoreCase(bridgeErrorSymbol, "");
+        if (hasBridgeError || !Strings.isOk(quotePayResult)) {
+            revert UnableToConstructActionIntent(
+                hasBridgeError,
+                bridgeErrorSymbol,
+                HashMap.getOrDefaultUint256(bridgeFees, abi.encode(bridgeErrorSymbol), 0),
+                quotePayResult,
+                payment.currency,
+                totalQuoteAmount
+            );
+        }
 
         // Convert to array
         quarkOperationsArray = List.toQuarkOperationArray(quarkOperations);
         actionsArray = List.toActionArray(actions);
+
+        // Merge operations that are from the same chain into one Multicall operation
+        (quarkOperationsArray, actionsArray) =
+            QuarkOperationHelper.mergeSameChainOperations(quarkOperationsArray, actionsArray);
+
+        // Wrap operations around Paycall if payment is with token and the action is recurring
+        if (!PaymentInfo.isOffchainPayment(payment) && Actions.isRecurringAction(actionIntent.actionType)) {
+            assertSufficientPaymentTokensForPaycall(
+                PaymentBalanceAssertionArgs({
+                    actions: List.toActionArray(actions),
+                    chainAccountsList: chainAccountsList,
+                    targetChainId: actionIntent.chainId,
+                    account: actionIntent.actor,
+                    blockTimestamp: actionIntent.blockTimestamp,
+                    payment: payment
+                })
+            );
+
+            quarkOperationsArray = QuarkOperationHelper.wrapOperationsWithTokenPayment({
+                quarkOperations: quarkOperationsArray,
+                actions: actionsArray,
+                payment: payment
+            });
+        }
+
+        // Merge operations that are from the same chain into one Multicall operation
+        (quarkOperationsArray, actionsArray) =
+            QuarkOperationHelper.mergeSameChainOperations(quarkOperationsArray, actionsArray);
+    }
+
+    function constructOperationAndAction(
+        Accounts.ChainAccounts[] memory chainAccountsList,
+        PaymentInfo.Payment memory payment,
+        HashMap.Map memory bridgeFees,
+        List.DynamicArray memory chainIdsInvolved,
+        string memory actionType,
+        bytes memory actionIntent
+    ) internal pure returns (string memory, IQuarkWallet.QuarkOperation memory, Actions.Action memory) {
+        if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_TRANSFER)) {
+            TransferIntent memory intent = abi.decode(actionIntent, (TransferIntent));
+            if (intent.amount == type(uint256).max) {
+                intent.amount = Accounts.getTotalAvailableBalance(
+                    chainAccountsList,
+                    payment,
+                    bridgeFees,
+                    List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                    intent.assetSymbol
+                );
+            }
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.transferAsset(
+                Actions.TransferAsset({
+                    chainAccountsList: chainAccountsList,
+                    assetSymbol: intent.assetSymbol,
+                    amount: intent.amount,
+                    chainId: intent.chainId,
+                    sender: intent.sender,
+                    recipient: intent.recipient,
+                    blockTimestamp: intent.blockTimestamp
+                }),
+                payment
+            );
+            return (Strings.OK, operation, action);
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_BORROW)) {
+            CometBorrowIntent memory intent = abi.decode(actionIntent, (CometBorrowIntent));
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.cometBorrow(
+                Actions.CometBorrowInput({
+                    chainAccountsList: chainAccountsList,
+                    amount: intent.amount,
+                    assetSymbol: intent.assetSymbol,
+                    blockTimestamp: intent.blockTimestamp,
+                    borrower: intent.borrower,
+                    chainId: intent.chainId,
+                    collateralAmounts: intent.collateralAmounts,
+                    collateralAssetSymbols: intent.collateralAssetSymbols,
+                    comet: intent.comet
+                }),
+                payment
+            );
+            return (Strings.OK, operation, action);
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_SUPPLY)) {
+            CometSupplyIntent memory intent = abi.decode(actionIntent, (CometSupplyIntent));
+            if (intent.amount == type(uint256).max) {
+                intent.amount = Accounts.getTotalAvailableBalance(
+                    chainAccountsList,
+                    payment,
+                    bridgeFees,
+                    List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                    intent.assetSymbol
+                );
+            }
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.cometSupplyAsset(
+                Actions.CometSupply({
+                    chainAccountsList: chainAccountsList,
+                    assetSymbol: intent.assetSymbol,
+                    amount: intent.amount,
+                    chainId: intent.chainId,
+                    comet: intent.comet,
+                    sender: intent.sender,
+                    blockTimestamp: intent.blockTimestamp
+                }),
+                payment
+            );
+            return (Strings.OK, operation, action);
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_REPAY)) {
+            CometRepayIntent memory intent = abi.decode(actionIntent, (CometRepayIntent));
+            if (intent.amount == type(uint256).max) {
+                uint256 repayAmount =
+                    cometRepayMaxAmount(chainAccountsList, intent.chainId, intent.comet, intent.repayer);
+                uint256 totalAvailable = Accounts.getTotalAvailableBalance(
+                    chainAccountsList,
+                    payment,
+                    bridgeFees,
+                    List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                    intent.assetSymbol
+                );
+
+                intent.amount = repayAmount < totalAvailable ? type(uint256).max : totalAvailable;
+            }
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.cometRepay(
+                Actions.CometRepayInput({
+                    chainAccountsList: chainAccountsList,
+                    assetSymbol: intent.assetSymbol,
+                    amount: intent.amount,
+                    chainId: intent.chainId,
+                    collateralAmounts: intent.collateralAmounts,
+                    collateralAssetSymbols: intent.collateralAssetSymbols,
+                    comet: intent.comet,
+                    blockTimestamp: intent.blockTimestamp,
+                    repayer: intent.repayer
+                }),
+                payment
+            );
+            return (Strings.OK, operation, action);
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_WITHDRAW)) {
+            CometWithdrawIntent memory intent = abi.decode(actionIntent, (CometWithdrawIntent));
+
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.cometWithdrawAsset(
+                Actions.CometWithdraw({
+                    chainAccountsList: chainAccountsList,
+                    assetSymbol: intent.assetSymbol,
+                    amount: intent.amount,
+                    chainId: intent.chainId,
+                    comet: intent.comet,
+                    withdrawer: intent.withdrawer,
+                    blockTimestamp: intent.blockTimestamp
+                }),
+                payment
+            );
+            return (Strings.OK, operation, action);
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_BORROW)) {
+            MorphoBorrowIntent memory intent = abi.decode(actionIntent, (MorphoBorrowIntent));
+
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.morphoBorrow(
+                Actions.MorphoBorrow({
+                    chainAccountsList: chainAccountsList,
+                    assetSymbol: intent.assetSymbol,
+                    amount: intent.amount,
+                    chainId: intent.chainId,
+                    borrower: intent.borrower,
+                    blockTimestamp: intent.blockTimestamp,
+                    collateralAmount: intent.collateralAmount,
+                    collateralAssetSymbol: intent.collateralAssetSymbol
+                }),
+                payment
+            );
+            return (Strings.OK, operation, action);
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_REPAY)) {
+            MorphoRepayIntent memory intent = abi.decode(actionIntent, (MorphoRepayIntent));
+
+            if (intent.amount == type(uint256).max) {
+                uint256 repayAmount = morphoRepayMaxAmount(
+                    chainAccountsList,
+                    intent.chainId,
+                    Accounts.findAssetPositions(intent.assetSymbol, intent.chainId, chainAccountsList).asset,
+                    Accounts.findAssetPositions(intent.collateralAssetSymbol, intent.chainId, chainAccountsList).asset,
+                    intent.repayer
+                );
+                uint256 totalAvailable = Accounts.getTotalAvailableBalance(
+                    chainAccountsList,
+                    payment,
+                    bridgeFees,
+                    List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                    intent.assetSymbol
+                );
+
+                intent.amount = repayAmount < totalAvailable ? type(uint256).max : totalAvailable;
+            }
+
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.morphoRepay(
+                Actions.MorphoRepay({
+                    chainAccountsList: chainAccountsList,
+                    assetSymbol: intent.assetSymbol,
+                    amount: intent.amount,
+                    chainId: intent.chainId,
+                    repayer: intent.repayer,
+                    blockTimestamp: intent.blockTimestamp,
+                    collateralAmount: intent.collateralAmount,
+                    collateralAssetSymbol: intent.collateralAssetSymbol
+                }),
+                payment
+            );
+            return (Strings.OK, operation, action);
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_CLAIM_REWARDS)) {
+            MorphoRewardsClaimIntent memory intent = abi.decode(actionIntent, (MorphoRewardsClaimIntent));
+
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.morphoClaimRewards(
+                Actions.MorphoClaimRewards({
+                    chainAccountsList: chainAccountsList,
+                    accounts: intent.accounts,
+                    blockTimestamp: intent.blockTimestamp,
+                    chainId: intent.chainId,
+                    claimables: intent.claimables,
+                    claimer: intent.claimer,
+                    distributors: intent.distributors,
+                    rewards: intent.rewards,
+                    proofs: intent.proofs
+                }),
+                payment
+            );
+            return (Strings.OK, operation, action);
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_VAULT_SUPPLY)) {
+            MorphoVaultSupplyIntent memory intent = abi.decode(actionIntent, (MorphoVaultSupplyIntent));
+
+            if (intent.amount == type(uint256).max) {
+                intent.amount = Accounts.getTotalAvailableBalance(
+                    chainAccountsList,
+                    payment,
+                    bridgeFees,
+                    List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                    intent.assetSymbol
+                );
+            }
+
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.morphoVaultSupply(
+                Actions.MorphoVaultSupply({
+                    chainAccountsList: chainAccountsList,
+                    assetSymbol: intent.assetSymbol,
+                    amount: intent.amount,
+                    blockTimestamp: intent.blockTimestamp,
+                    chainId: intent.chainId,
+                    sender: intent.sender
+                }),
+                payment
+            );
+            return (Strings.OK, operation, action);
+        } else {
+            return (
+                Strings.ERROR,
+                IQuarkWallet.QuarkOperation(bytes32(0), false, address(0), new bytes[](0), "", 0),
+                Actions.Action(0, address(0), "", "", "", "", bytes32(0), 0)
+            );
+        }
     }
 
     /* ===== Helper functions ===== */
+
+    /**
+     * @dev Takes in a list of actions and returns a unique list of chain ids of all actions
+     */
+    function getUniqueChainIdsForActions(Actions.Action[] memory actions)
+        internal
+        pure
+        returns (List.DynamicArray memory)
+    {
+        List.DynamicArray memory chainIdsInvolved = List.newList();
+
+        for (uint256 i = 0; i < actions.length; ++i) {
+            Actions.Action memory action = actions[i];
+
+            List.addUniqueUint256(chainIdsInvolved, action.chainId);
+        }
+
+        return chainIdsInvolved;
+    }
 
     function cometRepayMaxAmount(
         Accounts.ChainAccounts[] memory chainAccountsList,
@@ -477,10 +991,6 @@ contract QuarkBuilderBase {
     /**
      * @dev If there is not enough of the asset to cover the amount and the asset has a counterpart asset,
      * insert a wrap/unwrap action to cover the gap in amount.
-     *
-     * `supplementalBalance` param describes an amount of the token that might have been received in the course
-     * of an action (for example, bridging to the destination chain), which would therefore not be present in
-     * `chainAccountsList` but could be used to cover action costs.
      */
     function checkAndInsertWrapOrUnwrapAction(
         List.DynamicArray memory actions,
@@ -489,15 +999,13 @@ contract QuarkBuilderBase {
         PaymentInfo.Payment memory payment,
         string memory assetSymbol,
         uint256 amountNeeded,
-        uint256 supplementalBalance,
         uint256 chainId,
         address account,
         uint256 blockTimestamp,
         bool isRecurring
     ) internal pure {
         // Check if inserting wrapOrUnwrap action is necessary
-        uint256 assetBalanceOnChain =
-            Accounts.getBalanceOnChain(assetSymbol, chainId, chainAccountsList) + supplementalBalance;
+        uint256 assetBalanceOnChain = Accounts.getBalanceOnChain(assetSymbol, chainId, chainAccountsList);
         if (assetBalanceOnChain < amountNeeded && TokenWrapper.hasWrapperContract(chainId, assetSymbol)) {
             // If the asset has a wrapper counterpart, wrap/unwrap the token to cover the amount needed for the intent
             string memory counterpartSymbol = TokenWrapper.getWrapperCounterpartSymbol(chainId, assetSymbol);
