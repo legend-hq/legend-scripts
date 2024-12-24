@@ -2,7 +2,7 @@
 
 let morphoBorrowTests: [AcceptanceTest] = [
     .init(
-        name: "Alice tries to borrow from a Morpho market that does not exist (USDC/WETH) (testMorphoBorrowInvalidMarketParams)",
+        name: "Alice tries to borrow from a Morpho market that does not exist (WETH/USDC) (testMorphoBorrowInvalidMarketParams)",
         given: [
             .tokenBalance(.alice, .amt(1, .wbtc), .ethereum),
             .tokenBalance(.alice, .amt(1, .weth), .ethereum),
@@ -55,7 +55,7 @@ let morphoBorrowTests: [AcceptanceTest] = [
                     .supplyCollateralAndBorrowFromMorpho(
                         borrowAmount: .amt(1, .usdc),
                         collateralAmount: .amt(1, .wbtc),
-                        market: .morpho(.usdc, .wbtc),
+                        market: .morpho(.wbtc, .usdc),
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
@@ -82,7 +82,7 @@ let morphoBorrowTests: [AcceptanceTest] = [
                     .supplyCollateralAndBorrowFromMorpho(
                         borrowAmount: .amt(1, .usdc),
                         collateralAmount: .amt(1, .weth),
-                        market: .morpho(.usdc, .weth),
+                        market: .morpho(.weth, .usdc),
                         network: .base
                     ),
                     .quotePay(payment: .amt(0.02, .usdc), payee: .stax, quote: .basic),
@@ -109,7 +109,7 @@ let morphoBorrowTests: [AcceptanceTest] = [
                     .supplyCollateralAndBorrowFromMorpho(
                         borrowAmount: .amt(1, .usdc),
                         collateralAmount: .amt(1, .wbtc),
-                        market: .morpho(.usdc, .wbtc),
+                        market: .morpho(.wbtc, .usdc),
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
@@ -135,7 +135,7 @@ let morphoBorrowTests: [AcceptanceTest] = [
                     .supplyCollateralAndBorrowFromMorpho(
                         borrowAmount: .amt(1, .usdc),
                         collateralAmount: .amt(1, .wbtc),
-                        market: .morpho(.usdc, .wbtc),
+                        market: .morpho(.wbtc, .usdc),
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),

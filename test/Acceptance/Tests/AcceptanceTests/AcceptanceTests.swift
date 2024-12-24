@@ -182,14 +182,14 @@ enum Call: CustomStringConvertible, Equatable {
         }
 
         if scriptAddress == getScriptAddress(MorphoActions.creationCode) {
-            if let (morpho, marketParams, collateralTokenAmount, borrowTokenAmount) = try? MorphoActions.supplyCollateralAndBorrowDecode(input: calldata) {
-                let borrowToken = Token.from(network: network, address: marketParams.loanToken)
+            if let (_, marketParams, collateralTokenAmount, borrowTokenAmount) = try? MorphoActions.supplyCollateralAndBorrowDecode(input: calldata) {
                 let collateralToken = Token.from(network: network, address: marketParams.collateralToken)
+                let borrowToken = Token.from(network: network, address: marketParams.loanToken)
 
                 return .supplyCollateralAndBorrowFromMorpho(
                     borrowAmount: TokenAmount(fromWei: borrowTokenAmount, ofToken: borrowToken),
                     collateralAmount: TokenAmount(fromWei: collateralTokenAmount, ofToken: collateralToken),
-                    market: .morpho(borrowToken, collateralToken),
+                    market: Morpho(collateralToken: collateralToken, borrowToken: borrowToken),
                     network: network
                 )
             }
@@ -413,27 +413,27 @@ enum Comet: Hashable, Equatable {
 }
 
 struct Morpho: Equatable {
-    let borrowToken: Token
     let collateralToken: Token
+    let borrowToken: Token
 
-    init(borrowToken bt: Token, collateralToken ct: Token) {
-        self.borrowToken = bt
+    init(collateralToken ct: Token, borrowToken bt: Token) {
         self.collateralToken = ct
+        self.borrowToken = bt
     }
 
     static func == (lhs: Morpho, rhs: Morpho) -> Bool {
-        return lhs.borrowToken == rhs.borrowToken && lhs.collateralToken == rhs.collateralToken
+        return lhs.collateralToken == rhs.collateralToken && lhs.borrowToken == rhs.borrowToken
     }
 
-    static func morpho(_ borrowToken: Token, _ collateralToken: Token) -> Morpho {
+    static func morpho(_ collateralToken: Token, _ borrowToken: Token) -> Morpho {
         return Morpho(
-            borrowToken: borrowToken,
-            collateralToken: collateralToken
+            collateralToken: collateralToken,
+            borrowToken: borrowToken
         )
     }
 
     var description: String {
-        return "Morpho(\(self.borrowToken.symbol)/\(self.collateralToken.symbol))"
+        return "Morpho(\(self.collateralToken.symbol)/\(self.borrowToken.symbol))"
     }
 }
 
