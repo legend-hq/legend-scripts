@@ -86,7 +86,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
             morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
         });
 
-        // Pair not exist in known Morpho markets
+        // Pair does not exist in known Morpho markets
         vm.expectRevert(MorphoInfo.MorphoMarketNotFound.selector);
         builder.morphoBorrow(
             borrowIntent_(1, "USDC", 1e6, "WETH", 1e18, "USD"),
@@ -149,7 +149,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
                 MorphoActions.supplyCollateralAndBorrow,
                 (MorphoInfo.getMorphoAddress(1), MorphoInfo.getMarketParams(1, "WBTC", "USDC"), 1e8, 1e6)
             ),
-            "calldata is MorphoActions.supplyCollateralAndBorrow(MorphoInfo.getMorphoAddress(1), MorphoInfo.getMarketParams(1, WBTC, USDC), 1e8, 1e6, address(0xal1ce), address(0xal1ce));"
+            "calldata is MorphoActions.supplyCollateralAndBorrow(MorphoInfo.getMorphoAddress(1), MorphoInfo.getMarketParams(1, WBTC, USDC), 1e8, 1e6);"
         );
         assertEq(result.quarkOperations[0].scriptSources.length, 1);
         assertEq(result.quarkOperations[0].scriptSources[0], type(MorphoActions).creationCode);
@@ -249,7 +249,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
         assertEq(
             result.quarkOperations[0].scriptCalldata,
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
-            "calldata is Multicall.run([wrapperActionsAddress, MorphoActionsAddress], [WrapperActions.wrapAllETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2), MorphoActions.supplyCollateralAndBorrow(MorphoInfo.getMorphoAddress(8453), MorphoInfo.getMarketParams(8453, WETH, USDC), 1e18, 1e6, address(0xa11ce), address(0xa11ce))"
+            "calldata is Multicall.run([wrapperActionsAddress, MorphoActionsAddress], [WrapperActions.wrapAllETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2), MorphoActions.supplyCollateralAndBorrow(MorphoInfo.getMorphoAddress(8453), MorphoInfo.getMarketParams(8453, WETH, USDC), 1e18, 1e6)"
         );
         assertEq(result.quarkOperations[0].scriptSources.length, 3);
         assertEq(result.quarkOperations[0].scriptSources[0], type(WrapperActions).creationCode);
@@ -354,7 +354,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
         assertEq(
             result.quarkOperations[0].scriptCalldata,
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
-            "calldata is Multicall.run([morphoActionsAddress, quotePayAddress], [MorphoActions.supplyCollateralAndBorrow(MorphoInfo.getMorphoAddress(1), MorphoInfo.getMarketParams(1, WBTC, USDC), 1e8, 1e6, address(0xa11ce), address(0xa11ce)), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.1e6, QUOTE_ID)]);"
+            "calldata is Multicall.run([morphoActionsAddress, quotePayAddress], [MorphoActions.supplyCollateralAndBorrow(MorphoInfo.getMorphoAddress(1), MorphoInfo.getMarketParams(1, WBTC, USDC), 1e8, 1e6), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.1e6, QUOTE_ID)]);"
         );
         assertEq(result.quarkOperations[0].scriptSources.length, 3);
         assertEq(result.quarkOperations[0].scriptSources[0], type(MorphoActions).creationCode);
