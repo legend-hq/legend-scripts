@@ -54,6 +54,7 @@ enum Call: CustomStringConvertible, Equatable {
         market: Morpho,
         network: Network
     )
+    case depositToMorphoVault(amount: TokenAmount, network: Network)
     case multicall(_ calls: [Call])
     case withdrawFromComet(tokenAmount: TokenAmount, market: Comet, network: Network)
     case wrapAsset(_ token: Token)
@@ -257,6 +258,16 @@ enum Call: CustomStringConvertible, Equatable {
             }
         }
 
+        // if scriptAddress == getScriptAddress(MorphoVaultActions.creationCode) {
+        //     if let (vault, asset, amount) = try? MorphoVaultActions.depositDecode(input: calldata) {
+        //         let token = Token.from(network: network, address: asset)
+        //         return .depositToMorphoVault(
+        //             amount: TokenAmount(fromWei: amount, ofToken: token),
+        //             network: network
+        //         )
+        //     }
+        // }
+
         if scriptAddress == getScriptAddress(WrapperActions.creationCode) {
             if let _ = try? WrapperActions.wrapAllETHDecode(input: calldata) {
                 return .wrapAsset(.eth)
@@ -317,6 +328,8 @@ enum Call: CustomStringConvertible, Equatable {
             return "wrapAsset(\(token.symbol))"
         case let .supplyCollateralAndBorrowFromMorpho(borrowAmount, collateralAmount, market, network):
             return "supplyCollateralAndBorrowFromMorpho(borrow \(borrowAmount.amount) \(borrowAmount.token.symbol), supply \(collateralAmount.amount) \(collateralAmount.token.symbol) from \(market.description) on \(network.description))"
+        case let .depositToMorphoVault(amount, network):
+            return "depositToMorphoVault(\(amount.amount) \(amount.token.symbol) on \(network.description))"
         case let .unknownFunctionCall(name, function, value):
             return "unknownFunctionCall(\(name), \(function), \(value))"
         case let .unknownScriptCall(scriptSource, calldata):
@@ -861,6 +874,7 @@ indirect enum When {
     case morphoBorrow(from: Account, borrowAmount: TokenAmount, collateralAmount: TokenAmount, on: Network)
     case morphoVaultSupply(from: Account, vault: MorphoVault, amount: TokenAmount, on: Network)
     case swap(from: Account, sellAmount: TokenAmount, buyAmount: TokenAmount, exchange: Exchange, on: Network)
+    // case morphoVaultSupply(from: Account, amount: TokenAmount, on: Network)
     case payWith(currency: Token, When)
 
     var sender: Account {
@@ -881,6 +895,8 @@ indirect enum When {
             return from
         case let .swap(from, _, _, _, _):
             return from
+        // case let .morphoVaultSupply(from, _, _):
+        //     return from
         case let .payWith(_, intent):
             return intent.sender
         }
@@ -1210,6 +1226,30 @@ class Context {
                 ),
                 withFunctions: ffis
             )
+
+        // case let .morphoVaultSupply(from, amount, network):
+        //     return try await QuarkBuilder.morphoVaultSupply(
+        //         supplyIntent: .init(
+        //             amount: amount.amount,
+        //             assetSymbol: amount.token.symbol,
+        //             blockTimestamp: 1_000_000,
+        //             sender: from.address,
+        //             chainId: BigUInt(network.chainId),
+        //             preferAcross: true,
+        //             paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+        //         ),
+        //         chainAccountsList: chainAccounts,
+        //         quote: .init(
+        //             quoteId: Hex(
+        //                 "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+        //             issuedAt: 0,
+        //             expiresAt: BigUInt(Date(timeIntervalSinceNow: 1_000_000).timeIntervalSince1970),
+        //             assetQuotes: assetQuotes,
+        //             networkOperationFees: networkOperationFees
+        //         ),
+        //         withFunctions: ffis
+        //     )
+
         case let .transfer(from, to, amount, network):
             return try await QuarkBuilder.transfer(
                 intent: .init(
