@@ -11,7 +11,8 @@ let allTests: [AcceptanceTest] = transferTests +
     cometRepayTests +
     cometSupplyTests +
     cometWithdrawTests +
-    morphoBorrowTests
+    morphoBorrowTests +
+    morphoVaultSupplyTests
 
 let tests = allTests.filter { !$0.skip }
 let filteredTests = tests.contains { $0.only } ? tests.filter { $0.only } : tests
