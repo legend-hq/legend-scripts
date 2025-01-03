@@ -45,7 +45,8 @@ let cometBorrowTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(
-                        payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
+                        payment: .amt(0.1, .usdc), payee: .stax, quote: .basic
+                    ),
                 ])
             )
         )
@@ -74,7 +75,8 @@ let cometBorrowTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(
-                        payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
+                        payment: .amt(0.1, .usdc), payee: .stax, quote: .basic
+                    ),
                 ])
             )
         )
@@ -95,7 +97,7 @@ let cometBorrowTests: [AcceptanceTest] = [
                     ),
                     fees: [.ethereum: 0.1, .base: 1]
                 )
-            )
+            ),
         ],
         when: .cometBorrow(
             from: .alice,
@@ -112,7 +114,7 @@ let cometBorrowTests: [AcceptanceTest] = [
                     market: .cusdcv3,
                     network: .base
                 ),
-                .quotePay(payment: .amt(1.1, .usdc), payee: .stax, quote: .basic)
+                .quotePay(payment: .amt(1.1, .usdc), payee: .stax, quote: .basic),
             ])
         )
     ),
@@ -130,7 +132,7 @@ let cometBorrowTests: [AcceptanceTest] = [
                     ),
                     fees: [.ethereum: 1.5]
                 )
-            )
+            ),
         ],
         when: .cometBorrow(
             from: .alice,
@@ -148,7 +150,7 @@ let cometBorrowTests: [AcceptanceTest] = [
                         market: .cusdcv3,
                         network: .ethereum
                     ),
-                    .quotePay(payment: .amt(1.5, .usdc), payee: .stax, quote: .basic)
+                    .quotePay(payment: .amt(1.5, .usdc), payee: .stax, quote: .basic),
                 ])
             )
         )
@@ -195,9 +197,9 @@ let cometBorrowTests: [AcceptanceTest] = [
                     collateralAmounts: [.amt(1, .weth)],
                     market: .cusdcv3,
                     network: .base
-                )
+                ),
             ])
         ),
         skip: true
-    )
+    ),
 ]

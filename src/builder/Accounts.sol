@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.27;
 
+import {HashMap} from "src/builder/HashMap.sol";
+import {List} from "src/builder/List.sol";
 import {Math} from "src/lib/Math.sol";
 import {PaymentInfo} from "./PaymentInfo.sol";
 import {Strings} from "./Strings.sol";
@@ -309,6 +311,30 @@ library Accounts {
             total += balance + counterpartBalance;
         }
         return total;
+    }
+
+    /*
+    * @notice Get the total asset balance net fees for a given token symbol across chains
+    * @param chainAccountsList The list of chain accounts to check
+    * @param payment The payment currency and cost per chains
+    * @param bridgeFees A map of bridge fees by asset symbol
+    * @param chainIdsInvolved The list of chainIdsInvovled for the current intent
+    * @return The total available asset balance less the fees
+    */
+    function getTotalAvailableBalance(
+        Accounts.ChainAccounts[] memory chainAccountsList,
+        PaymentInfo.Payment memory payment,
+        HashMap.Map memory bridgeFees,
+        List.DynamicArray memory chainIdsInvolved,
+        string memory assetSymbol
+    ) internal pure returns (uint256) {
+        uint256 paymentFees = Strings.stringEqIgnoreCase(payment.currency, assetSymbol)
+            && !PaymentInfo.isOffchainPayment(payment)
+            ? PaymentInfo.totalCost(payment, List.toUint256Array(chainIdsInvolved))
+            : 0;
+
+        return Accounts.totalBalance(assetSymbol, chainAccountsList) - paymentFees
+            - HashMap.getOrDefaultUint256(bridgeFees, abi.encode(assetSymbol), 0);
     }
 
     function truncate(ChainAccounts[] memory chainAccountsList, uint256 length)

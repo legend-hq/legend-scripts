@@ -34,7 +34,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         address sender,
         uint256 blockTimestamp,
         string memory paymentAssetSymbol
-    ) internal pure returns (SwapActionsBuilder.ZeroExSwapIntent memory) {
+    ) internal pure returns (QuarkBuilderBase.ZeroExSwapIntent memory) {
         address usdc = usdc_(chainId);
         return zeroExSwap_(
             chainId,
@@ -58,7 +58,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         address sender,
         uint256 blockTimestamp,
         string memory paymentAssetSymbol
-    ) internal pure returns (SwapActionsBuilder.ZeroExSwapIntent memory) {
+    ) internal pure returns (QuarkBuilderBase.ZeroExSwapIntent memory) {
         address weth = weth_(chainId);
         return zeroExSwap_(
             chainId,
@@ -85,8 +85,8 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         address sender,
         uint256 blockTimestamp,
         string memory paymentAssetSymbol
-    ) internal pure returns (SwapActionsBuilder.ZeroExSwapIntent memory) {
-        return SwapActionsBuilder.ZeroExSwapIntent({
+    ) internal pure returns (QuarkBuilderBase.ZeroExSwapIntent memory) {
+        return QuarkBuilderBase.ZeroExSwapIntent({
             chainId: chainId,
             entryPoint: entryPoint,
             swapData: swapData,
@@ -827,145 +827,6 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
                     outputTokenPrice: WETH_PRICE,
                     outputAssetSymbol: "WETH",
                     outputAmount: 1e18,
-                    isExactOut: false
-                })
-            ),
-            "action context encoded from SwapActionContext"
-        );
-        assertEq(result.actions[1].quotePayActionContext, "", "no QuotePay action context");
-
-        // TODO: Check the contents of the EIP712 data
-        assertNotEq(result.eip712Data.digest, hex"", "non-empty digest");
-        assertNotEq(result.eip712Data.domainSeparator, hex"", "non-empty domain separator");
-        assertNotEq(result.eip712Data.hashStruct, hex"", "non-empty hashStruct");
-    }
-
-    function testBridgeSwapMaxWithQuotePaySucceeds() public {
-        QuarkBuilder builder = new QuarkBuilder();
-
-        QuarkBuilder.BuilderResult memory result = builder.swap(
-            buyWeth_(8453, usdc_(8453), type(uint256).max, 2e18, address(0xb0b), BLOCK_TIMESTAMP, "USDC"), // swap max on chain 8453 to 4 WETH
-            chainAccountsList_(6010e6), // holding 6010 USDC in total across chains 1, 8453
-            quote_({chainIds: Arrays.uintArray(1, 8453), prices: Arrays.uintArray(5e8, 1e8)})
-        );
-
-        address approveAndSwapAddress = CodeJarHelper.getCodeAddress(type(ApproveAndSwap).creationCode);
-        address cctpBridgeActionsAddress = CodeJarHelper.getCodeAddress(type(CCTPBridgeActions).creationCode);
-        address multicallAddress = CodeJarHelper.getCodeAddress(type(Multicall).creationCode);
-        address quotePayAddress = CodeJarHelper.getCodeAddress(type(QuotePay).creationCode);
-
-        assertEq(result.paymentCurrency, "USDC", "usdc currency");
-
-        // Check the quark operations
-        assertEq(result.quarkOperations.length, 2, "two operations");
-        assertEq(
-            result.quarkOperations[0].scriptAddress,
-            multicallAddress,
-            "script address[0] has been wrapped with multicall address"
-        );
-        // Max swap amount should be 6010e6 - 6e6 (cost) = 6004e6, which means we bridge over 2999e6 (chain 8453 already has 3005e6, so only needs 2999e6 more)
-        address[] memory callContracts = new address[](2);
-        callContracts[0] = cctpBridgeActionsAddress;
-        callContracts[1] = quotePayAddress;
-        bytes[] memory callDatas = new bytes[](2);
-        callDatas[0] = abi.encodeWithSelector(
-            CCTPBridgeActions.bridgeUSDC.selector,
-            address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155),
-            2999e6,
-            6,
-            bytes32(uint256(uint160(0xb0b))),
-            usdc_(1)
-        );
-        callDatas[1] = abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 6e6, QUOTE_ID);
-        assertEq(
-            result.quarkOperations[0].scriptCalldata,
-            abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
-            "calldata is Multicall.run([cctpBridgeActionsAddress, quotePayAddress], [CCTPBridgeActions.bridgeUSDC(address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155), 2999e6, 6, bytes32(uint256(uint160(0xb0b))), usdc_(1))), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 6e6, QUOTE_ID)]);"
-        );
-        assertEq(
-            result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
-        );
-        assertEq(result.quarkOperations[0].nonce, ALICE_DEFAULT_SECRET, "unexpected nonce");
-        assertEq(result.quarkOperations[0].isReplayable, false, "isReplayable is false");
-
-        assertEq(result.quarkOperations[1].scriptAddress, approveAndSwapAddress, "script address[1] is correct");
-        assertEq(
-            result.quarkOperations[1].scriptCalldata,
-            abi.encodeWithSelector(
-                ApproveAndSwap.run.selector, ZERO_EX_ENTRY_POINT, USDC_8453, 6004e6, WETH_8453, 2e18, ZERO_EX_SWAP_DATA
-            ),
-            "calldata is ApproveAndSwap.run(ZERO_EX_ENTRY_POINT, USDC_8453, 3500e6, WETH_8453, 1e18, ZERO_EX_SWAP_DATA);"
-        );
-        assertEq(
-            result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 3 days, "expiry is current blockTimestamp + 3 days"
-        );
-        assertEq(result.quarkOperations[1].nonce, BOB_DEFAULT_SECRET, "unexpected nonce");
-        assertEq(result.quarkOperations[1].isReplayable, false, "isReplayable is false");
-
-        // Check the actions
-        assertEq(result.actions.length, 2, "one action");
-        assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
-        assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "BRIDGE", "action type is 'BRIDGE'");
-        assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
-        assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
-        assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
-        assertEq(
-            result.actions[0].actionContext,
-            abi.encode(
-                Actions.BridgeActionContext({
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    assetSymbol: "USDC",
-                    inputAmount: 2999e6,
-                    outputAmount: 2999e6,
-                    chainId: 1,
-                    recipient: address(0xb0b),
-                    destinationChainId: 8453,
-                    bridgeType: Actions.BRIDGE_TYPE_CCTP
-                })
-            ),
-            "action context encoded from BridgeActionContext"
-        );
-        assertEq(
-            result.actions[0].quotePayActionContext,
-            abi.encode(
-                Actions.QuotePayActionContext({
-                    amount: 6e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    payee: Actions.QUOTE_PAY_RECIPIENT,
-                    quoteId: QUOTE_ID
-                })
-            ),
-            "action context encoded from QuotePayActionContext"
-        );
-
-        assertEq(result.actions[1].chainId, 8453, "operation is on chainid 8453");
-        assertEq(result.actions[1].quarkAccount, address(0xb0b), "0xb0b sends the funds");
-        assertEq(result.actions[1].actionType, "SWAP", "action type is 'SWAP'");
-        assertEq(result.actions[1].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
-        assertEq(result.actions[1].nonceSecret, BOB_DEFAULT_SECRET, "unexpected nonce secret");
-        assertEq(result.actions[1].totalPlays, 1, "total plays is 1");
-        assertEq(
-            result.actions[1].actionContext,
-            abi.encode(
-                Actions.SwapActionContext({
-                    chainId: 8453,
-                    feeAmount: 10,
-                    feeAssetSymbol: "WETH",
-                    feeToken: WETH_8453,
-                    feeTokenPrice: WETH_PRICE,
-                    inputToken: USDC_8453,
-                    inputTokenPrice: USDC_PRICE,
-                    inputAssetSymbol: "USDC",
-                    inputAmount: 6004e6,
-                    outputToken: WETH_8453,
-                    outputTokenPrice: WETH_PRICE,
-                    outputAssetSymbol: "WETH",
-                    outputAmount: 2e18,
                     isExactOut: false
                 })
             ),

@@ -19,71 +19,39 @@ import {QuarkBuilderBase} from "src/builder/QuarkBuilderBase.sol";
 import {Quotes} from "src/builder/Quotes.sol";
 
 contract MorphoActionsBuilder is QuarkBuilderBase {
-    struct MorphoBorrowIntent {
-        uint256 amount;
-        string assetSymbol;
-        uint256 blockTimestamp;
-        address borrower;
-        uint256 chainId;
-        uint256 collateralAmount;
-        string collateralAssetSymbol;
-        bool preferAcross;
-        string paymentAssetSymbol;
-    }
-
     function morphoBorrow(
-        MorphoBorrowIntent memory borrowIntent,
+        MorphoBorrowIntent memory intent,
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory) {
         PaymentInfo.Payment memory payment =
-            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, borrowIntent.paymentAssetSymbol);
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        (IQuarkWallet.QuarkOperation memory borrowQuarkOperation, Actions.Action memory borrowAction) = Actions
-            .morphoBorrow(
-            Actions.MorphoBorrow({
-                chainAccountsList: chainAccountsList,
-                assetSymbol: borrowIntent.assetSymbol,
-                amount: borrowIntent.amount,
-                chainId: borrowIntent.chainId,
-                borrower: borrowIntent.borrower,
-                blockTimestamp: borrowIntent.blockTimestamp,
-                collateralAmount: borrowIntent.collateralAmount,
-                collateralAssetSymbol: borrowIntent.collateralAssetSymbol
-            }),
-            payment
-        );
+        uint256[] memory amountOuts = new uint256[](1);
+        amountOuts[0] = intent.collateralAmount;
+        string[] memory assetSymbolOuts = new string[](1);
+        assetSymbolOuts[0] = intent.collateralAssetSymbol;
+        uint256[] memory amountIns = new uint256[](1);
+        amountIns[0] = intent.amount;
+        string[] memory assetSymbolIns = new string[](1);
+        assetSymbolIns[0] = intent.assetSymbol;
 
-        QuarkBuilderBase.ActionIntent memory actionIntent;
-        // Note: Scope to avoid stack too deep errors
-        {
-            uint256[] memory amountOuts = new uint256[](1);
-            amountOuts[0] = borrowIntent.collateralAmount;
-            string[] memory assetSymbolOuts = new string[](1);
-            assetSymbolOuts[0] = borrowIntent.collateralAssetSymbol;
-            uint256[] memory amountIns = new uint256[](1);
-            amountIns[0] = borrowIntent.amount;
-            string[] memory assetSymbolIns = new string[](1);
-            assetSymbolIns[0] = borrowIntent.assetSymbol;
-            actionIntent = QuarkBuilderBase.ActionIntent({
-                actor: borrowIntent.borrower,
+        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
+        constructOperationsAndActions({
+            actionIntent: ActionIntent({
+                actor: intent.borrower,
                 amountIns: amountIns,
                 assetSymbolIns: assetSymbolIns,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
-                blockTimestamp: borrowIntent.blockTimestamp,
-                chainId: borrowIntent.chainId,
-                preferAcross: borrowIntent.preferAcross
-            });
-        }
-
-        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
-        QuarkBuilderBase.collectAssetsForAction({
-            actionIntent: actionIntent,
+                actionType: Actions.ACTION_TYPE_MORPHO_BORROW,
+                intent: abi.encode(intent),
+                blockTimestamp: intent.blockTimestamp,
+                chainId: intent.chainId,
+                preferAcross: intent.preferAcross
+            }),
             chainAccountsList: chainAccountsList,
-            payment: payment,
-            actionQuarkOperation: borrowQuarkOperation,
-            action: borrowAction
+            payment: payment
         });
 
         return BuilderResult({
@@ -93,88 +61,57 @@ contract MorphoActionsBuilder is QuarkBuilderBase {
             paymentCurrency: payment.currency,
             eip712Data: EIP712Helper.eip712DataForQuarkOperations(quarkOperationsArray, actionsArray)
         });
-    }
-
-    struct MorphoRepayIntent {
-        uint256 amount;
-        string assetSymbol;
-        uint256 blockTimestamp;
-        address repayer;
-        uint256 chainId;
-        uint256 collateralAmount;
-        string collateralAssetSymbol;
-        bool preferAcross;
-        string paymentAssetSymbol;
     }
 
     function morphoRepay(
-        MorphoRepayIntent memory repayIntent,
+        MorphoRepayIntent memory intent,
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory) {
-        bool isMaxRepay = repayIntent.amount == type(uint256).max;
-
         PaymentInfo.Payment memory payment =
-            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, repayIntent.paymentAssetSymbol);
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        // Only use repayAmount for purpose of bridging, will still use uint256 max for MorphoScript
-        uint256 repayAmount = repayIntent.amount;
-        if (isMaxRepay) {
-            repayAmount = morphoRepayMaxAmount(
+        uint256 repayAmount;
+        if (intent.amount == type(uint256).max) {
+            uint256 maxRepayAmount = morphoRepayMaxAmount(
                 chainAccountsList,
-                repayIntent.chainId,
-                Accounts.findAssetPositions(repayIntent.assetSymbol, repayIntent.chainId, chainAccountsList).asset,
-                Accounts.findAssetPositions(repayIntent.collateralAssetSymbol, repayIntent.chainId, chainAccountsList)
-                    .asset,
-                repayIntent.repayer
+                intent.chainId,
+                Accounts.findAssetPositions(intent.assetSymbol, intent.chainId, chainAccountsList).asset,
+                Accounts.findAssetPositions(intent.collateralAssetSymbol, intent.chainId, chainAccountsList).asset,
+                intent.repayer
             );
+            uint256 availableAssetBalance = Accounts.totalAvailableAsset(intent.assetSymbol, chainAccountsList, payment);
+            repayAmount = maxRepayAmount < availableAssetBalance ? maxRepayAmount : type(uint256).max;
+        } else {
+            repayAmount = intent.amount;
         }
 
-        (IQuarkWallet.QuarkOperation memory repayQuarkOperations, Actions.Action memory repayActions) = Actions
-            .morphoRepay(
-            Actions.MorphoRepay({
-                chainAccountsList: chainAccountsList,
-                assetSymbol: repayIntent.assetSymbol,
-                amount: repayIntent.amount,
-                chainId: repayIntent.chainId,
-                repayer: repayIntent.repayer,
-                blockTimestamp: repayIntent.blockTimestamp,
-                collateralAmount: repayIntent.collateralAmount,
-                collateralAssetSymbol: repayIntent.collateralAssetSymbol
+        uint256[] memory amountOuts = new uint256[](1);
+        amountOuts[0] = repayAmount;
+        string[] memory assetSymbolOuts = new string[](1);
+        assetSymbolOuts[0] = intent.assetSymbol;
+        uint256[] memory amountIns = new uint256[](1);
+        amountIns[0] = intent.collateralAmount;
+        string[] memory assetSymbolIns = new string[](1);
+        assetSymbolIns[0] = intent.collateralAssetSymbol;
+
+        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
+        constructOperationsAndActions({
+            actionIntent: ActionIntent({
+                actor: intent.repayer,
+                amountIns: amountIns,
+                assetSymbolIns: assetSymbolIns,
+                amountOuts: amountOuts,
+                assetSymbolOuts: assetSymbolOuts,
+                actionType: Actions.ACTION_TYPE_MORPHO_REPAY,
+                intent: abi.encode(intent),
+                blockTimestamp: intent.blockTimestamp,
+                chainId: intent.chainId,
+                preferAcross: intent.preferAcross
             }),
-            payment
-        );
-
-        IQuarkWallet.QuarkOperation[] memory quarkOperationsArray;
-        Actions.Action[] memory actionsArray;
-        // Note: Scope to avoid stack too deep errors
-        {
-            uint256[] memory amountOuts = new uint256[](1);
-            amountOuts[0] = repayAmount;
-            string[] memory assetSymbolOuts = new string[](1);
-            assetSymbolOuts[0] = repayIntent.assetSymbol;
-            uint256[] memory amountIns = new uint256[](1);
-            amountIns[0] = repayIntent.collateralAmount;
-            string[] memory assetSymbolIns = new string[](1);
-            assetSymbolIns[0] = repayIntent.collateralAssetSymbol;
-
-            (quarkOperationsArray, actionsArray) = QuarkBuilderBase.collectAssetsForAction({
-                actionIntent: QuarkBuilderBase.ActionIntent({
-                    actor: repayIntent.repayer,
-                    amountIns: amountIns,
-                    assetSymbolIns: assetSymbolIns,
-                    amountOuts: amountOuts,
-                    assetSymbolOuts: assetSymbolOuts,
-                    blockTimestamp: repayIntent.blockTimestamp,
-                    chainId: repayIntent.chainId,
-                    preferAcross: repayIntent.preferAcross
-                }),
-                chainAccountsList: chainAccountsList,
-                payment: payment,
-                actionQuarkOperation: repayQuarkOperations,
-                action: repayActions
-            });
-        }
+            chainAccountsList: chainAccountsList,
+            payment: payment
+        });
 
         return BuilderResult({
             version: VERSION,
@@ -185,83 +122,44 @@ contract MorphoActionsBuilder is QuarkBuilderBase {
         });
     }
 
-    struct MorphoRewardsClaimIntent {
-        uint256 blockTimestamp;
-        address claimer;
-        uint256 chainId;
-        address[] accounts;
-        uint256[] claimables;
-        address[] distributors;
-        address[] rewards;
-        bytes32[][] proofs;
-        bool preferAcross;
-        string paymentAssetSymbol;
-    }
-
     function morphoClaimRewards(
-        MorphoRewardsClaimIntent memory claimIntent,
+        MorphoRewardsClaimIntent memory intent,
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory) {
         if (
-            claimIntent.accounts.length != claimIntent.claimables.length
-                || claimIntent.accounts.length != claimIntent.distributors.length
-                || claimIntent.accounts.length != claimIntent.rewards.length
-                || claimIntent.accounts.length != claimIntent.proofs.length
+            intent.accounts.length != intent.claimables.length || intent.accounts.length != intent.distributors.length
+                || intent.accounts.length != intent.rewards.length || intent.accounts.length != intent.proofs.length
         ) {
             revert InvalidInput();
         }
 
         PaymentInfo.Payment memory payment =
-            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, claimIntent.paymentAssetSymbol);
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        (
-            IQuarkWallet.QuarkOperation memory morphoClaimRewardsQuarkOperation,
-            Actions.Action memory morphoClaimRewardsAction
-        ) = Actions.morphoClaimRewards(
-            Actions.MorphoClaimRewards({
-                chainAccountsList: chainAccountsList,
-                accounts: claimIntent.accounts,
-                blockTimestamp: claimIntent.blockTimestamp,
-                chainId: claimIntent.chainId,
-                claimables: claimIntent.claimables,
-                claimer: claimIntent.claimer,
-                distributors: claimIntent.distributors,
-                rewards: claimIntent.rewards,
-                proofs: claimIntent.proofs
-            }),
-            payment
-        );
-
-        ActionIntent memory actionIntent;
         // Note: Scope to avoid stack too deep errors
-        {
-            string[] memory assetSymbolIns = new string[](claimIntent.rewards.length);
-            for (uint256 i = 0; i < claimIntent.rewards.length; ++i) {
-                assetSymbolIns[i] =
-                    Accounts.findAssetPositions(claimIntent.rewards[i], claimIntent.chainId, chainAccountsList).symbol;
-            }
-            uint256[] memory amountOuts = new uint256[](0);
-            string[] memory assetSymbolOuts = new string[](0);
-            actionIntent = ActionIntent({
-                actor: claimIntent.claimer,
-                amountIns: claimIntent.claimables,
+        string[] memory assetSymbolIns = new string[](intent.rewards.length);
+        for (uint256 i = 0; i < intent.rewards.length; ++i) {
+            assetSymbolIns[i] = Accounts.findAssetPositions(intent.rewards[i], intent.chainId, chainAccountsList).symbol;
+        }
+        uint256[] memory amountOuts = new uint256[](0);
+        string[] memory assetSymbolOuts = new string[](0);
+        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
+        constructOperationsAndActions({
+            actionIntent: ActionIntent({
+                actor: intent.claimer,
+                amountIns: intent.claimables,
                 assetSymbolIns: assetSymbolIns,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
-                blockTimestamp: claimIntent.blockTimestamp,
-                chainId: claimIntent.chainId,
-                preferAcross: claimIntent.preferAcross
-            });
-        }
-
-        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
-        collectAssetsForAction({
-            actionIntent: actionIntent,
+                actionType: Actions.ACTION_TYPE_MORPHO_CLAIM_REWARDS,
+                intent: abi.encode(intent),
+                blockTimestamp: intent.blockTimestamp,
+                chainId: intent.chainId,
+                preferAcross: intent.preferAcross
+            }),
             chainAccountsList: chainAccountsList,
-            payment: payment,
-            actionQuarkOperation: morphoClaimRewardsQuarkOperation,
-            action: morphoClaimRewardsAction
+            payment: payment
         });
 
         return BuilderResult({

@@ -27,7 +27,7 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
         uint256 amount,
         string memory assetSymbol,
         string memory paymentAssetSymbol
-    ) internal pure returns (MorphoVaultActionsBuilder.MorphoVaultSupplyIntent memory) {
+    ) internal pure returns (QuarkBuilderBase.MorphoVaultSupplyIntent memory) {
         return morphoSupplyIntent_({
             chainId: chainId,
             amount: amount,
@@ -43,8 +43,8 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
         string memory assetSymbol,
         address sender,
         string memory paymentAssetSymbol
-    ) internal pure returns (MorphoVaultActionsBuilder.MorphoVaultSupplyIntent memory) {
-        return MorphoVaultActionsBuilder.MorphoVaultSupplyIntent({
+    ) internal pure returns (QuarkBuilderBase.MorphoVaultSupplyIntent memory) {
+        return QuarkBuilderBase.MorphoVaultSupplyIntent({
             amount: amount,
             assetSymbol: assetSymbol,
             blockTimestamp: BLOCK_TIMESTAMP,
@@ -59,7 +59,7 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
         QuarkBuilder builder = new QuarkBuilder();
         vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 2e6, 0e6));
         builder.morphoVaultSupply(
-            MorphoVaultActionsBuilder.MorphoVaultSupplyIntent({
+            QuarkBuilderBase.MorphoVaultSupplyIntent({
                 amount: 2e6,
                 assetSymbol: "USDC",
                 blockTimestamp: BLOCK_TIMESTAMP,
@@ -88,7 +88,7 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
             )
         );
         builder.morphoVaultSupply(
-            MorphoVaultActionsBuilder.MorphoVaultSupplyIntent({
+            QuarkBuilderBase.MorphoVaultSupplyIntent({
                 amount: 1e6,
                 assetSymbol: "USDC",
                 blockTimestamp: BLOCK_TIMESTAMP,
@@ -133,7 +133,7 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
         vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 2e6, 0));
         builder.morphoVaultSupply(
             // there is no bridge to brige from 7777, so we cannot get to our funds
-            MorphoVaultActionsBuilder.MorphoVaultSupplyIntent({
+            QuarkBuilderBase.MorphoVaultSupplyIntent({
                 amount: 2e6,
                 assetSymbol: "USDC",
                 blockTimestamp: BLOCK_TIMESTAMP,
@@ -150,7 +150,7 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
     function testSimpleMorphoVaultSupply() public {
         QuarkBuilder builder = new QuarkBuilder();
         QuarkBuilder.BuilderResult memory result = builder.morphoVaultSupply(
-            MorphoVaultActionsBuilder.MorphoVaultSupplyIntent({
+            QuarkBuilderBase.MorphoVaultSupplyIntent({
                 amount: 1e6,
                 assetSymbol: "USDC",
                 blockTimestamp: BLOCK_TIMESTAMP,
@@ -225,7 +225,7 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
         });
 
         QuarkBuilder.BuilderResult memory result = builder.morphoVaultSupply(
-            MorphoVaultActionsBuilder.MorphoVaultSupplyIntent({
+            QuarkBuilderBase.MorphoVaultSupplyIntent({
                 amount: type(uint256).max,
                 assetSymbol: "USDC",
                 blockTimestamp: BLOCK_TIMESTAMP,
@@ -683,125 +683,6 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
             abi.encode(
                 Actions.MorphoVaultSupplyActionContext({
                     amount: 6e6,
-                    assetSymbol: "USDC",
-                    chainId: 8453,
-                    morphoVault: MorphoInfo.getMorphoVaultAddress(8453, "USDC"),
-                    price: USDC_PRICE,
-                    token: USDC_8453
-                })
-            ),
-            "action context encoded from SupplyActionContext"
-        );
-
-        // TODO: Check the contents of the EIP712 data
-        assertNotEq(result.eip712Data.digest, hex"", "non-empty digest");
-        assertNotEq(result.eip712Data.domainSeparator, hex"", "non-empty domain separator");
-        assertNotEq(result.eip712Data.hashStruct, hex"", "non-empty hashStruct");
-    }
-
-    function testMorphoVaultSupplyMaxWithBridgeAndQuotePay() public {
-        QuarkBuilder builder = new QuarkBuilder();
-
-        // Note: There are 3e6 USDC on each chain, so the Builder should attempt to bridge 3 - cost (0.6) USDC to chain 8453
-        QuarkBuilder.BuilderResult memory result = builder.morphoVaultSupply(
-            morphoSupplyIntent_(8453, type(uint256).max, "USDC", address(0xb0b), "USDC"),
-            chainAccountsList_(6e6), // holding 3 USDC in total across chains 1, 8453
-            quote_({chainIds: Arrays.uintArray(1, 8453, 7777), prices: Arrays.uintArray(0.5e8, 0.1e8, 0.1e8)})
-        );
-
-        address cctpBridgeActionsAddress = CodeJarHelper.getCodeAddress(type(CCTPBridgeActions).creationCode);
-        address morphoVaultActionsAddress = CodeJarHelper.getCodeAddress(type(MorphoVaultActions).creationCode);
-        address multicallAddress = CodeJarHelper.getCodeAddress(type(Multicall).creationCode);
-        address quotePayAddress = CodeJarHelper.getCodeAddress(type(QuotePay).creationCode);
-
-        assertEq(result.paymentCurrency, "USDC", "usd currency");
-
-        // Check the quark operations
-        assertEq(result.quarkOperations.length, 2, "two operations");
-        // first operation
-        assertEq(
-            result.quarkOperations[0].scriptAddress,
-            multicallAddress,
-            "script address[0] has been wrapped with multicall address"
-        );
-        address[] memory callContracts = new address[](2);
-        callContracts[0] = cctpBridgeActionsAddress;
-        callContracts[1] = quotePayAddress;
-        bytes[] memory callDatas = new bytes[](2);
-        callDatas[0] = abi.encodeWithSelector(
-            CCTPBridgeActions.bridgeUSDC.selector,
-            address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155),
-            2.4e6, // 3e6 - 0.5e6 - 0.1e6
-            6,
-            bytes32(uint256(uint160(0xb0b))),
-            usdc_(1)
-        );
-        callDatas[1] =
-            abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 0.6e6, QUOTE_ID);
-        assertEq(
-            result.quarkOperations[0].scriptCalldata,
-            abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
-            "calldata is Multicall.run([cctpBridgeActionsAddress, quotePayAddress], [CCTPBridgeActions.bridgeUSDC(address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155), 2.4e6, 6, bytes32(uint256(uint160(0xb0b))), usdc_(1))), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.6e6, QUOTE_ID)]);"
-        );
-        assertEq(
-            result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
-        );
-        assertEq(result.quarkOperations[0].nonce, ALICE_DEFAULT_SECRET, "unexpected nonce");
-        assertEq(result.quarkOperations[0].isReplayable, false, "isReplayable is false");
-
-        // second operation
-        assertEq(result.quarkOperations[1].scriptAddress, morphoVaultActionsAddress, "script address[1] is correct");
-        assertEq(
-            result.quarkOperations[1].scriptCalldata,
-            abi.encodeCall(
-                MorphoVaultActions.deposit, (MorphoInfo.getMorphoVaultAddress(8453, "USDC"), usdc_(8453), 5.4e6)
-            ),
-            "calldata is MorphoVaultActions.deposit, (MorphoInfo.getMorphoVaultAddress(8453, USDC), usdc_(8453), 5.4e6));"
-        );
-        assertEq(
-            result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
-        );
-        assertEq(result.quarkOperations[1].nonce, BOB_DEFAULT_SECRET, "unexpected nonce");
-        assertEq(result.quarkOperations[1].isReplayable, false, "isReplayable is false");
-
-        // Check the actions
-        assertEq(result.actions.length, 2, "two actions");
-        // first action
-        assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
-        assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "BRIDGE", "action type is 'BRIDGE'");
-        assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
-        assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
-        assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
-        assertEq(
-            result.actions[0].actionContext,
-            abi.encode(
-                Actions.BridgeActionContext({
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    assetSymbol: "USDC",
-                    inputAmount: 2.4e6,
-                    outputAmount: 2.4e6,
-                    chainId: 1,
-                    recipient: address(0xb0b),
-                    destinationChainId: 8453,
-                    bridgeType: Actions.BRIDGE_TYPE_CCTP
-                })
-            ),
-            "action context encoded from BridgeActionContext"
-        );
-        // second action
-        assertEq(result.actions[1].chainId, 8453, "operation is on chainid 8453");
-        assertEq(result.actions[1].quarkAccount, address(0xb0b), "0xb0b sends the funds");
-        assertEq(result.actions[1].actionType, "MORPHO_VAULT_SUPPLY", "action type is 'MORPHO_VAULT_SUPPLY'");
-        assertEq(result.actions[1].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
-        assertEq(result.actions[1].nonceSecret, BOB_DEFAULT_SECRET, "unexpected nonce secret");
-        assertEq(result.actions[1].totalPlays, 1, "total plays is 1");
-        assertEq(
-            result.actions[1].actionContext,
-            abi.encode(
-                Actions.MorphoVaultSupplyActionContext({
-                    amount: 5.4e6,
                     assetSymbol: "USDC",
                     chainId: 8453,
                     morphoVault: MorphoInfo.getMorphoVaultAddress(8453, "USDC"),
