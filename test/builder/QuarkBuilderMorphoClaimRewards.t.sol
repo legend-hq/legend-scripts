@@ -66,8 +66,8 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
         address[] memory rewards,
         bytes32[][] memory proofs,
         string memory paymentAssetSymbol
-    ) internal pure returns (MorphoActionsBuilder.MorphoRewardsClaimIntent memory) {
-        return MorphoActionsBuilder.MorphoRewardsClaimIntent({
+    ) internal pure returns (QuarkBuilderBase.MorphoRewardsClaimIntent memory) {
+        return QuarkBuilderBase.MorphoRewardsClaimIntent({
             blockTimestamp: BLOCK_TIMESTAMP,
             claimer: address(0xa11ce),
             chainId: chainId,

@@ -25,7 +25,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
     function transferUsdc_(uint256 chainId, uint256 amount, address recipient, uint256 blockTimestamp)
         internal
         pure
-        returns (TransferActionsBuilder.TransferIntent memory)
+        returns (QuarkBuilderBase.TransferIntent memory)
     {
         return transferToken_("USDC", chainId, amount, recipient, blockTimestamp);
     }
@@ -33,7 +33,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
     function transferUsdc_(uint256 chainId, uint256 amount, address sender, address recipient, uint256 blockTimestamp)
         internal
         pure
-        returns (TransferActionsBuilder.TransferIntent memory)
+        returns (QuarkBuilderBase.TransferIntent memory)
     {
         return transferToken_("USDC", chainId, amount, sender, recipient, blockTimestamp);
     }
@@ -41,7 +41,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
     function transferEth_(uint256 chainId, uint256 amount, address recipient, uint256 blockTimestamp)
         internal
         pure
-        returns (TransferActionsBuilder.TransferIntent memory)
+        returns (QuarkBuilderBase.TransferIntent memory)
     {
         return transferToken_("ETH", chainId, amount, recipient, blockTimestamp);
     }
@@ -49,7 +49,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
     function transferWeth_(uint256 chainId, uint256 amount, address recipient, uint256 blockTimestamp)
         internal
         pure
-        returns (TransferActionsBuilder.TransferIntent memory)
+        returns (QuarkBuilderBase.TransferIntent memory)
     {
         return transferToken_("WETH", chainId, amount, recipient, blockTimestamp);
     }
@@ -60,7 +60,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         uint256 amount,
         address recipient,
         uint256 blockTimestamp
-    ) internal pure returns (TransferActionsBuilder.TransferIntent memory) {
+    ) internal pure returns (QuarkBuilderBase.TransferIntent memory) {
         return transferToken_({
             chainId: chainId,
             sender: address(0xa11ce),
@@ -78,8 +78,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         address sender,
         address recipient,
         uint256 blockTimestamp
-    ) internal pure returns (TransferActionsBuilder.TransferIntent memory) {
-        return TransferActionsBuilder.TransferIntent({
+    ) internal pure returns (QuarkBuilderBase.TransferIntent memory) {
+        return QuarkBuilderBase.TransferIntent({
             chainId: chainId,
             sender: sender,
             recipient: recipient,
@@ -100,8 +100,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         uint256 blockTimestamp,
         bool preferAcross,
         string memory paymentAssetSymbol
-    ) internal pure returns (TransferActionsBuilder.TransferIntent memory) {
-        return TransferActionsBuilder.TransferIntent({
+    ) internal pure returns (QuarkBuilderBase.TransferIntent memory) {
+        return QuarkBuilderBase.TransferIntent({
             chainId: chainId,
             sender: sender,
             recipient: recipient,
@@ -114,7 +114,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
     }
 
     function testTransferInsufficientFunds() public {
-        TransferActionsBuilder.TransferIntent memory intent = transferUsdc_(1, 10e6, address(0xc0b), BLOCK_TIMESTAMP); // transfer 10 USDC on chain 1 to 0xc0b
+        QuarkBuilderBase.TransferIntent memory intent = transferUsdc_(1, 10e6, address(0xc0b), BLOCK_TIMESTAMP); // transfer 10 USDC on chain 1 to 0xc0b
         intent.paymentAssetSymbol = "USD";
 
         QuarkBuilder builder = new QuarkBuilder();
@@ -132,7 +132,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(
                 QuarkBuilderBase.UnableToConstructActionIntent.selector,
                 false,
-                "USDC",
+                "",
                 0,
                 "IMPOSSIBLE_TO_CONSTRUCT",
                 "USDC",
@@ -147,7 +147,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
     }
 
     function testTransferFundsOnUnbridgeableChains() public {
-        TransferActionsBuilder.TransferIntent memory intent = transferUsdc_(7777, 2e6, address(0xc0b), BLOCK_TIMESTAMP); // transfer 2 USDC on chain 7777 to 0xc0b
+        QuarkBuilderBase.TransferIntent memory intent = transferUsdc_(7777, 2e6, address(0xc0b), BLOCK_TIMESTAMP); // transfer 2 USDC on chain 7777 to 0xc0b
         intent.paymentAssetSymbol = "USD";
 
         QuarkBuilder builder = new QuarkBuilder();
@@ -182,7 +182,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(
                 QuarkBuilderBase.UnableToConstructActionIntent.selector,
                 false,
-                "USDC",
+                "",
                 0,
                 "UNABLE_TO_CONSTRUCT",
                 "USDC",
@@ -197,7 +197,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
     }
 
     function testSimpleLocalTransferSucceeds() public {
-        TransferActionsBuilder.TransferIntent memory intent = transferUsdc_(1, 1e6, address(0xceecee), BLOCK_TIMESTAMP); // transfer 1 USDC on chain 1 to 0xceecee
+        QuarkBuilderBase.TransferIntent memory intent = transferUsdc_(1, 1e6, address(0xceecee), BLOCK_TIMESTAMP); // transfer 1 USDC on chain 1 to 0xceecee
         intent.paymentAssetSymbol = "USD";
 
         QuarkBuilder builder = new QuarkBuilder();
@@ -888,8 +888,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             morphoVaultPositions: emptyMorphoVaultPositions_()
         });
 
-        TransferActionsBuilder.TransferIntent memory intent =
-            transferEth_(1, 1.5e18, address(0xceecee), BLOCK_TIMESTAMP);
+        QuarkBuilderBase.TransferIntent memory intent = transferEth_(1, 1.5e18, address(0xceecee), BLOCK_TIMESTAMP);
         intent.paymentAssetSymbol = "USD";
 
         // Transfer 1.5 ETH to 0xceecee on chain 1
@@ -1225,8 +1224,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             morphoVaultPositions: emptyMorphoVaultPositions_()
         });
 
-        TransferActionsBuilder.TransferIntent memory intent =
-            transferWeth_(1, 1.75e18, address(0xceecee), BLOCK_TIMESTAMP);
+        QuarkBuilderBase.TransferIntent memory intent = transferWeth_(1, 1.75e18, address(0xceecee), BLOCK_TIMESTAMP);
         intent.paymentAssetSymbol = "USD";
 
         // Transfer 1.5ETH to 0xceecee on chain 1

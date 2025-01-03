@@ -24,7 +24,7 @@ contract QuarkBuilderMorphoVaultWithdrawTest is Test, QuarkBuilderTest {
         uint256 amount,
         string memory assetSymbol,
         string memory paymentAssetSymbol
-    ) internal pure returns (MorphoVaultActionsBuilder.MorphoVaultWithdrawIntent memory) {
+    ) internal pure returns (QuarkBuilderBase.MorphoVaultWithdrawIntent memory) {
         return morphoWithdrawIntent_({
             amount: amount,
             assetSymbol: assetSymbol,
@@ -40,8 +40,8 @@ contract QuarkBuilderMorphoVaultWithdrawTest is Test, QuarkBuilderTest {
         string memory assetSymbol,
         address withdrawer,
         string memory paymentAssetSymbol
-    ) internal pure returns (MorphoVaultActionsBuilder.MorphoVaultWithdrawIntent memory) {
-        return MorphoVaultActionsBuilder.MorphoVaultWithdrawIntent({
+    ) internal pure returns (QuarkBuilderBase.MorphoVaultWithdrawIntent memory) {
+        return QuarkBuilderBase.MorphoVaultWithdrawIntent({
             amount: amount,
             assetSymbol: assetSymbol,
             blockTimestamp: BLOCK_TIMESTAMP,

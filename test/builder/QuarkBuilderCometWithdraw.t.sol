@@ -23,7 +23,7 @@ contract QuarkBuilderCometWithdrawTest is Test, QuarkBuilderTest {
         uint256 amount,
         string memory paymentAssetSymbol
     ) internal pure returns (CometActionsBuilder.CometWithdrawIntent memory) {
-        return CometActionsBuilder.CometWithdrawIntent({
+        return QuarkBuilderBase.CometWithdrawIntent({
             amount: amount,
             assetSymbol: assetSymbol,
             blockTimestamp: BLOCK_TIMESTAMP,
