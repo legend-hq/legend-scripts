@@ -28,7 +28,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
         string memory collateralAssetSymbol,
         uint256 collateralAmount,
         string memory paymentAssetSymbol
-    ) internal pure returns (MorphoActionsBuilder.MorphoBorrowIntent memory) {
+    ) internal pure returns (QuarkBuilderBase.MorphoBorrowIntent memory) {
         return borrowIntent_({
             chainId: chainId,
             assetSymbol: assetSymbol,
@@ -48,8 +48,8 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
         uint256 collateralAmount,
         address borrower,
         string memory paymentAssetSymbol
-    ) internal pure returns (MorphoActionsBuilder.MorphoBorrowIntent memory) {
-        return MorphoActionsBuilder.MorphoBorrowIntent({
+    ) internal pure returns (QuarkBuilderBase.MorphoBorrowIntent memory) {
+        return QuarkBuilderBase.MorphoBorrowIntent({
             amount: amount,
             assetSymbol: assetSymbol,
             blockTimestamp: BLOCK_TIMESTAMP,

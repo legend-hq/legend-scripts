@@ -19,108 +19,40 @@ import {QuarkBuilderBase} from "src/builder/QuarkBuilderBase.sol";
 import {Quotes} from "src/builder/Quotes.sol";
 
 contract SwapActionsBuilder is QuarkBuilderBase {
-    struct ZeroExSwapIntent {
-        uint256 chainId;
-        address entryPoint;
-        bytes swapData;
-        address sellToken;
-        uint256 sellAmount;
-        address buyToken;
-        uint256 buyAmount;
-        address feeToken;
-        uint256 feeAmount;
-        address sender;
-        bool isExactOut;
-        uint256 blockTimestamp;
-        bool preferAcross;
-        string paymentAssetSymbol;
-    }
-
     function swap(
-        ZeroExSwapIntent memory swapIntent,
+        ZeroExSwapIntent memory intent,
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory) {
         PaymentInfo.Payment memory payment =
-            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, swapIntent.paymentAssetSymbol);
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        IQuarkWallet.QuarkOperation memory operation;
-        Actions.Action memory action;
-        IQuarkWallet.QuarkOperation[] memory quarkOperationsArray;
-        Actions.Action[] memory actionsArray;
+        uint256[] memory amountOuts = new uint256[](1);
+        amountOuts[0] = intent.sellAmount;
+        string[] memory assetSymbolOuts = new string[](1);
+        assetSymbolOuts[0] = Accounts.findAssetPositions(intent.sellToken, intent.chainId, chainAccountsList).symbol;
+        uint256[] memory amountIns = new uint256[](1);
+        amountIns[0] = intent.buyAmount;
+        string[] memory assetSymbolIns = new string[](1);
+        assetSymbolIns[0] = Accounts.findAssetPositions(intent.buyToken, intent.chainId, chainAccountsList).symbol;
 
-        {
-            // Initialize swap max flag (when sell amount is max)
-            bool isMaxSwap = swapIntent.sellAmount == type(uint256).max;
-            // Convert swapIntent to user aggregated balance
-            if (isMaxSwap) {
-                swapIntent.sellAmount = Accounts.totalAvailableAsset(
-                    Accounts.findAssetPositions(swapIntent.sellToken, swapIntent.chainId, chainAccountsList).symbol,
-                    chainAccountsList,
-                    payment
-                );
-            }
-
-            // Then, swap `amount` of `assetSymbol` to `recipient`
-            (operation, action) = Actions.zeroExSwap(
-                Actions.ZeroExSwap({
-                    chainAccountsList: chainAccountsList,
-                    entryPoint: swapIntent.entryPoint,
-                    swapData: swapIntent.swapData,
-                    sellToken: swapIntent.sellToken,
-                    sellAssetSymbol: Accounts.findAssetPositions(
-                        swapIntent.sellToken, swapIntent.chainId, chainAccountsList
-                    ).symbol,
-                    sellAmount: swapIntent.sellAmount,
-                    buyToken: swapIntent.buyToken,
-                    buyAssetSymbol: Accounts.findAssetPositions(swapIntent.buyToken, swapIntent.chainId, chainAccountsList)
-                        .symbol,
-                    buyAmount: swapIntent.buyAmount,
-                    feeToken: swapIntent.feeToken,
-                    feeAssetSymbol: Accounts.findAssetPositions(swapIntent.feeToken, swapIntent.chainId, chainAccountsList)
-                        .symbol,
-                    feeAmount: swapIntent.feeAmount,
-                    chainId: swapIntent.chainId,
-                    sender: swapIntent.sender,
-                    isExactOut: swapIntent.isExactOut,
-                    blockTimestamp: swapIntent.blockTimestamp
-                }),
-                payment
-            );
-
-            ActionIntent memory actionIntent;
-            // Note: Scope to avoid stack too deep errors
-            {
-                uint256[] memory amountOuts = new uint256[](1);
-                amountOuts[0] = swapIntent.sellAmount;
-                string[] memory assetSymbolOuts = new string[](1);
-                assetSymbolOuts[0] =
-                    Accounts.findAssetPositions(swapIntent.sellToken, swapIntent.chainId, chainAccountsList).symbol;
-                uint256[] memory amountIns = new uint256[](1);
-                amountIns[0] = swapIntent.buyAmount;
-                string[] memory assetSymbolIns = new string[](1);
-                assetSymbolIns[0] =
-                    Accounts.findAssetPositions(swapIntent.buyToken, swapIntent.chainId, chainAccountsList).symbol;
-                actionIntent = ActionIntent({
-                    actor: swapIntent.sender,
-                    amountIns: amountIns,
-                    assetSymbolIns: assetSymbolIns,
-                    amountOuts: amountOuts,
-                    assetSymbolOuts: assetSymbolOuts,
-                    blockTimestamp: swapIntent.blockTimestamp,
-                    chainId: swapIntent.chainId,
-                    preferAcross: swapIntent.preferAcross
-                });
-            }
-
-            (quarkOperationsArray, actionsArray) = collectAssetsForAction({
-                actionIntent: actionIntent,
-                chainAccountsList: chainAccountsList,
-                payment: payment,
-                actionQuarkOperation: operation,
-                action: action
-            });
-        }
+        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
+        constructOperationsAndActions({
+            actionIntent: ActionIntent({
+                actor: intent.sender,
+                amountIns: amountIns,
+                assetSymbolIns: assetSymbolIns,
+                amountOuts: amountOuts,
+                assetSymbolOuts: assetSymbolOuts,
+                actionType: Actions.ACTION_TYPE_SWAP,
+                intent: abi.encode(intent),
+                blockTimestamp: intent.blockTimestamp,
+                chainId: intent.chainId,
+                preferAcross: intent.preferAcross
+            }),
+            chainAccountsList: chainAccountsList,
+            payment: payment
+        });
 
         return BuilderResult({
             version: VERSION,
@@ -131,86 +63,41 @@ contract SwapActionsBuilder is QuarkBuilderBase {
         });
     }
 
-    struct RecurringSwapIntent {
-        uint256 chainId;
-        address sellToken;
-        // For exact out swaps, this will be an estimate of the expected input token amount for the first swap
-        uint256 sellAmount;
-        address buyToken;
-        uint256 buyAmount;
-        bool isExactOut;
-        bytes path;
-        uint256 interval;
-        address sender;
-        uint256 blockTimestamp;
-        bool preferAcross;
-        string paymentAssetSymbol;
-    }
-
     // Note: We don't currently bridge the input token or the payment token for recurring swaps. Recurring swaps
     // are actions tied to assets on a single chain.
     function recurringSwap(
-        RecurringSwapIntent memory swapIntent,
+        RecurringSwapIntent memory intent,
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory) {
         PaymentInfo.Payment memory payment =
-            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, swapIntent.paymentAssetSymbol);
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        // Then, set up the recurring swap operation
-        (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.recurringSwap(
-            Actions.RecurringSwapParams({
-                chainAccountsList: chainAccountsList,
-                sellToken: swapIntent.sellToken,
-                sellAssetSymbol: Accounts.findAssetPositions(swapIntent.sellToken, swapIntent.chainId, chainAccountsList)
-                    .symbol,
-                sellAmount: swapIntent.sellAmount,
-                buyToken: swapIntent.buyToken,
-                buyAssetSymbol: Accounts.findAssetPositions(swapIntent.buyToken, swapIntent.chainId, chainAccountsList)
-                    .symbol,
-                buyAmount: swapIntent.buyAmount,
-                isExactOut: swapIntent.isExactOut,
-                path: swapIntent.path,
-                interval: swapIntent.interval,
-                chainId: swapIntent.chainId,
-                sender: swapIntent.sender,
-                blockTimestamp: swapIntent.blockTimestamp
-            }),
-            payment
-        );
+        uint256[] memory amountOuts = new uint256[](1);
+        amountOuts[0] = intent.sellAmount;
+        string[] memory assetSymbolOuts = new string[](1);
+        assetSymbolOuts[0] = Accounts.findAssetPositions(intent.sellToken, intent.chainId, chainAccountsList).symbol;
+        uint256[] memory amountIns = new uint256[](1);
+        amountIns[0] = intent.buyAmount;
+        string[] memory assetSymbolIns = new string[](1);
+        assetSymbolIns[0] = Accounts.findAssetPositions(intent.buyToken, intent.chainId, chainAccountsList).symbol;
 
-        ActionIntent memory actionIntent;
-        // Note: Scope to avoid stack too deep errors
-        {
-            uint256[] memory amountOuts = new uint256[](1);
-            amountOuts[0] = swapIntent.sellAmount;
-            string[] memory assetSymbolOuts = new string[](1);
-            assetSymbolOuts[0] =
-                Accounts.findAssetPositions(swapIntent.sellToken, swapIntent.chainId, chainAccountsList).symbol;
-            uint256[] memory amountIns = new uint256[](1);
-            amountIns[0] = swapIntent.buyAmount;
-            string[] memory assetSymbolIns = new string[](1);
-            assetSymbolIns[0] =
-                Accounts.findAssetPositions(swapIntent.buyToken, swapIntent.chainId, chainAccountsList).symbol;
-            actionIntent = ActionIntent({
-                actor: swapIntent.sender,
+        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
+        constructOperationsAndActions({
+            actionIntent: ActionIntent({
+                actor: intent.sender,
                 amountIns: amountIns,
                 assetSymbolIns: assetSymbolIns,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
-                blockTimestamp: swapIntent.blockTimestamp,
-                chainId: swapIntent.chainId,
-                preferAcross: swapIntent.preferAcross
-            });
-        }
-
-        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
-        collectAssetsForAction({
-            actionIntent: actionIntent,
+                actionType: Actions.ACTION_TYPE_RECURRING_SWAP,
+                intent: abi.encode(intent),
+                blockTimestamp: intent.blockTimestamp,
+                chainId: intent.chainId,
+                preferAcross: intent.preferAcross
+            }),
             chainAccountsList: chainAccountsList,
-            payment: payment,
-            actionQuarkOperation: operation,
-            action: action
+            payment: payment
         });
 
         return BuilderResult({

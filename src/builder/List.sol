@@ -38,6 +38,14 @@ library List {
         return list;
     }
 
+    function addUniqueItem(DynamicArray memory list, bytes memory item) internal pure returns (DynamicArray memory) {
+        if (contains(list, item)) {
+            return list;
+        }
+
+        return addItem(list, item);
+    }
+
     function get(DynamicArray memory list, uint256 index) internal pure returns (bytes memory) {
         if (index >= list.length) revert IndexOutOfBound();
         return list.bytesArray[index];
@@ -166,6 +174,10 @@ library List {
 
     function addUint256(DynamicArray memory list, uint256 item) internal pure returns (DynamicArray memory) {
         return addItem(list, abi.encode(item));
+    }
+
+    function addUniqueUint256(DynamicArray memory list, uint256 item) internal pure returns (DynamicArray memory) {
+        return addUniqueItem(list, abi.encode(item));
     }
 
     function getUint256(DynamicArray memory list, uint256 index) internal pure returns (uint256) {

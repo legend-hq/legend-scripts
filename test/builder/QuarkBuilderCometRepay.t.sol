@@ -27,8 +27,8 @@ contract QuarkBuilderCometRepayTest is Test, QuarkBuilderTest {
         uint256 amount,
         string[] memory collateralAssetSymbols,
         uint256[] memory collateralAmounts
-    ) internal pure returns (CometActionsBuilder.CometRepayIntent memory) {
-        return CometActionsBuilder.CometRepayIntent({
+    ) internal pure returns (QuarkBuilderBase.CometRepayIntent memory) {
+        return QuarkBuilderBase.CometRepayIntent({
             amount: amount,
             assetSymbol: assetSymbol,
             blockTimestamp: BLOCK_TIMESTAMP,
@@ -44,8 +44,8 @@ contract QuarkBuilderCometRepayTest is Test, QuarkBuilderTest {
 
     function setRepayPaymentAsset_(
         string memory paymentAssetSymbol,
-        CometActionsBuilder.CometRepayIntent memory repayIntent
-    ) internal pure returns (CometActionsBuilder.CometRepayIntent memory) {
+        QuarkBuilderBase.CometRepayIntent memory repayIntent
+    ) internal pure returns (QuarkBuilderBase.CometRepayIntent memory) {
         repayIntent.paymentAssetSymbol = paymentAssetSymbol;
         return repayIntent;
     }
@@ -400,7 +400,7 @@ contract QuarkBuilderCometRepayTest is Test, QuarkBuilderTest {
             morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
         });
 
-        CometActionsBuilder.CometRepayIntent memory repayIntent;
+        QuarkBuilderBase.CometRepayIntent memory repayIntent;
         // Local scope to avoid stack too deep
         {
             uint256[] memory collateralAmounts = new uint256[](1);

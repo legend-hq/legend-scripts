@@ -28,7 +28,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
         string[] memory collateralAssetSymbols,
         string memory paymentAssetSymbol
     ) internal pure returns (CometActionsBuilder.CometBorrowIntent memory) {
-        return CometActionsBuilder.CometBorrowIntent({
+        return QuarkBuilderBase.CometBorrowIntent({
             amount: amount,
             assetSymbol: assetSymbol,
             blockTimestamp: BLOCK_TIMESTAMP,
