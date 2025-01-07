@@ -20,6 +20,12 @@ legend-scripts/tests/Acceptance> ./Scripts/generate-contract-scripts.sh
 legend-scripts/tests/Acceptance> swift test
 ```
 
+Alternatively, generate and run tests in one step
+
+```sh
+legend-scripts> ./script/acceptance-tests.sh
+```
+
 ## Example Test
 
 ```swift

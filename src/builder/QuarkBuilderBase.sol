@@ -584,16 +584,15 @@ contract QuarkBuilderBase {
 
             // Get the first account that has a balance
             address payer;
+            if (paymentAssetPositions.accountBalances.length > 0) {
+                payer = paymentAssetPositions.accountBalances[0].account;
+            }
 
             for (uint256 j = 0; j < paymentAssetPositions.accountBalances.length; ++j) {
                 if (paymentAssetPositions.accountBalances[j].balance > 0) {
                     payer = paymentAssetPositions.accountBalances[j].account;
                     break;
                 }
-            }
-
-            if (payer == address(0)) {
-                continue;
             }
 
             uint256 netPaymentAssetBalanceOnChain = 0;
