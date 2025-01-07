@@ -121,10 +121,13 @@ contract QuarkBuilderBase {
         HashMap.Map memory assetsBridged = HashMap.newMap();
 
         for (uint256 i = 0; i < actionIntent.assetSymbolOuts.length; ++i) {
+            console.log("Hit index", i);
             string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
 
             uint256 aggregateAssetBalance =
                 getAggregateAssetBalance(actionIntent.chainId, assetSymbolOut, chainAccountsList);
+
+            console.log("Hit 0");
 
             // Assert that there are enough of the intent token to complete the action
             if (aggregateAssetBalance < actionIntent.amountOuts[i]) {
@@ -132,6 +135,7 @@ contract QuarkBuilderBase {
                 revert BadInputInsufficientFunds(assetSymbolOut, actionIntent.amountOuts[i], aggregateAssetBalance);
             }
 
+            console.log("Hit 1");
             if (needsBridgedFunds(assetSymbolOut, actionIntent.amountOuts[i], actionIntent.chainId, chainAccountsList))
             {
                 if (Actions.isRecurringAction(action)) {
@@ -147,6 +151,8 @@ contract QuarkBuilderBase {
                         assetSymbolOut, amountNeededOnChain, availableAssetBalance
                     );
                 }
+
+                console.log("Hit 2");
 
                 uint256 amountNeededOnDst = actionIntent.amountOuts[i];
                 (
@@ -168,20 +174,28 @@ contract QuarkBuilderBase {
                     payment
                 );
 
+                console.log("Hit 3");
+
                 if (amountLeftToBridge > 0 && unbridgeableBalance > 0) {
                     // Bad Input :: the specified amount exceeds the bridgeable balance
                     revert BadInputUnbridgeableFunds(assetSymbolOut, amountNeededOnDst, amountLeftToBridge);
                 }
+
+                console.log("Hit 4");
 
                 // Track how much is actually bridged for each asset
                 HashMap.addOrPutUint256(
                     assetsBridged, abi.encode(assetSymbolOut), amountNeededOnDst - amountLeftToBridge
                 );
 
+                console.log("Hit 5");
+
                 for (uint256 j = 0; j < bridgeQuarkOperations.length; ++j) {
                     List.addQuarkOperation(quarkOperations, bridgeQuarkOperations[j]);
                     List.addAction(actions, bridgeActions[j]);
                 }
+
+                console.log("Hit 6", amountLeftToBridge);
 
                 if (amountLeftToBridge > 0) {
                     bridgeErrorSymbol = assetSymbolOut;
@@ -190,6 +204,8 @@ contract QuarkBuilderBase {
                 }
             }
         }
+
+        console.log("Hit 7");
 
         for (uint256 i = 0; i < actionIntent.assetSymbolOuts.length; ++i) {
             string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
@@ -218,12 +234,16 @@ contract QuarkBuilderBase {
             });
         }
 
+        console.log("Hit 8");
+
         // Insert action and operation that will be wrapped with this
         List.addAction(actions, action);
         List.addQuarkOperation(quarkOperations, actionQuarkOperation);
 
         string memory quotePayResult = Strings.OK;
         uint256 totalQuoteAmount;
+
+        console.log("Hit 9");
 
         // Generate a QuotePay operation if the payment method is with tokens and the action is non-recurring
         if (!PaymentInfo.isOffchainPayment(payment) && !Actions.isRecurringAction(action)) {
@@ -250,20 +270,30 @@ contract QuarkBuilderBase {
             List.addQuarkOperation(quarkOperations, quotePayOperation);
         }
 
+        console.log("Hit 10");
+
         bool hasBridgeError = !Strings.stringEqIgnoreCase(bridgeErrorSymbol, "");
+
+        console.log("Has bridge error:", hasBridgeError);
         if (hasBridgeError || !Strings.isOk(quotePayResult)) {
             revert UnableToConstructActionIntent(
                 hasBridgeError, bridgeErrorSymbol, bridgeFees, quotePayResult, payment.currency, totalQuoteAmount
             );
         }
 
+        console.log("Hit 11");
+
         // Convert to array
         quarkOperationsArray = List.toQuarkOperationArray(quarkOperations);
         actionsArray = List.toActionArray(actions);
 
+        console.log("Hit 12");
+
         // Merge operations that are from the same chain into one Multicall operation
         (quarkOperationsArray, actionsArray) =
             QuarkOperationHelper.mergeSameChainOperations(quarkOperationsArray, actionsArray);
+
+        console.log("Hit 13");
 
         // Wrap operations around Paycall if payment is with token and the action is recurring
         if (!PaymentInfo.isOffchainPayment(payment) && Actions.isRecurringAction(action)) {
@@ -284,6 +314,8 @@ contract QuarkBuilderBase {
                 payment: payment
             });
         }
+
+        console.log("Hit 14");
     }
 
     /**
@@ -545,6 +577,7 @@ contract QuarkBuilderBase {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Actions.Action memory, string memory, uint256)
     {
+        console.log("Hit quotepay 1");
         // Checks the chain ids that have actions
         List.DynamicArray memory chainIdsInvolved = List.newList();
 
@@ -572,8 +605,14 @@ contract QuarkBuilderBase {
             });
         }
 
+        console.log("Hit quotepay 2");
+
         for (uint256 i = 0; i < args.chainAccountsList.length; ++i) {
             uint256 chainId = args.chainAccountsList[i].chainId;
+
+            console.log("Checking chain", chainId);
+
+            console.log("Hit quotepay 2.1");
 
             // Calculate the net payment balance on this chain
             // TODO: Need to be modified when supporting multiple accounts per chain, since this currently assumes all assets are in one account.
@@ -582,14 +621,24 @@ contract QuarkBuilderBase {
                 Accounts.findAssetPositions(paymentTokenSymbol, args.chainAccountsList[i].assetPositionsList);
             uint256 paymentAssetBalanceOnChain = Accounts.sumBalances(paymentAssetPositions);
 
+            console.log("Hit quotepay 2.2", paymentAssetBalanceOnChain);
+
             // TODO: Right now, we hack around lack of multi account support by just taking the first account with non-zero balance or defaulting to the first account
-            address payer = paymentAssetPositions.accountBalances[0].account;
+            address payer;
+
+            console.log("Hit quotepay 2.2.1");
             for (uint256 j = 0; j < paymentAssetPositions.accountBalances.length; ++j) {
                 if (paymentAssetPositions.accountBalances[j].balance > 0) {
                     payer = paymentAssetPositions.accountBalances[j].account;
                     break;
                 }
             }
+
+            if (payer == address(0)) {
+                continue;
+            }
+
+            console.log("Hit quotepay 2.3");
 
             uint256 netPaymentAssetBalanceOnChain = 0;
             if (
@@ -601,6 +650,8 @@ contract QuarkBuilderBase {
                     - HashMap.getOrDefaultUint256(assetsOutPerChain, abi.encode(chainId), 0);
             }
 
+            console.log("Hit quotepay 2.4");
+
             // Skip if there is no net payment balance on this chain
             if (netPaymentAssetBalanceOnChain == 0) {
                 continue;
@@ -609,10 +660,14 @@ contract QuarkBuilderBase {
             // Generate quote amount based on which chains have an operation on them
             uint256 quoteAmount = PaymentInfo.totalCost(args.payment, List.toUint256Array(chainIdsInvolved));
 
+            console.log("Hit quotepay 2.5");
+
             // Add the quote for the current chain if it is not already included in the sum
             if (!List.contains(chainIdsInvolved, chainId)) {
                 quoteAmount += PaymentInfo.findCostForChain(args.payment, chainId);
             }
+
+            console.log("Hit quotepay 2.6");
 
             // Skip if there is not enough net payment balance on this chain
             if (netPaymentAssetBalanceOnChain < quoteAmount) {
@@ -631,6 +686,8 @@ contract QuarkBuilderBase {
                 );
             }
 
+            console.log("Hit quotepay 2.7");
+
             (IQuarkWallet.QuarkOperation memory quotePayOperation, Actions.Action memory quotePayAction) = Actions
                 .quotePay(
                 Actions.QuotePayInfo({
@@ -644,8 +701,12 @@ contract QuarkBuilderBase {
                 args.payment
             );
 
+            console.log("Hit quotepay 2.8");
+
             return (quotePayOperation, quotePayAction, Strings.OK, quoteAmount);
         }
+
+        console.log("Hit quotepay 3");
 
         // Unable to construct a proper quote pay, so we try to find a chain that has enough of the payment token and then construct the totalQuoteAmount based on that.
         // Then we throw an error that contains the total quote amount.
@@ -678,6 +739,8 @@ contract QuarkBuilderBase {
                 break;
             }
         }
+
+        console.log("Hit quotepay 4");
 
         return (
             IQuarkWallet.QuarkOperation(bytes32(0), false, address(0), new bytes[](0), "", 0),

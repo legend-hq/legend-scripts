@@ -17,6 +17,7 @@ import {QuarkOperationHelper} from "src/builder/QuarkOperationHelper.sol";
 import {List} from "src/builder/List.sol";
 import {QuarkBuilderBase} from "src/builder/QuarkBuilderBase.sol";
 import {Quotes} from "src/builder/Quotes.sol";
+import {console} from "src/builder/console.sol";
 
 contract MorphoVaultActionsBuilder is QuarkBuilderBase {
     struct MorphoVaultSupplyIntent {
@@ -34,6 +35,16 @@ contract MorphoVaultActionsBuilder is QuarkBuilderBase {
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory) {
+        // bytes memory encodedMorphoVaultSupplyIntent = abi.encode(supplyIntent);
+        // bytes memory encodedChainAccountsList = abi.encode(chainAccountsList);
+        // bytes memory encodedQuote = abi.encode(quote);
+
+        // console.log("Morpho vault supply inputs");
+        // console.log("Hello");
+        // console.log("Intent: ", string(encodedMorphoVaultSupplyIntent));
+        // console.log("Chain account list: ", string(encodedChainAccountsList));
+        // console.log("Quote: ", string(encodedQuote));
+
         PaymentInfo.Payment memory payment =
             Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, supplyIntent.paymentAssetSymbol);
 

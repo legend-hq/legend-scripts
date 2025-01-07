@@ -506,6 +506,8 @@ library Actions {
             Accounts.getBalanceOnChain(bridgeInfo.assetSymbol, bridgeInfo.dstChainId, chainAccountsList);
         uint256 amountLeftToBridge = bridgeInfo.amountNeededOnDst - balanceOnDstChain;
 
+        console.log("Hit 2.1");
+
         // TODO: Need to augment with some logic to handle WETH/ETH if using Across. Also, we need to check if the counterpart token can/should be bridged
         // Check to see if there are counterpart tokens on the destination chain that can be used. If there are, subtract the balance from `amountLeftToBridge`
         if (TokenWrapper.hasWrapperContract(bridgeInfo.dstChainId, bridgeInfo.assetSymbol)) {
@@ -521,11 +523,15 @@ library Actions {
             amountLeftToBridge -= counterpartTokenAmountToUse;
         }
 
+        console.log("Hit 2.2");
+
         uint256 unbridgeableBalance = 0;
         uint256 totalBridgeFees = 0;
         // Iterate chainAccountList and find chains that can provide enough funds to bridge.
         // One optimization is to allow the client to provide optimal routes.
         for (uint256 i = 0; i < chainAccountsList.length; ++i) {
+            console.log("Hit 2.3 index:", i);
+
             // End loop if enough tokens have been bridged
             if (amountLeftToBridge == 0) {
                 break;
@@ -547,9 +553,12 @@ library Actions {
             Accounts.AssetPositions memory srcAssetPositions =
                 Accounts.findAssetPositions(bridgeInfo.assetSymbol, srcChainAccounts.assetPositionsList);
             Accounts.AccountBalance[] memory srcAccountBalances = srcAssetPositions.accountBalances;
+
+            console.log("Hit 2.4. Length:", srcAccountBalances.length);
             // TODO: Make logic smarter. Currently, this uses a greedy algorithm.
             // e.g. Optimize by trying to bridge with the least amount of bridge operations
             for (uint256 j = 0; j < srcAccountBalances.length; ++j) {
+                console.log("Hit 2.5. index:", j);
                 uint256 amountToBridge = srcAccountBalances[j].balance >= amountLeftToBridge
                     ? amountLeftToBridge
                     : srcAccountBalances[j].balance;
@@ -582,6 +591,8 @@ library Actions {
                     List.addAction(actions, action);
                     List.addQuarkOperation(quarkOperations, operation);
                 }
+
+                console.log("Hit 2.6. Amount left to bridge:", amountLeftToBridge);
             }
         }
 
@@ -692,23 +703,37 @@ library Actions {
         console.log("Bridging from", bridge.srcChainId);
         console.log("Bridging to", bridge.destinationChainId);
 
+        console.log("Hit across 1");
+
         Accounts.ChainAccounts memory srcChainAccounts =
             Accounts.findChainAccounts(bridge.srcChainId, bridge.chainAccountsList);
+
+        console.log("Hit across 2");
 
         Accounts.ChainAccounts memory dstChainAccounts =
             Accounts.findChainAccounts(bridge.destinationChainId, bridge.chainAccountsList);
 
+        console.log("Hit across 3");
+
         Accounts.AssetPositions memory srcAssetPositions =
             Accounts.findAssetPositions(bridge.assetSymbol, srcChainAccounts.assetPositionsList);
+
+        console.log("Hit across 4");
 
         Accounts.AssetPositions memory dstAssetPositions =
             Accounts.findAssetPositions(bridge.assetSymbol, dstChainAccounts.assetPositionsList);
 
+        console.log("Hit across 5");
+
         Accounts.QuarkSecret memory accountSecret =
             Accounts.findQuarkSecret(bridge.sender, srcChainAccounts.quarkSecrets);
 
+        console.log("Hit across 6");
+
         bytes[] memory scriptSources = new bytes[](1);
         scriptSources[0] = Across.bridgeScriptSource();
+
+        console.log("Hit across 7");
 
         // Make FFI call to fetch a quote from Across API
         (uint256 gasFee, uint256 variableFeePct) = FFI.requestAcrossQuote(
@@ -719,10 +744,14 @@ library Actions {
             bridge.amount
         );
 
+        console.log("Hit across 8");
+
         // The quote should consist of a fixed gas fee and variable fee. To calculate the input
         // amount, we scale the bridge.amount by the variable fee and add the fixed gas fee to it.
         uint256 inputAmount = bridge.amount * (1e18 + variableFeePct) / 1e18 + gasFee;
         uint256 outputAmount = bridge.amount;
+
+        console.log("Hit across 9");
 
         // if inputAmount exceeds balance on chain revert to balance on chain and compute output amount
         uint256 sumSrcBalance = Accounts.sumBalances(srcAssetPositions);
@@ -730,6 +759,8 @@ library Actions {
             inputAmount = sumSrcBalance;
             outputAmount = sumSrcBalance * (1e18 - variableFeePct) / 1e18 - gasFee;
         }
+
+        console.log("Hit across 10");
 
         // Construct QuarkOperation
         IQuarkWallet.QuarkOperation memory quarkOperation = IQuarkWallet.QuarkOperation({
@@ -752,6 +783,8 @@ library Actions {
             expiry: bridge.blockTimestamp + BRIDGE_EXPIRY_BUFFER
         });
 
+        console.log("Hit across 11");
+
         // Construct Action
         BridgeActionContext memory bridgeActionContext = BridgeActionContext({
             price: srcAssetPositions.usdPrice,
@@ -765,6 +798,8 @@ library Actions {
             bridgeType: BRIDGE_TYPE_ACROSS
         });
 
+        console.log("Hit across 12");
+
         Action memory action = Actions.Action({
             chainId: bridge.srcChainId,
             quarkAccount: bridge.sender,
@@ -775,6 +810,8 @@ library Actions {
             nonceSecret: accountSecret.nonceSecret,
             totalPlays: 1
         });
+
+        console.log("Hit across 13");
 
         return (quarkOperation, action, inputAmount, outputAmount);
     }
