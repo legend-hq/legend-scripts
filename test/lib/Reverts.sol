@@ -7,7 +7,8 @@ contract Reverts {
     error Whoops();
 
     function divideByZero() external pure {
-        uint256(100) / uint256(0);
+        uint256 result = uint256(100) / uint256(0);
+        result; // Supress unused variable warning
     }
 
     function revertSeven() external pure {
