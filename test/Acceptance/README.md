@@ -1,4 +1,3 @@
-
 # Acceptance Tests
 
 Acceptance tests verify the behavior of QuarkBuilder with human-digestible tests.
@@ -9,7 +8,7 @@ Acceptance tests verify the behavior of QuarkBuilder with human-digestible tests
 legend-scripts> FOUNDRY_PROFILE=ir forge build
 ```
 
-Then in `tests/Acceptance/` run:
+Then in `test/Acceptance/` run:
 
 ```sh
 legend-scripts/tests/Acceptance> ./Scripts/generate-contract-scripts.sh
@@ -19,6 +18,12 @@ legend-scripts/tests/Acceptance> ./Scripts/generate-contract-scripts.sh
 
 ```sh
 legend-scripts/tests/Acceptance> swift test
+```
+
+Alternatively, generate and run tests in one step
+
+```sh
+legend-scripts> ./script/acceptance-tests.sh
 ```
 
 ## Example Test
