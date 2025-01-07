@@ -582,11 +582,17 @@ contract QuarkBuilderBase {
                 Accounts.findAssetPositions(paymentTokenSymbol, args.chainAccountsList[i].assetPositionsList);
             uint256 paymentAssetBalanceOnChain = Accounts.sumBalances(paymentAssetPositions);
 
-            // Get the first account that has a balance
-            address payer;
-            if (paymentAssetPositions.accountBalances.length > 0) {
-                payer = paymentAssetPositions.accountBalances[0].account;
+            // TODO: Right now, we hack around lack of multi account support by just taking the first account with non-zero balance or defaulting to the first account
+
+            // if (paymentAssetPositions.accountBalances.length > 0) {
+            //     payer = paymentAssetPositions.accountBalances[0].account;
+            // }
+
+            if (paymentAssetPositions.accountBalances.length == 0) {
+                continue;
             }
+
+            address payer = paymentAssetPositions.accountBalances[0].account;
 
             for (uint256 j = 0; j < paymentAssetPositions.accountBalances.length; ++j) {
                 if (paymentAssetPositions.accountBalances[j].balance > 0) {
@@ -594,6 +600,10 @@ contract QuarkBuilderBase {
                     break;
                 }
             }
+
+            // if (payer == address(0)) {
+            //     continue;
+            // }
 
             uint256 netPaymentAssetBalanceOnChain = 0;
             if (
