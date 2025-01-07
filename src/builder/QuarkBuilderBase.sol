@@ -592,8 +592,6 @@ contract QuarkBuilderBase {
                     - HashMap.getOrDefaultUint256(assetsOutPerChain, abi.encode(chainId), 0);
             }
 
-            console.log("Chain ID: %d, Net Payment Balance: %d", chainId, netPaymentAssetBalanceOnChain);
-
             // Skip if there is no net payment balance on this chain
             if (netPaymentAssetBalanceOnChain == 0) {
                 continue;
