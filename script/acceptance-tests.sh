@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-FOUNDRY_PROFILE=ir forge build
+FOUNDRY_PROFILE=ir forge build --skip test --skip script
 cd test/Acceptance
 ./Scripts/generate-contract-scripts.sh
 

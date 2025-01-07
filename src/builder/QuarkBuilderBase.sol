@@ -582,20 +582,6 @@ contract QuarkBuilderBase {
                 Accounts.findAssetPositions(paymentTokenSymbol, args.chainAccountsList[i].assetPositionsList);
             uint256 paymentAssetBalanceOnChain = Accounts.sumBalances(paymentAssetPositions);
 
-            // TODO: Right now, we hack around lack of multi account support by just taking the first account with non-zero balance or defaulting to the first account
-            if (paymentAssetPositions.accountBalances.length == 0) {
-                continue;
-            }
-
-            address payer = paymentAssetPositions.accountBalances[0].account;
-
-            for (uint256 j = 0; j < paymentAssetPositions.accountBalances.length; ++j) {
-                if (paymentAssetPositions.accountBalances[j].balance > 0) {
-                    payer = paymentAssetPositions.accountBalances[j].account;
-                    break;
-                }
-            }
-
             uint256 netPaymentAssetBalanceOnChain = 0;
             if (
                 paymentAssetBalanceOnChain + HashMap.getOrDefaultUint256(assetsInPerChain, abi.encode(chainId), 0)
@@ -605,6 +591,8 @@ contract QuarkBuilderBase {
                     + HashMap.getOrDefaultUint256(assetsInPerChain, abi.encode(chainId), 0)
                     - HashMap.getOrDefaultUint256(assetsOutPerChain, abi.encode(chainId), 0);
             }
+
+            console.log("Chain ID: %d, Net Payment Balance: %d", chainId, netPaymentAssetBalanceOnChain);
 
             // Skip if there is no net payment balance on this chain
             if (netPaymentAssetBalanceOnChain == 0) {
@@ -635,6 +623,9 @@ contract QuarkBuilderBase {
                     quoteAmount
                 );
             }
+
+            // TODO: Right now we don't support multiple accounts
+            address payer = paymentAssetPositions.accountBalances[0].account;
 
             (IQuarkWallet.QuarkOperation memory quotePayOperation, Actions.Action memory quotePayAction) = Actions
                 .quotePay(
