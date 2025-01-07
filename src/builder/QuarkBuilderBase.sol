@@ -223,8 +223,6 @@ contract QuarkBuilderBase {
      * @param actor The address of the actor who is initiating the action
      * @param amountOuts The amounts of assets to be transferred out from actor's account
      * @param assetSymbolOuts The symbols of the assets to be transferred out from actor's account
-     * @param amountIns The amounts of assets to be transferred in to actor's account
-     * @param assetSymbolIns The symbols of the assets to be transferred in to actor's account
      * @param actionType The action type string of the intent
      * @param intent The encoded intent data
      * @param blockTimestamp The block timestamp at which the action is initiated
@@ -235,8 +233,6 @@ contract QuarkBuilderBase {
         address actor;
         uint256[] amountOuts;
         string[] assetSymbolOuts;
-        uint256[] amountIns;
-        string[] assetSymbolIns;
         string actionType;
         bytes intent;
         uint256 blockTimestamp;
@@ -258,10 +254,7 @@ contract QuarkBuilderBase {
         returns (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray)
     {
         // Sanity check on ActionIntent
-        if (
-            actionIntent.amountOuts.length != actionIntent.assetSymbolOuts.length
-                || actionIntent.amountIns.length != actionIntent.assetSymbolIns.length
-        ) {
+        if (actionIntent.amountOuts.length != actionIntent.assetSymbolOuts.length) {
             revert InvalidInput();
         }
 

@@ -11,7 +11,7 @@ let allTests: [AcceptanceTest] = transferTests +
     cometRepayTests +
     cometSupplyTests +
     cometWithdrawTests +
-    morphoBorrowTests
+    morphoBorrowTests +
     morphoVaultSupplyTests +
     swapTests
 
@@ -252,10 +252,6 @@ enum Call: CustomStringConvertible, Equatable {
                         address: to, 
                         data: data
                     ),
-                    network: network
-                )
-            }
-        }
                     network: network
                 )
             }
@@ -776,8 +772,6 @@ enum Token: Hashable, Equatable {
             return 8
         case .eth, .weth, .link:
             return 18
-        case .wbtc:
-            return 8
         case .unknownToken:
             return 0
         }
@@ -1171,7 +1165,7 @@ class Context {
 
         case let .morphoBorrow(from, borrowAmount, collateralAmount, network):
             return try await QuarkBuilder.morphoBorrow(
-                borrowIntent: .init(
+                intent: .init(
                     amount: borrowAmount.amount,
                     assetSymbol: borrowAmount.token.symbol,
                     blockTimestamp: 0,

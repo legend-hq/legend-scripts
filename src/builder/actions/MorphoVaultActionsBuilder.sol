@@ -31,15 +31,11 @@ contract MorphoVaultActionsBuilder is QuarkBuilderBase {
         amountOuts[0] = intent.amount;
         string[] memory assetSymbolOuts = new string[](1);
         assetSymbolOuts[0] = intent.assetSymbol;
-        uint256[] memory amountIns = new uint256[](0);
-        string[] memory assetSymbolIns = new string[](0);
 
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.sender,
-                amountIns: amountIns,
-                assetSymbolIns: assetSymbolIns,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
                 actionType: Actions.ACTION_TYPE_MORPHO_VAULT_SUPPLY,
@@ -71,16 +67,6 @@ contract MorphoVaultActionsBuilder is QuarkBuilderBase {
         PaymentInfo.Payment memory payment =
             Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        uint256 actualWithdrawAmount = intent.amount;
-        if (intent.amount == type(uint256).max) {
-            actualWithdrawAmount =
-                morphoWithdrawMaxAmount(chainAccountsList, intent.chainId, intent.assetSymbol, intent.withdrawer);
-        }
-
-        uint256[] memory amountIns = new uint256[](1);
-        amountIns[0] = actualWithdrawAmount;
-        string[] memory assetSymbolIns = new string[](1);
-        assetSymbolIns[0] = intent.assetSymbol;
         uint256[] memory amountOuts = new uint256[](0);
         string[] memory assetSymbolOuts = new string[](0);
 
@@ -88,8 +74,6 @@ contract MorphoVaultActionsBuilder is QuarkBuilderBase {
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.withdrawer,
-                amountIns: amountIns,
-                assetSymbolIns: assetSymbolIns,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
                 actionType: Actions.ACTION_TYPE_MORPHO_VAULT_WITHDRAW,

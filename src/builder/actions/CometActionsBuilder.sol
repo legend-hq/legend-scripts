@@ -49,8 +49,6 @@ contract CometActionsBuilder is QuarkBuilderBase {
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.repayer,
-                amountIns: intent.collateralAmounts,
-                assetSymbolIns: intent.collateralAssetSymbols,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
                 actionType: Actions.ACTION_TYPE_REPAY,
@@ -84,17 +82,10 @@ contract CometActionsBuilder is QuarkBuilderBase {
             revert InvalidInput();
         }
 
-        uint256[] memory amountIns = new uint256[](1);
-        amountIns[0] = intent.amount;
-        string[] memory assetSymbolIns = new string[](1);
-        assetSymbolIns[0] = intent.assetSymbol;
-
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.borrower,
-                amountIns: amountIns,
-                assetSymbolIns: assetSymbolIns,
                 amountOuts: intent.collateralAmounts,
                 assetSymbolOuts: intent.collateralAssetSymbols,
                 actionType: Actions.ACTION_TYPE_BORROW,
@@ -128,15 +119,11 @@ contract CometActionsBuilder is QuarkBuilderBase {
         amountOuts[0] = intent.amount;
         string[] memory assetSymbolOuts = new string[](1);
         assetSymbolOuts[0] = intent.assetSymbol;
-        uint256[] memory amountIns = new uint256[](0);
-        string[] memory assetSymbolIns = new string[](0);
 
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.sender,
-                amountIns: amountIns,
-                assetSymbolIns: assetSymbolIns,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
                 actionType: Actions.ACTION_TYPE_SUPPLY,
@@ -167,17 +154,6 @@ contract CometActionsBuilder is QuarkBuilderBase {
         PaymentInfo.Payment memory payment =
             Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        uint256 actualWithdrawAmount = intent.amount;
-        if (intent.amount == type(uint256).max) {
-            // When doing a max withdraw, we need to find the actual approximate amount instead of using uint256 max
-            actualWithdrawAmount =
-                cometWithdrawMaxAmount(chainAccountsList, intent.chainId, intent.comet, intent.withdrawer);
-        }
-
-        uint256[] memory amountIns = new uint256[](1);
-        amountIns[0] = actualWithdrawAmount;
-        string[] memory assetSymbolIns = new string[](1);
-        assetSymbolIns[0] = intent.assetSymbol;
         uint256[] memory amountOuts = new uint256[](0);
         string[] memory assetSymbolOuts = new string[](0);
 
@@ -185,8 +161,6 @@ contract CometActionsBuilder is QuarkBuilderBase {
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.withdrawer,
-                amountIns: amountIns,
-                assetSymbolIns: assetSymbolIns,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
                 actionType: Actions.ACTION_TYPE_WITHDRAW,

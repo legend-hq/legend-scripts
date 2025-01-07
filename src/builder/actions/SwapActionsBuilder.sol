@@ -31,17 +31,11 @@ contract SwapActionsBuilder is QuarkBuilderBase {
         amountOuts[0] = intent.sellAmount;
         string[] memory assetSymbolOuts = new string[](1);
         assetSymbolOuts[0] = Accounts.findAssetPositions(intent.sellToken, intent.chainId, chainAccountsList).symbol;
-        uint256[] memory amountIns = new uint256[](1);
-        amountIns[0] = intent.buyAmount;
-        string[] memory assetSymbolIns = new string[](1);
-        assetSymbolIns[0] = Accounts.findAssetPositions(intent.buyToken, intent.chainId, chainAccountsList).symbol;
 
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.sender,
-                amountIns: amountIns,
-                assetSymbolIns: assetSymbolIns,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
                 actionType: Actions.ACTION_TYPE_SWAP,
@@ -77,17 +71,11 @@ contract SwapActionsBuilder is QuarkBuilderBase {
         amountOuts[0] = intent.sellAmount;
         string[] memory assetSymbolOuts = new string[](1);
         assetSymbolOuts[0] = Accounts.findAssetPositions(intent.sellToken, intent.chainId, chainAccountsList).symbol;
-        uint256[] memory amountIns = new uint256[](1);
-        amountIns[0] = intent.buyAmount;
-        string[] memory assetSymbolIns = new string[](1);
-        assetSymbolIns[0] = Accounts.findAssetPositions(intent.buyToken, intent.chainId, chainAccountsList).symbol;
 
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.sender,
-                amountIns: amountIns,
-                assetSymbolIns: assetSymbolIns,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
                 actionType: Actions.ACTION_TYPE_RECURRING_SWAP,

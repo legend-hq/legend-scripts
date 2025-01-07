@@ -32,15 +32,11 @@ contract TransferActionsBuilder is QuarkBuilderBase {
         amountOuts[0] = intent.amount;
         string[] memory assetSymbolOuts = new string[](1);
         assetSymbolOuts[0] = intent.assetSymbol;
-        uint256[] memory amountIns = new uint256[](0);
-        string[] memory assetSymbolIns = new string[](0);
 
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.sender,
-                amountIns: amountIns,
-                assetSymbolIns: assetSymbolIns,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
                 actionType: Actions.ACTION_TYPE_TRANSFER,
