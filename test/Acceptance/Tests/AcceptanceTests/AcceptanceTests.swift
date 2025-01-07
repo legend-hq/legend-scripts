@@ -10,7 +10,8 @@ let allTests: [AcceptanceTest] = transferTests +
     cometBorrowTests +
     cometRepayTests +
     cometSupplyTests +
-    cometWithdrawTests
+    cometWithdrawTests +
+    morphoBorrowTests
 
 let tests = allTests.filter { !$0.skip }
 let filteredTests = tests.contains { $0.only } ? tests.filter { $0.only } : tests
@@ -33,6 +34,12 @@ enum Call: CustomStringConvertible, Equatable {
         network: Network
     )
     case quotePay(payment: TokenAmount, payee: Account, quote: Quote)
+    case supplyCollateralAndBorrowFromMorpho(
+        borrowAmount: TokenAmount,
+        collateralAmount: TokenAmount,
+        market: Morpho,
+        network: Network
+    )
     case multicall(_ calls: [Call])
     case withdrawFromComet(tokenAmount: TokenAmount, market: Comet, network: Network)
     case wrapAsset(_ token: Token)
@@ -174,6 +181,20 @@ enum Call: CustomStringConvertible, Equatable {
             }
         }
 
+        if scriptAddress == getScriptAddress(MorphoActions.creationCode) {
+            if let (_, marketParams, collateralTokenAmount, borrowTokenAmount) = try? MorphoActions.supplyCollateralAndBorrowDecode(input: calldata) {
+                let collateralToken = Token.from(network: network, address: marketParams.collateralToken)
+                let borrowToken = Token.from(network: network, address: marketParams.loanToken)
+
+                return .supplyCollateralAndBorrowFromMorpho(
+                    borrowAmount: TokenAmount(fromWei: borrowTokenAmount, ofToken: borrowToken),
+                    collateralAmount: TokenAmount(fromWei: collateralTokenAmount, ofToken: collateralToken),
+                    market: Morpho(collateralToken: collateralToken, borrowToken: borrowToken),
+                    network: network
+                )
+            }
+        }
+
         if scriptAddress == getScriptAddress(WrapperActions.creationCode) {
             if let (_) = try? WrapperActions.wrapAllETHDecode(input: calldata) {
                 return .wrapAsset(.eth)
@@ -228,6 +249,8 @@ enum Call: CustomStringConvertible, Equatable {
             return "multicall(\(calls.map { $0.description }.joined(separator: ", ")))"
         case let .wrapAsset(token):
             return "wrapAsset(\(token.symbol))"
+        case let .supplyCollateralAndBorrowFromMorpho(borrowAmount, collateralAmount, market, network):
+            return "supplyCollateralAndBorrowFromMorpho(borrow \(borrowAmount.amount) \(borrowAmount.token.symbol), supply \(collateralAmount.amount) \(collateralAmount.token.symbol) from \(market.description) on \(network.description))"
         case let .unknownFunctionCall(name, function, value):
             return "unknownFunctionCall(\(name), \(function), \(value))"
         case let .unknownScriptCall(scriptSource, calldata):
@@ -389,6 +412,31 @@ enum Comet: Hashable, Equatable {
     }
 }
 
+struct Morpho: Equatable {
+    let collateralToken: Token
+    let borrowToken: Token
+
+    init(collateralToken ct: Token, borrowToken bt: Token) {
+        self.collateralToken = ct
+        self.borrowToken = bt
+    }
+
+    static func == (lhs: Morpho, rhs: Morpho) -> Bool {
+        return lhs.collateralToken == rhs.collateralToken && lhs.borrowToken == rhs.borrowToken
+    }
+
+    static func morpho(_ collateralToken: Token, _ borrowToken: Token) -> Morpho {
+        return Morpho(
+            collateralToken: collateralToken,
+            borrowToken: borrowToken
+        )
+    }
+
+    var description: String {
+        return "Morpho(\(self.collateralToken.symbol)/\(self.borrowToken.symbol))"
+    }
+}
+
 enum Quote: Hashable, Equatable {
     case basic
     case custom(quoteId: Hex, prices: [Token: Double], fees: [Network: Double])
@@ -445,9 +493,10 @@ enum Token: Hashable, Equatable {
     case weth
     case link
     case usdt
+    case wbtc
     case unknownToken(EthAddress)
 
-    static let knownCases: [Token] = [.usdc, .eth, .weth, .link, .usdt]
+    static let knownCases: [Token] = [.usdc, .eth, .weth, .link, .usdt, .wbtc]
 
     static let networkTokenAddress: [Network: [Token: EthAddress]] = [
         .ethereum: [
@@ -456,6 +505,7 @@ enum Token: Hashable, Equatable {
             .usdc: EthAddress("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
             .link: EthAddress("0x514910771af9ca656af840dff83e8264ecf986ca"),
             .usdt: EthAddress("0xdac17f958d2ee523a2206206994597c13d831ec7"),
+            .wbtc: EthAddress("0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"),
         ],
         .base: [
             .eth: EthAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"),
@@ -463,6 +513,7 @@ enum Token: Hashable, Equatable {
             .usdc: EthAddress("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"),
             .link: EthAddress("0x514910771af9ca656af840dff83e8264ecf986ca"),  // Link is not actually deployed on Base
             .usdt: EthAddress("0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2"),
+            .wbtc: EthAddress("0x0555E30da8f98308EdB960aa94C0Db47230d2B9c"),
         ],
         .arbitrum: [
             .eth: EthAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"),
@@ -470,6 +521,7 @@ enum Token: Hashable, Equatable {
             .usdc: EthAddress("0xaf88d065e77c8cC2239327C5EDb3A432268e5831"),
             .link: EthAddress("0xf97f4df75117a78c1A5a0DBb814Af92458539FB4"),
             .usdt: EthAddress("0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9"),
+            .wbtc: EthAddress("0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f"),
         ],
     ]
 
@@ -510,6 +562,8 @@ enum Token: Hashable, Equatable {
             return "WETH"
         case .link:
             return "LINK"
+        case .wbtc:
+            return "WBTC"
         case let .unknownToken(address):
             return "UnknownToken(\(address.description))"
         }
@@ -519,6 +573,8 @@ enum Token: Hashable, Equatable {
         switch self {
         case .usdc, .usdt:
             return 6
+        case .wbtc:
+            return 8
         case .eth, .weth, .link:
             return 18
         case .unknownToken:
@@ -534,6 +590,8 @@ enum Token: Hashable, Equatable {
             return 4000.0
         case .link:
             return 25.0
+        case .wbtc:
+            return 100_000.0
         case .unknownToken:
             return 0
         }
@@ -603,6 +661,7 @@ indirect enum When {
     case cometRepay(from: Account, market: Comet, repayAmount: TokenAmount, collateralAmounts: [TokenAmount], on: Network)
     case cometSupply(from: Account, market: Comet, amount: TokenAmount, on: Network)
     case cometWithdraw(from: Account, market: Comet, amount: TokenAmount, on: Network)
+    case morphoBorrow(from: Account, borrowAmount: TokenAmount, collateralAmount: TokenAmount, on: Network)
     case payWith(currency: Token, When)
 
     var sender: Account {
@@ -616,6 +675,8 @@ indirect enum When {
         case let .cometRepay(from, _, _, _, _):
             return from
         case let .cometWithdraw(from, _, _, _):
+            return from
+        case let .morphoBorrow(from, _, _, _):
             return from
         case let .payWith(_, intent):
             return intent.sender
@@ -894,6 +955,30 @@ class Context {
                 withFunctions: ffis
             )
 
+        case let .morphoBorrow(from, borrowAmount, collateralAmount, network):
+            return try await QuarkBuilder.morphoBorrow(
+                borrowIntent: .init(
+                    amount: borrowAmount.amount,
+                    assetSymbol: borrowAmount.token.symbol,
+                    blockTimestamp: 0,
+                    borrower: from.address,
+                    chainId: BigUInt(network.chainId),
+                    collateralAmount: collateralAmount.amount,
+                    collateralAssetSymbol: collateralAmount.token.symbol,
+                    preferAcross: true,
+                    paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                ),
+                chainAccountsList: chainAccounts,
+                quote: .init(
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    issuedAt: 0,
+                    expiresAt: BigUInt(Date(timeIntervalSinceNow: 1_000_000).timeIntervalSince1970),
+                    assetQuotes: assetQuotes,
+                    networkOperationFees: networkOperationFees
+                ),
+                withFunctions: ffis
+            )
         case let .transfer(from, to, amount, network):
             return try await QuarkBuilder.transfer(
                 transferIntent: .init(
