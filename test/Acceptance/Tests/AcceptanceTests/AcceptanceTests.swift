@@ -536,7 +536,7 @@ enum MorphoVault: Hashable, Equatable {
         }
     }
 
-    func asset(network: Network) -> EthAddress {
+    func asset(network: Network) -> EthAddress? {
         switch self {
         case .usdc:
             return Token.usdc.address(network: network)
@@ -689,9 +689,10 @@ enum Token: Hashable, Equatable {
     case link
     case usdt
     case wbtc
+    case degen
     case unknownToken(EthAddress)
 
-    static let knownCases: [Token] = [.usdc, .eth, .weth, .link, .usdt, .wbtc]
+    static let knownCases: [Token] = [.usdc, .eth, .weth, .link, .usdt, .wbtc, .degen]
 
     static let networkTokenAddress: [Network: [Token: EthAddress]] = [
         .ethereum: [
@@ -709,6 +710,7 @@ enum Token: Hashable, Equatable {
             .link: EthAddress("0x514910771af9ca656af840dff83e8264ecf986ca"), // Link is not actually deployed on Base
             .usdt: EthAddress("0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2"),
             .wbtc: EthAddress("0x0555E30da8f98308EdB960aa94C0Db47230d2B9c"),
+            .degen: EthAddress("0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed"),
         ],
         .arbitrum: [
             .eth: EthAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"),
@@ -759,6 +761,8 @@ enum Token: Hashable, Equatable {
             return "LINK"
         case .wbtc:
             return "WBTC"
+        case .degen:
+            return "DEGEN"
         case let .unknownToken(address):
             return "UnknownToken(\(address.description))"
         }
@@ -770,7 +774,7 @@ enum Token: Hashable, Equatable {
             return 6
         case .wbtc:
             return 8
-        case .eth, .weth, .link:
+        case .eth, .weth, .link, .degen:
             return 18
         case .unknownToken:
             return 0
@@ -787,6 +791,8 @@ enum Token: Hashable, Equatable {
             return 25.0
         case .wbtc:
             return 100_000.0
+        case .degen:
+            return 2.0
         case .unknownToken:
             return 0
         }
@@ -796,12 +802,8 @@ enum Token: Hashable, Equatable {
         return symbol
     }
 
-    func address(network: Network) -> EthAddress {
-        if let address = Token.networkTokenAddress[network]?[self] {
-            return address
-        } else {
-            fatalError("Unknown token \(self) for network \(network)")
-        }
+    func address(network: Network) -> EthAddress? {
+        Token.networkTokenAddress[network]?[self]
     }
 }
 
@@ -824,7 +826,13 @@ struct TokenAmount: Equatable {
     }
 
     static func == (lhs: TokenAmount, rhs: TokenAmount) -> Bool {
-        return lhs.amount == rhs.amount && lhs.token == rhs.token
+        guard lhs.token == rhs.token else {
+            return false
+        }
+
+        // Compare amounts with a tolerance of 0.01%
+        let difference = lhs.amount > rhs.amount ? lhs.amount - rhs.amount : rhs.amount - lhs.amount
+        return difference * 10000 <= lhs.amount
     }
 
     static func amt(_ amount: Double, _ token: Token) -> TokenAmount {
@@ -961,7 +969,7 @@ class Context {
                         nonceSecret: Hex(
                             "0x5555555555555555555555555555555555555555555555555555555555555555"
                         )
-                    ),
+                    )
                 ],
                 assetPositionsList: reifyTokenPositions(network: network),
                 cometPositions: reifyCometPositions(network: network),
@@ -1233,16 +1241,22 @@ class Context {
                 withFunctions: ffis
             )
         case let .swap(from, sellAmount, buyAmount, exchange, network):
+            guard let sellToken = sellAmount.token.address(network: network),
+                let buyToken = buyAmount.token.address(network: network)
+            else {
+                fatalError("Cannot swap unknown token")
+            }
+
             return try await QuarkBuilder.swap(
                 intent: .init(
                     chainId: BigUInt(network.chainId),
                     entryPoint: exchange.entryPoint,
                     swapData: exchange.swapData,
-                    sellToken: sellAmount.token.address(network: network),
+                    sellToken: sellToken,
                     sellAmount: sellAmount.amount,
-                    buyToken: buyAmount.token.address(network: network),
+                    buyToken: buyToken,
                     buyAmount: buyAmount.amount,
-                    feeToken: buyAmount.token.address(network: network),
+                    feeToken: buyToken,
                     feeAmount: BigUInt(10),
                     sender: from.address,
                     isExactOut: false,
@@ -1265,9 +1279,13 @@ class Context {
     }
 
     func reifyTokenPositions(network: Network) -> [QuarkBuilder.Accounts.AssetPositions] {
-        Token.knownCases.map { token in
-            QuarkBuilder.Accounts.AssetPositions(
-                asset: token.address(network: network),
+        Token.knownCases.compactMap { token in
+            guard let asset = token.address(network: network) else {
+                return nil
+            }
+
+            return QuarkBuilder.Accounts.AssetPositions(
+                asset: asset,
                 symbol: token.symbol,
                 decimals: BigUInt(token.decimals),
                 usdPrice: BigUInt(token.defaultUsdPrice),
@@ -1284,7 +1302,7 @@ class Context {
     }
 
     func reifyCometPositions(network: Network) -> [QuarkBuilder.Accounts.CometPositions] {
-        (cometPositions[network] ?? [:]).map { comet, accountPositions in
+        (cometPositions[network] ?? [:]).compactMap { comet, accountPositions in
             var collateralPositions: [Token: [Account: BigUInt]] = [:]
             for (account, position) in accountPositions {
                 for (token, amount) in position.2 {
@@ -1292,17 +1310,25 @@ class Context {
                 }
             }
 
+            guard let baseAsset = comet.baseAsset.address(network: network) else {
+                return nil
+            }
+
             return QuarkBuilder.Accounts.CometPositions(
                 comet: comet.address(network: network),
                 basePosition: QuarkBuilder.Accounts.CometBasePosition(
-                    asset: comet.baseAsset.address(network: network),
+                    asset: baseAsset,
                     accounts: accountPositions.map { account, _ in account.address },
                     borrowed: accountPositions.map { _, position in position.1 },
                     supplied: accountPositions.map { _, position in position.0 }
                 ),
-                collateralPositions: collateralPositions.map { token, accountAmounts in
-                    QuarkBuilder.Accounts.CometCollateralPosition(
-                        asset: token.address(network: network),
+                collateralPositions: collateralPositions.compactMap { token, accountAmounts in
+                    guard let asset = token.address(network: network) else {
+                        return nil
+                    }
+                    
+                    return QuarkBuilder.Accounts.CometCollateralPosition(
+                        asset: asset,
                         accounts: accountAmounts.map { account, _ in account.address },
                         balances: accountAmounts.map { _, amount in amount }
                     )
@@ -1312,9 +1338,13 @@ class Context {
     }
 
     func reifyMorphoVaultPositions(network: Network) -> [QuarkBuilder.Accounts.MorphoVaultPositions] {
-        (morphoVaultPositions[network] ?? [:]).map { vault, accountPositions in
-            QuarkBuilder.Accounts.MorphoVaultPositions(
-                asset: vault.asset(network: network),
+        (morphoVaultPositions[network] ?? [:]).compactMap { vault, accountPositions in
+            guard let asset = vault.asset(network: network) else {
+                return nil
+            }
+            
+            return QuarkBuilder.Accounts.MorphoVaultPositions(
+                asset: asset,
                 accounts: accountPositions.map { $0.key.address },
                 balances: accountPositions.map { $0.value },
                 vault: vault.address(network: network)

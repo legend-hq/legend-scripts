@@ -47,7 +47,6 @@ contract QuarkBuilderBase {
 
     /* ===== Custom Errors ===== */
 
-    error AssetPositionNotFound();
     error BadInputInsufficientFunds(string assetSymbol, uint256 requiredAmount, uint256 actualAmount);
     error BadInputInsufficientFundsForRecurring(string assetSymbol, uint256 requiredAmount, uint256 actualAmount);
     error BadInputUnbridgeableFunds(string assetSymbol, uint256 requiredAmount, uint256 amountLeftToBridge);

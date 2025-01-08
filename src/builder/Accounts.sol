@@ -11,6 +11,7 @@ import {TokenWrapper} from "./TokenWrapper.sol";
 
 library Accounts {
     error QuarkSecretNotFound(address account);
+    error AssetPositionNotFound(string symbol);
 
     struct ChainAccounts {
         uint256 chainId;
@@ -181,6 +182,23 @@ library Accounts {
     {
         ChainAccounts memory chainAccounts = findChainAccounts(chainId, chainAccountsList);
         return findAssetPositions(assetAddress, chainAccounts.assetPositionsList);
+    }
+
+    // Finds the first asset position for the given symbol in the chain accounts list
+    function findFirstAssetPositions(string memory assetSymbol, ChainAccounts[] memory chainAccountsList)
+        internal
+        pure
+        returns (AssetPositions memory found)
+    {
+        for (uint256 i = 0; i < chainAccountsList.length; ++i) {
+            AssetPositions memory assetPositions =
+                findAssetPositions(assetSymbol, chainAccountsList[i].assetPositionsList);
+            if (assetPositions.asset != address(0)) {
+                return assetPositions;
+            }
+        }
+
+        revert AssetPositionNotFound(assetSymbol);
     }
 
     function findQuarkSecret(address account, Accounts.QuarkSecret[] memory quarkSecrets)

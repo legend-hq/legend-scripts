@@ -68,10 +68,19 @@ library Quotes {
             Accounts.AssetPositions memory singularAssetPositionsForSymbol =
                 Accounts.findAssetPositions(symbol, chainAccountListByChainId.assetPositionsList);
 
+            // Even if an asset doesn't exist on the current chain, we still need the payment cost
+            // in terms of the asset for the current chain. This assumes that the asset has the same
+            // decimals across all chains
+            uint256 decimals = singularAssetPositionsForSymbol.decimals;
+            if (decimals == 0) {
+                Accounts.AssetPositions memory firstAssetPositions =
+                    Accounts.findFirstAssetPositions(symbol, chainAccountsList);
+                decimals = firstAssetPositions.decimals;
+            }
+
             chainCosts[i] = PaymentInfo.ChainCost({
                 chainId: networkOperationFee.chainId,
-                amount: (networkOperationFee.price * (10 ** singularAssetPositionsForSymbol.decimals))
-                    / Math.subtractFlooredAtOne(assetQuote.price, 1)
+                amount: (networkOperationFee.price * (10 ** decimals)) / Math.subtractFlooredAtOne(assetQuote.price, 1)
             });
         }
 

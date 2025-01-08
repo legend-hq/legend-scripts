@@ -23,3 +23,5 @@ node_modules/
 /quark-out.release-v*.zip
 /releases
 archive.zip
+
+.DS_Store
