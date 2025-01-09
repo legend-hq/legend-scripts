@@ -40,7 +40,7 @@ let transferTests: [AcceptanceTest] = [
         expect: .revert(
             .unableToConstructActionIntent(
                 false,
-                Token.usdc.symbol,
+                "",
                 0,
                 "UNABLE_TO_CONSTRUCT",
                 Token.usdc.symbol,
@@ -115,7 +115,7 @@ let transferTests: [AcceptanceTest] = [
     ),
     .init(
         name:
-            "Alice attempts to transfers 75 USDC to Bob on Arbitrum via Bridge but doesn't have all the quotes",
+        "Alice attempts to transfers 75 USDC to Bob on Arbitrum via Bridge but doesn't have all the quotes",
         given: [
             .tokenBalance(.alice, .amt(50, .usdc), .arbitrum),
             .tokenBalance(.alice, .amt(50, .usdc), .base),
@@ -129,7 +129,7 @@ let transferTests: [AcceptanceTest] = [
                         }
                     ),
                     fees: [
-                        .arbitrum: 0.04
+                        .arbitrum: 0.04,
                     ]
                 )
             ),
@@ -188,15 +188,40 @@ let transferTests: [AcceptanceTest] = [
                     ),
                     // Total quote = 0.02 + 0.04 = 0.06
                     // Amount in terms of ETH = 0.06 / 4000 = 0.000015
-                    .quotePay(payment: .amt(0.000015000000000037, .weth), payee: .stax, quote: .basic),
+                    .quotePay(payment: .amt(0.000015, .weth), payee: .stax, quote: .basic),
                 ]),
                 .transferErc20(tokenAmount: .amt(0.3, .weth), recipient: .bob),
             ])
         )
     ),
     .init(
+        name: "Alice transfers all of Base USDC to Bob on Arbitrum via Bridge",
+        given: [
+            .tokenBalance(.alice, .amt(100, .usdc), .base),
+            .quote(.basic),
+            .acrossQuote(.amt(1, .usdc), 0.01),
+        ],
+        when: .transfer(from: .alice, to: .bob, amount: .max(.usdc), on: .arbitrum),
+        expect: .success(
+            .multi([
+                .bridge(
+                    bridge: "Across",
+                    srcNetwork: .base,
+                    destinationNetwork: .arbitrum,
+                    inputTokenAmount: .amt(100, .usdc),
+                    outputTokenAmount: .amt(98.00, .usdc)
+                ),
+                .multicall([
+                    // Bridge 100 -> 98 arrives on arbitrum - 0.06 quote pay -> 97.94 USDC transfer
+                    .transferErc20(tokenAmount: .amt(97.94, .usdc), recipient: .bob),
+                    .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
+                ]),
+            ])
+        )
+    ),
+    .init(
         name:
-            "WIP: Alice repays 75 USDC of a 100 USDC borrow against 0.3 WETH on cUSDCv3 on Ethereum",
+        "WIP: Alice repays 75 USDC of a 100 USDC borrow against 0.3 WETH on cUSDCv3 on Ethereum",
         given: [
             .tokenBalance(.alice, .amt(0.5, .weth), .ethereum),
             .cometSupply(.alice, .amt(0.3, .weth), .cusdcv3, .ethereum),

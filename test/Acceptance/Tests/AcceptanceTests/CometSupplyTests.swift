@@ -15,9 +15,11 @@ let cometSupplyTests: [AcceptanceTest] = [
             .single(
                 .multicall([
                     .supplyToComet(
-                        tokenAmount: .amt(0.5, .weth), market: .cusdcv3, network: .ethereum),
+                        tokenAmount: .amt(0.5, .weth), market: .cusdcv3, network: .ethereum
+                    ),
                     .quotePay(
-                        payment: .amt(0.000025000000000062, .weth), payee: .stax, quote: .basic),
+                        payment: .amt(0.000025, .weth), payee: .stax, quote: .basic
+                    ),
                 ])
             )
         )
@@ -37,7 +39,8 @@ let cometSupplyTests: [AcceptanceTest] = [
             .single(
                 .multicall([
                     .supplyToComet(
-                        tokenAmount: .amt(0.5, .eth), market: .cusdcv3, network: .ethereum),
+                        tokenAmount: .amt(0.5, .eth), market: .cusdcv3, network: .ethereum
+                    ),
                     .quotePay(payment: .amt(0.000025, .eth), payee: .stax, quote: .basic),
                 ])
             )
@@ -46,7 +49,7 @@ let cometSupplyTests: [AcceptanceTest] = [
     ),
     .init(
         name:
-            "Alice supplies, but does not allow enough for quote pay (testCometSupplyInsufficientFunds)",
+        "Alice supplies, but does not allow enough for quote pay (testCometSupplyInsufficientFunds)",
         given: [.quote(.basic)],
         when: .cometSupply(from: .alice, market: .cusdcv3, amount: .amt(2, .usdc), on: .ethereum),
         expect: .revert(
@@ -85,7 +88,7 @@ let cometSupplyTests: [AcceptanceTest] = [
                 0,
                 "IMPOSSIBLE_TO_CONSTRUCT",
                 Token.usdc.symbol,
-                TokenAmount.amt(1000.03001, .usdc).amount
+                TokenAmount.amt(1000.03, .usdc).amount
             )
         )
     ),
@@ -101,7 +104,8 @@ let cometSupplyTests: [AcceptanceTest] = [
             .single(
                 .multicall([
                     .supplyToComet(
-                        tokenAmount: .amt(1, .usdc), market: .cusdcv3, network: .ethereum),
+                        tokenAmount: .amt(1, .usdc), market: .cusdcv3, network: .ethereum
+                    ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
                 ])
             )
@@ -118,11 +122,38 @@ let cometSupplyTests: [AcceptanceTest] = [
             .single(
                 .multicall([
                     .supplyToComet(
-                        tokenAmount: .amt(2.9, .usdc), market: .cusdcv3, network: .ethereum),
+                        tokenAmount: .amt(2.9, .usdc), market: .cusdcv3, network: .ethereum
+                    ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
                 ])
             )
-
+        )
+    ),
+    .init(
+        name: "Alice supplies max to Comet with bridge (testCometSupplyMaxWithBridgeAndQuotePay)",
+        given: [
+            .tokenBalance(.alice, .amt(50, .usdc), .arbitrum),
+            .tokenBalance(.alice, .amt(50, .usdc), .base),
+            .quote(.basic),
+            .acrossQuote(.amt(1, .usdc), 0.01),
+        ],
+        when: .cometSupply(from: .alice, market: .cusdcv3, amount: .max(.usdc), on: .arbitrum),
+        expect: .success(
+            .multi([
+                .bridge(
+                    bridge: "Across",
+                    srcNetwork: .base,
+                    destinationNetwork: .arbitrum,
+                    inputTokenAmount: .amt(50, .usdc),
+                    outputTokenAmount: .amt(48.5, .usdc)
+                ),
+                .multicall([
+                    .supplyToComet(
+                        tokenAmount: .amt(98.44, .usdc), market: .cusdcv3, network: .arbitrum
+                    ),
+                    .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
+                ]),
+            ])
         )
     ),
     .init(
@@ -137,11 +168,11 @@ let cometSupplyTests: [AcceptanceTest] = [
             .single(
                 .multicall([
                     .supplyToComet(
-                        tokenAmount: .amt(1, .usdc), market: .cusdcv3, network: .ethereum),
+                        tokenAmount: .amt(1, .usdc), market: .cusdcv3, network: .ethereum
+                    ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
                 ])
             )
-
         )
     ),
 ]

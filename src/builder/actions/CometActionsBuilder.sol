@@ -19,84 +19,46 @@ import {List} from "src/builder/List.sol";
 import {QuarkBuilderBase} from "src/builder/QuarkBuilderBase.sol";
 
 contract CometActionsBuilder is QuarkBuilderBase {
-    struct CometRepayIntent {
-        uint256 amount;
-        string assetSymbol;
-        uint256 blockTimestamp;
-        uint256 chainId;
-        uint256[] collateralAmounts;
-        string[] collateralAssetSymbols;
-        address comet;
-        address repayer;
-        bool preferAcross;
-        string paymentAssetSymbol;
-    }
-
     function cometRepay(
-        CometRepayIntent memory repayIntent,
+        CometRepayIntent memory intent,
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory /* builderResult */ ) {
-        if (repayIntent.collateralAmounts.length != repayIntent.collateralAssetSymbols.length) {
+        if (intent.collateralAmounts.length != intent.collateralAssetSymbols.length) {
             revert InvalidInput();
         }
 
         PaymentInfo.Payment memory payment =
-            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, repayIntent.paymentAssetSymbol);
-
-        // XXX confirm that the user is not withdrawing beyond their limits
-
-        bool isMaxRepay = repayIntent.amount == type(uint256).max;
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
         uint256 repayAmount;
-        if (isMaxRepay) {
-            repayAmount =
-                cometRepayMaxAmount(chainAccountsList, repayIntent.chainId, repayIntent.comet, repayIntent.repayer);
+        if (intent.amount == type(uint256).max) {
+            uint256 maxRepayAmount =
+                cometRepayMaxAmount(chainAccountsList, intent.chainId, intent.comet, intent.repayer);
+            uint256 availableAssetBalance = Accounts.totalAvailableAsset(intent.assetSymbol, chainAccountsList, payment);
+            repayAmount = maxRepayAmount < availableAssetBalance ? maxRepayAmount : type(uint256).max;
         } else {
-            repayAmount = repayIntent.amount;
+            repayAmount = intent.amount;
         }
 
-        (IQuarkWallet.QuarkOperation memory repayQuarkOperation, Actions.Action memory repayAction) = Actions.cometRepay(
-            Actions.CometRepayInput({
-                chainAccountsList: chainAccountsList,
-                assetSymbol: repayIntent.assetSymbol,
-                amount: repayIntent.amount,
-                chainId: repayIntent.chainId,
-                collateralAmounts: repayIntent.collateralAmounts,
-                collateralAssetSymbols: repayIntent.collateralAssetSymbols,
-                comet: repayIntent.comet,
-                blockTimestamp: repayIntent.blockTimestamp,
-                repayer: repayIntent.repayer
-            }),
-            payment
-        );
-
-        QuarkBuilderBase.ActionIntent memory actionIntent;
-        // Note: Scope to avoid stack too deep errors
-        {
-            uint256[] memory amountOuts = new uint256[](1);
-            amountOuts[0] = repayAmount;
-            string[] memory assetSymbolOuts = new string[](1);
-            assetSymbolOuts[0] = repayIntent.assetSymbol;
-            actionIntent = QuarkBuilderBase.ActionIntent({
-                actor: repayIntent.repayer,
+        uint256[] memory amountOuts = new uint256[](1);
+        amountOuts[0] = repayAmount;
+        string[] memory assetSymbolOuts = new string[](1);
+        assetSymbolOuts[0] = intent.assetSymbol;
+        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
+        constructOperationsAndActions({
+            actionIntent: ActionIntent({
+                actor: intent.repayer,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
-                amountIns: repayIntent.collateralAmounts,
-                assetSymbolIns: repayIntent.collateralAssetSymbols,
-                blockTimestamp: repayIntent.blockTimestamp,
-                chainId: repayIntent.chainId,
-                preferAcross: repayIntent.preferAcross
-            });
-        }
-
-        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
-        QuarkBuilderBase.collectAssetsForAction({
-            actionIntent: actionIntent,
+                actionType: Actions.ACTION_TYPE_REPAY,
+                intent: abi.encode(intent),
+                blockTimestamp: intent.blockTimestamp,
+                chainId: intent.chainId,
+                preferAcross: intent.preferAcross
+            }),
             chainAccountsList: chainAccountsList,
-            payment: payment,
-            actionQuarkOperation: repayQuarkOperation,
-            action: repayAction
+            payment: payment
         });
 
         return BuilderResult({
@@ -106,75 +68,34 @@ contract CometActionsBuilder is QuarkBuilderBase {
             paymentCurrency: payment.currency,
             eip712Data: EIP712Helper.eip712DataForQuarkOperations(quarkOperationsArray, actionsArray)
         });
-    }
-
-    struct CometBorrowIntent {
-        uint256 amount;
-        string assetSymbol;
-        uint256 blockTimestamp;
-        address borrower;
-        uint256 chainId;
-        uint256[] collateralAmounts;
-        string[] collateralAssetSymbols;
-        address comet;
-        bool preferAcross;
-        string paymentAssetSymbol;
     }
 
     function cometBorrow(
-        CometBorrowIntent memory borrowIntent,
+        CometBorrowIntent memory intent,
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory /* builderResult */ ) {
         PaymentInfo.Payment memory payment =
-            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, borrowIntent.paymentAssetSymbol);
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        if (borrowIntent.collateralAmounts.length != borrowIntent.collateralAssetSymbols.length) {
+        if (intent.collateralAmounts.length != intent.collateralAssetSymbols.length) {
             revert InvalidInput();
         }
 
-        (IQuarkWallet.QuarkOperation memory borrowQuarkOperation, Actions.Action memory borrowAction) = Actions
-            .cometBorrow(
-            Actions.CometBorrowInput({
-                chainAccountsList: chainAccountsList,
-                amount: borrowIntent.amount,
-                assetSymbol: borrowIntent.assetSymbol,
-                blockTimestamp: borrowIntent.blockTimestamp,
-                borrower: borrowIntent.borrower,
-                chainId: borrowIntent.chainId,
-                collateralAmounts: borrowIntent.collateralAmounts,
-                collateralAssetSymbols: borrowIntent.collateralAssetSymbols,
-                comet: borrowIntent.comet
-            }),
-            payment
-        );
-
-        QuarkBuilderBase.ActionIntent memory actionIntent;
-        // Note: Scope to avoid stack too deep errors
-        {
-            uint256[] memory amountIns = new uint256[](1);
-            amountIns[0] = borrowIntent.amount;
-            string[] memory assetSymbolIns = new string[](1);
-            assetSymbolIns[0] = borrowIntent.assetSymbol;
-            actionIntent = QuarkBuilderBase.ActionIntent({
-                actor: borrowIntent.borrower,
-                amountIns: amountIns,
-                assetSymbolIns: assetSymbolIns,
-                amountOuts: borrowIntent.collateralAmounts,
-                assetSymbolOuts: borrowIntent.collateralAssetSymbols,
-                blockTimestamp: borrowIntent.blockTimestamp,
-                chainId: borrowIntent.chainId,
-                preferAcross: borrowIntent.preferAcross
-            });
-        }
-
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
-        QuarkBuilderBase.collectAssetsForAction({
-            actionIntent: actionIntent,
+        constructOperationsAndActions({
+            actionIntent: ActionIntent({
+                actor: intent.borrower,
+                amountOuts: intent.collateralAmounts,
+                assetSymbolOuts: intent.collateralAssetSymbols,
+                actionType: Actions.ACTION_TYPE_BORROW,
+                intent: abi.encode(intent),
+                blockTimestamp: intent.blockTimestamp,
+                chainId: intent.chainId,
+                preferAcross: intent.preferAcross
+            }),
             chainAccountsList: chainAccountsList,
-            payment: payment,
-            actionQuarkOperation: borrowQuarkOperation,
-            action: borrowAction
+            payment: payment
         });
 
         return BuilderResult({
@@ -186,75 +107,34 @@ contract CometActionsBuilder is QuarkBuilderBase {
         });
     }
 
-    struct CometSupplyIntent {
-        uint256 amount;
-        string assetSymbol;
-        uint256 blockTimestamp;
-        uint256 chainId;
-        address comet;
-        address sender;
-        bool preferAcross;
-        string paymentAssetSymbol;
-    }
-
     function cometSupply(
-        CometSupplyIntent memory cometSupplyIntent,
+        CometSupplyIntent memory intent,
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory /* builderResult */ ) {
         PaymentInfo.Payment memory payment =
-            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, cometSupplyIntent.paymentAssetSymbol);
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        // Initialize comet supply max flag
-        bool isMaxSupply = cometSupplyIntent.amount == type(uint256).max;
-        // Convert cometSupplyIntent to user aggregated balance
-        if (isMaxSupply) {
-            cometSupplyIntent.amount =
-                Accounts.totalAvailableAsset(cometSupplyIntent.assetSymbol, chainAccountsList, payment);
-        }
+        uint256[] memory amountOuts = new uint256[](1);
+        amountOuts[0] = intent.amount;
+        string[] memory assetSymbolOuts = new string[](1);
+        assetSymbolOuts[0] = intent.assetSymbol;
 
-        (IQuarkWallet.QuarkOperation memory supplyQuarkOperation, Actions.Action memory supplyAction) = Actions
-            .cometSupplyAsset(
-            Actions.CometSupply({
-                chainAccountsList: chainAccountsList,
-                assetSymbol: cometSupplyIntent.assetSymbol,
-                amount: cometSupplyIntent.amount,
-                chainId: cometSupplyIntent.chainId,
-                comet: cometSupplyIntent.comet,
-                sender: cometSupplyIntent.sender,
-                blockTimestamp: cometSupplyIntent.blockTimestamp
+        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
+        constructOperationsAndActions({
+            actionIntent: ActionIntent({
+                actor: intent.sender,
+                amountOuts: amountOuts,
+                assetSymbolOuts: assetSymbolOuts,
+                actionType: Actions.ACTION_TYPE_SUPPLY,
+                intent: abi.encode(intent),
+                blockTimestamp: intent.blockTimestamp,
+                chainId: intent.chainId,
+                preferAcross: intent.preferAcross
             }),
-            payment
-        );
-
-        IQuarkWallet.QuarkOperation[] memory quarkOperationsArray;
-        Actions.Action[] memory actionsArray;
-        // Note: Scope to avoid stack too deep errors
-        {
-            uint256[] memory amountOuts = new uint256[](1);
-            amountOuts[0] = cometSupplyIntent.amount;
-            string[] memory assetSymbolOuts = new string[](1);
-            assetSymbolOuts[0] = cometSupplyIntent.assetSymbol;
-            uint256[] memory amountIns = new uint256[](0);
-            string[] memory assetSymbolIns = new string[](0);
-
-            (quarkOperationsArray, actionsArray) = QuarkBuilderBase.collectAssetsForAction({
-                actionIntent: QuarkBuilderBase.ActionIntent({
-                    actor: cometSupplyIntent.sender,
-                    amountIns: amountIns,
-                    assetSymbolIns: assetSymbolIns,
-                    amountOuts: amountOuts,
-                    assetSymbolOuts: assetSymbolOuts,
-                    blockTimestamp: cometSupplyIntent.blockTimestamp,
-                    chainId: cometSupplyIntent.chainId,
-                    preferAcross: cometSupplyIntent.preferAcross
-                }),
-                chainAccountsList: chainAccountsList,
-                payment: payment,
-                actionQuarkOperation: supplyQuarkOperation,
-                action: supplyAction
-            });
-        }
+            chainAccountsList: chainAccountsList,
+            payment: payment
+        });
 
         return BuilderResult({
             version: VERSION,
@@ -265,80 +145,33 @@ contract CometActionsBuilder is QuarkBuilderBase {
         });
     }
 
-    struct CometWithdrawIntent {
-        uint256 amount;
-        string assetSymbol;
-        uint256 blockTimestamp;
-        uint256 chainId;
-        address comet;
-        address withdrawer;
-        bool preferAcross;
-        string paymentAssetSymbol;
-    }
-
     function cometWithdraw(
-        CometWithdrawIntent memory cometWithdrawIntent,
+        CometWithdrawIntent memory intent,
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory) {
         // XXX confirm that you actually have the amount to withdraw
-        bool isMaxWithdraw = cometWithdrawIntent.amount == type(uint256).max;
-
         PaymentInfo.Payment memory payment =
-            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, cometWithdrawIntent.paymentAssetSymbol);
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        uint256 actualWithdrawAmount = cometWithdrawIntent.amount;
-        if (isMaxWithdraw) {
-            // When doing a max withdraw, we need to find the actual approximate amount instead of using uint256 max
-            actualWithdrawAmount = cometWithdrawMaxAmount(
-                chainAccountsList,
-                cometWithdrawIntent.chainId,
-                cometWithdrawIntent.comet,
-                cometWithdrawIntent.withdrawer
-            );
-        }
+        uint256[] memory amountOuts = new uint256[](0);
+        string[] memory assetSymbolOuts = new string[](0);
 
-        (IQuarkWallet.QuarkOperation memory cometWithdrawQuarkOperation, Actions.Action memory cometWithdrawAction) =
-        Actions.cometWithdrawAsset(
-            Actions.CometWithdraw({
-                chainAccountsList: chainAccountsList,
-                assetSymbol: cometWithdrawIntent.assetSymbol,
-                amount: cometWithdrawIntent.amount,
-                chainId: cometWithdrawIntent.chainId,
-                comet: cometWithdrawIntent.comet,
-                withdrawer: cometWithdrawIntent.withdrawer,
-                blockTimestamp: cometWithdrawIntent.blockTimestamp
+        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
+        constructOperationsAndActions({
+            actionIntent: ActionIntent({
+                actor: intent.withdrawer,
+                amountOuts: amountOuts,
+                assetSymbolOuts: assetSymbolOuts,
+                actionType: Actions.ACTION_TYPE_WITHDRAW,
+                intent: abi.encode(intent),
+                blockTimestamp: intent.blockTimestamp,
+                chainId: intent.chainId,
+                preferAcross: intent.preferAcross
             }),
-            payment
-        );
-        IQuarkWallet.QuarkOperation[] memory quarkOperationsArray;
-        Actions.Action[] memory actionsArray;
-        // Note: Scope to avoid stack too deep errors
-        {
-            uint256[] memory amountIns = new uint256[](1);
-            amountIns[0] = actualWithdrawAmount;
-            string[] memory assetSymbolIns = new string[](1);
-            assetSymbolIns[0] = cometWithdrawIntent.assetSymbol;
-            uint256[] memory amountOuts = new uint256[](0);
-            string[] memory assetSymbolOuts = new string[](0);
-
-            (quarkOperationsArray, actionsArray) = QuarkBuilderBase.collectAssetsForAction({
-                actionIntent: QuarkBuilderBase.ActionIntent({
-                    actor: cometWithdrawIntent.withdrawer,
-                    amountIns: amountIns,
-                    assetSymbolIns: assetSymbolIns,
-                    amountOuts: amountOuts,
-                    assetSymbolOuts: assetSymbolOuts,
-                    blockTimestamp: cometWithdrawIntent.blockTimestamp,
-                    chainId: cometWithdrawIntent.chainId,
-                    preferAcross: cometWithdrawIntent.preferAcross
-                }),
-                chainAccountsList: chainAccountsList,
-                payment: payment,
-                actionQuarkOperation: cometWithdrawQuarkOperation,
-                action: cometWithdrawAction
-            });
-        }
+            chainAccountsList: chainAccountsList,
+            payment: payment
+        });
 
         return BuilderResult({
             version: VERSION,

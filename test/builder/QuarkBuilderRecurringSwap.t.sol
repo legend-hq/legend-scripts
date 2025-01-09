@@ -36,7 +36,7 @@ contract QuarkBuilderRecurringSwapTest is Test, QuarkBuilderTest {
         address sender,
         uint256 blockTimestamp,
         string memory paymentAssetSymbol
-    ) internal pure returns (SwapActionsBuilder.RecurringSwapIntent memory) {
+    ) internal pure returns (QuarkBuilderBase.RecurringSwapIntent memory) {
         address weth = weth_(chainId);
         return recurringSwap_({
             chainId: chainId,
@@ -65,8 +65,8 @@ contract QuarkBuilderRecurringSwapTest is Test, QuarkBuilderTest {
         address sender,
         uint256 blockTimestamp,
         string memory paymentAssetSymbol
-    ) internal pure returns (SwapActionsBuilder.RecurringSwapIntent memory) {
-        return SwapActionsBuilder.RecurringSwapIntent({
+    ) internal pure returns (QuarkBuilderBase.RecurringSwapIntent memory) {
+        return QuarkBuilderBase.RecurringSwapIntent({
             chainId: chainId,
             sellToken: sellToken,
             sellAmount: sellAmount,
@@ -82,7 +82,7 @@ contract QuarkBuilderRecurringSwapTest is Test, QuarkBuilderTest {
         });
     }
 
-    function constructSwapConfig_(SwapActionsBuilder.RecurringSwapIntent memory swap)
+    function constructSwapConfig_(QuarkBuilderBase.RecurringSwapIntent memory swap)
         internal
         pure
         returns (RecurringSwap.SwapConfig memory)
@@ -139,9 +139,7 @@ contract QuarkBuilderRecurringSwapTest is Test, QuarkBuilderTest {
         networkOperationFees[0] =
             Quotes.NetworkOperationFee({opType: Quotes.OP_TYPE_BASELINE, chainId: 1, price: 1000e8});
 
-        vm.expectRevert(
-            abi.encodeWithSelector(QuarkBuilderBase.UnableToConstructPaycall.selector, "USDC", 1_000.00001e6)
-        );
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.UnableToConstructPaycall.selector, "USDC", 1_000e6));
         builder.recurringSwap(
             buyWeth_({
                 chainId: 1,
@@ -210,7 +208,7 @@ contract QuarkBuilderRecurringSwapTest is Test, QuarkBuilderTest {
 
     function testRecurringExactInSwapSucceeds() public {
         QuarkBuilder builder = new QuarkBuilder();
-        SwapActionsBuilder.RecurringSwapIntent memory buyWethIntent = buyWeth_({
+        QuarkBuilderBase.RecurringSwapIntent memory buyWethIntent = buyWeth_({
             chainId: 1,
             sellToken: usdc_(1),
             sellAmount: 3000e6,
@@ -300,7 +298,7 @@ contract QuarkBuilderRecurringSwapTest is Test, QuarkBuilderTest {
 
     function testRecurringExactOutSwapSucceeds() public {
         QuarkBuilder builder = new QuarkBuilder();
-        SwapActionsBuilder.RecurringSwapIntent memory buyWethIntent = buyWeth_({
+        QuarkBuilderBase.RecurringSwapIntent memory buyWethIntent = buyWeth_({
             chainId: 1,
             sellToken: usdc_(1),
             sellAmount: 3000e6,
@@ -390,7 +388,7 @@ contract QuarkBuilderRecurringSwapTest is Test, QuarkBuilderTest {
 
     function testRecurringSwapWithPaycallSucceeds() public {
         QuarkBuilder builder = new QuarkBuilder();
-        SwapActionsBuilder.RecurringSwapIntent memory buyWethIntent = buyWeth_({
+        QuarkBuilderBase.RecurringSwapIntent memory buyWethIntent = buyWeth_({
             chainId: 1,
             sellToken: usdc_(1),
             sellAmount: 3000e6,

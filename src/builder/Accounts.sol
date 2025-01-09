@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.27;
 
+import {console} from "src/builder/console.sol";
+
+import {HashMap} from "src/builder/HashMap.sol";
+import {List} from "src/builder/List.sol";
 import {Math} from "src/lib/Math.sol";
 import {PaymentInfo} from "./PaymentInfo.sol";
 import {Strings} from "./Strings.sol";
@@ -9,6 +13,7 @@ import {TokenWrapper} from "./TokenWrapper.sol";
 
 library Accounts {
     error QuarkSecretNotFound(address account);
+    error AssetPositionNotFound(string symbol);
 
     struct ChainAccounts {
         uint256 chainId;
@@ -181,6 +186,23 @@ library Accounts {
         return findAssetPositions(assetAddress, chainAccounts.assetPositionsList);
     }
 
+    // Finds the first asset position for the given symbol in the chain accounts list
+    function findFirstAssetPositions(string memory assetSymbol, ChainAccounts[] memory chainAccountsList)
+        internal
+        pure
+        returns (AssetPositions memory found)
+    {
+        for (uint256 i = 0; i < chainAccountsList.length; ++i) {
+            AssetPositions memory assetPositions =
+                findAssetPositions(assetSymbol, chainAccountsList[i].assetPositionsList);
+            if (assetPositions.asset != address(0)) {
+                return assetPositions;
+            }
+        }
+
+        revert AssetPositionNotFound(assetSymbol);
+    }
+
     function findQuarkSecret(address account, Accounts.QuarkSecret[] memory quarkSecrets)
         internal
         pure
@@ -309,6 +331,36 @@ library Accounts {
             total += balance + counterpartBalance;
         }
         return total;
+    }
+
+    /*
+    * @notice Get the total asset balance net fees for a given token symbol across chains
+    * @param chainAccountsList The list of chain accounts to check
+    * @param payment The payment currency and cost per chains
+    * @param bridgeFees A map of bridge fees by asset symbol
+    * @param chainIdsInvolved The list of chainIdsInvovled for the current intent
+    * @return The total available asset balance less the fees
+    */
+    function getTotalAvailableBalance(
+        Accounts.ChainAccounts[] memory chainAccountsList,
+        PaymentInfo.Payment memory payment,
+        HashMap.Map memory bridgeFees,
+        List.DynamicArray memory chainIdsInvolved,
+        string memory assetSymbol
+    ) internal pure returns (uint256) {
+        uint256 paymentFees = Strings.stringEqIgnoreCase(payment.currency, assetSymbol)
+            && !PaymentInfo.isOffchainPayment(payment)
+            ? PaymentInfo.totalCost(payment, List.toUint256Array(chainIdsInvolved))
+            : 0;
+
+        uint256 balance = Accounts.totalBalance(assetSymbol, chainAccountsList);
+        uint256 totalBridgeFees = HashMap.getOrDefaultUint256(bridgeFees, abi.encode(assetSymbol), 0);
+
+        if (balance < paymentFees || balance - paymentFees < totalBridgeFees) {
+            return 0;
+        }
+
+        return balance - paymentFees - totalBridgeFees;
     }
 
     function truncate(ChainAccounts[] memory chainAccountsList, uint256 length)

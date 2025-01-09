@@ -176,6 +176,36 @@ let morphoBorrowTests: [AcceptanceTest] = [
                 TokenAmount.amt(0.5, .usdc).amount
             )
         )
+    ),
+    .init(
+        name:
+            "Alice borrows from Morpho, supplying max wbtc collateral and paying with wbtc (testMorphoBorrowWithMaxCollateral)",
+        given: [
+            .tokenBalance(.alice, .amt(5, .wbtc), .ethereum),
+            .quote(.basic),
+        ],
+        when: .payWith(
+            currency: .wbtc,
+            .morphoBorrow(
+                from: .alice, 
+                borrowAmount: .amt(1, .usdc), 
+                collateralAmount: .max(.wbtc), 
+                on: .ethereum
+            )
+        ),
+        expect: .success(
+            .single(
+                .multicall([
+                    .supplyCollateralAndBorrowFromMorpho(
+                        borrowAmount: .amt(1, .usdc), 
+                        collateralAmount: .init(fromWei: 499999900, ofToken: .wbtc), 
+                        market: .init(collateralToken: .wbtc, borrowToken: .usdc), 
+                        network: .ethereum
+                    ),
+                    .quotePay(payment: .init(fromWei: 100, ofToken: .wbtc), payee: .stax, quote: .basic),
+                ])
+            )
+        )
     )
     // TODO: add bridging tests
 ]
