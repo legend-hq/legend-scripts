@@ -1210,7 +1210,6 @@ class Context {
                 ),
                 withFunctions: ffis
             )
-
         case let .transfer(from, to, amount, network):
             return try await QuarkBuilder.transfer(
                 intent: .init(
