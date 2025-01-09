@@ -70,4 +70,401 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
             ])
         )
     ),
+
+    .init(
+        name: "Alice supplies to MorphoVault more than she has (testMorphoSupplyInsufficientFunds)",
+        given: [
+            .tokenBalance(.alice, .amt(0, .usdc), .ethereum),
+            .quote(.basic)
+        ],
+        when: .morphoVaultSupply(
+            from: .alice,
+            vault: .usdc,
+            amount: .amt(2, .usdc),
+            on: .ethereum
+        ),
+        expect: .revert(
+            .badInputInsufficientFunds(
+                Token.usdc.symbol,
+                TokenAmount.amt(2, .usdc).amount,
+                TokenAmount.amt(0, .usdc).amount
+            )
+        )
+    ),
+
+    .init(
+        name: "Alice supplies to MorhpoVault, but the operation cost is too high (testMorphoSupplyMaxCostTooHigh)",
+        given: [
+            .tokenBalance(.alice, .amt(1, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(1, .usdc), .base),
+            .quote(
+                .custom(
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    prices: Dictionary(
+                        uniqueKeysWithValues: Token.knownCases.map { token in
+                            (token, token.defaultUsdPrice)
+                        }
+                    ),
+                    fees: [
+                        .ethereum: 1000,
+                        .base: 0.1
+                    ]
+                )
+            )
+        ],
+        when: .morphoVaultSupply(
+            from: .alice,
+            vault: .usdc,
+            amount: .amt(1, .usdc),
+            on: .ethereum
+        ),
+        expect: .revert(
+            .unableToConstructActionIntent(
+                false,
+                "",
+                0,
+                "IMPOSSIBLE_TO_CONSTRUCT",
+                Token.usdc.symbol,
+                TokenAmount.amt(1000.1, .usdc).amount
+            )
+        )
+    ),
+
+    .init(
+        name: "Alice supplies to MorphoVault, but her funds are on an unreachable chain (7777) (testMorphoSupplyFundsUnavailable)",
+        given: [
+            .tokenBalance(.alice, .amt(0, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(0, .usdc), .base),
+            .tokenBalance(.alice, .amt(100, .usdc), .unknown(7777)),
+            .quote(.basic)
+        ],
+        when: .morphoVaultSupply(
+            from: .alice,
+            vault: .usdc,
+            amount: .amt(2, .usdc),
+            on: .ethereum
+        ),
+        expect: .revert(
+            .badInputInsufficientFunds(
+                Token.usdc.symbol,
+                TokenAmount.amt(2, .usdc).amount,
+                TokenAmount.amt(0, .usdc).amount
+            )
+        )
+    ),
+
+    .init(
+        name: "Alice supplies to MorphoVault, paying with QuotePay (testSimpleMorphoVaultSupply)",
+        given: [
+            .tokenBalance(.alice, .amt(1.5, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(1.5, .usdc), .base),
+            .quote(.basic)
+        ],
+        when: .morphoVaultSupply(
+            from: .alice,
+            vault: .usdc,
+            amount: .amt(1, .usdc),
+            on: .ethereum
+        ),
+        expect: .success(
+            .single(
+                .multicall([
+                    .supplyToMorphoVault(
+                        tokenAmount: .amt(1, .usdc),
+                        vault: .usdc,
+                        network: .ethereum
+                    ),
+                    .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
+                ])
+            )
+        )
+    ),
+
+    /*
+    +1.5 on Ethereum
+    +1.5 on Base
+    -1 for Across gasFee
+    -(1.5 * .01) for Across pctFee
+    -0.1 (Eth operation fee)
+    -0.02 (Base operation fee)
+    = 1.865 USDC supplied
+    */
+    .init(
+        name: "Alice supplies max to MorphoVault (testSimpleMorphoVaultSupplyMax)",
+        given: [
+            .tokenBalance(.alice, .amt(1.5, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(1.5, .usdc), .base),
+            .quote(.basic),
+            .acrossQuote(.amt(1, .usdc), 0.01),
+        ],
+        when: .morphoVaultSupply(
+            from: .alice,
+            vault: .usdc,
+            amount: .max(.usdc),
+            on: .ethereum
+        ),
+        expect: .success(
+            .multi([
+                .bridge(
+                    bridge: "Across",
+                    srcNetwork: .base,
+                    destinationNetwork: .ethereum,
+                    inputTokenAmount: .amt(1.5, .usdc),
+                    outputTokenAmount: .amt(0.485, .usdc)
+                ),
+                .multicall([
+                    .supplyToMorphoVault(
+                        tokenAmount: .amt(1.865, .usdc),
+                        vault: .usdc,
+                        network: .ethereum
+                    ),
+                    .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
+                ])
+            ])
+        )
+    ),
+
+    .init(
+        name: "Alice supplies to MorphoVault, converting ETH to WETH (testSimpleMorphoVaultSupplyWithAutoWrapper)",
+        given: [
+            .tokenBalance(.alice, .amt(1, .eth), .ethereum),
+            .tokenBalance(.alice, .amt(1, .usdc), .ethereum),
+            .quote(.basic),
+        ],
+        when: .morphoVaultSupply(
+            from: .alice,
+            vault: .weth,
+            amount: .amt(1, .weth),
+            on: .ethereum
+        ),
+        expect: .success(
+            .single(
+                .multicall([
+                    .wrapAsset(.eth),
+                    .supplyToMorphoVault(
+                        tokenAmount: .amt(1, .weth),
+                        vault: .weth,
+                        network: .ethereum
+                    ),
+                    .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
+                ])
+            )
+        )
+    ),
+
+    .init(
+        name: "Alice supplies to MorphoVault, paying with QuotePay (testMorphoVaultSupplyWithQuotePay)",
+        given: [
+            .tokenBalance(.alice, .amt(1.5, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(1.5, .usdc), .base),
+            .quote(.basic)
+        ],
+        when: .morphoVaultSupply(
+            from: .alice,
+            vault: .usdc,
+            amount: .amt(1, .usdc),
+            on: .ethereum
+        ),
+        expect: .success(
+            .single(
+                .multicall([
+                    .supplyToMorphoVault(
+                        tokenAmount: .amt(1, .usdc),
+                        vault: .usdc,
+                        network: .ethereum
+                    ),
+                    .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
+                ])
+            )
+        )
+    ),
+
+    .init(
+        name: "Alice supplies to MorphoVault, bridging funds from Ethereum to Base (testMorphoVaultSupplyWithBridge)",
+        given: [
+            .tokenBalance(.alice, .amt(4, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(3, .usdc), .base),
+            .quote(.basic),
+            .acrossQuote(.amt(1, .usdc), 0.01),
+        ],
+        when: .morphoVaultSupply(
+            from: .alice,
+            vault: .usdc,
+            amount: .amt(5, .usdc),
+            on: .base
+        ),
+        expect: .success(
+            .multi([
+                .multicall([
+                    .bridge(
+                        bridge: "Across",
+                        srcNetwork: .ethereum,
+                        destinationNetwork: .base,
+                        inputTokenAmount: .amt(3.02, .usdc),
+                        outputTokenAmount: .amt(2, .usdc)
+                    ),
+                    // .1 for mainnet operation + .02 for base operation
+                    .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
+                ]),
+                .supplyToMorphoVault(
+                    tokenAmount: .amt(5, .usdc),
+                    vault: .usdc,
+                    network: .base
+                )
+            ])
+        )
+    ),
+
+    /*
+    +3 on Base 
+    +3 on Ethereum
+    -1 for Across gas fee
+    -(3 * 0.01) for Across pct fee
+    -0.1 for Ethereum operation fee
+    -0.02 for Base operation fee
+    = 4.85 USDC supplied to MorphoVault
+    */
+    .init(
+        name: "Alice supplies max to MorphoVault, bridging funds (testMorphoVaultSupplyMaxWithBridge)",
+        given: [
+            .tokenBalance(.alice, .amt(3, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(3, .usdc), .base),
+            .quote(.basic),
+            .acrossQuote(.amt(1, .usdc), 0.01),
+        ],
+        when: .morphoVaultSupply(
+            from: .alice,
+            vault: .usdc,
+            amount: .max(.usdc),
+            on: .base
+        ),
+        expect: .success(
+            .multi([
+                .bridge(
+                    bridge: "Across",
+                    srcNetwork: .ethereum,
+                    destinationNetwork: .base,
+                    inputTokenAmount: .amt(3, .usdc),
+                    outputTokenAmount: .amt(1.97, .usdc)
+                ),
+                .multicall([
+                    .supplyToMorphoVault(
+                        tokenAmount: .amt(4.85, .usdc),
+                        vault: .usdc,
+                        network: .base
+                    ),
+                    .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
+                ]),
+            ])
+        )
+    ),
+
+    /*
+    +3 on Ethereum
+    +3 on Base
+    -1 for Across gas fee
+    -(3 * .01) for Across pct fee
+    -0.5 for Ethereum operation fee
+    -0.1 for Base operation fee
+    = 4.37 USDC supplied
+    */
+    .init(
+        name: "Alice supplies max to MorphoVault, bridging funds and paying with QuotePay (testMorphoVaultSupplyMaxWithBridgeAndQuotePay)",
+        given: [
+            .tokenBalance(.alice, .amt(3, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(3, .usdc), .base),
+            .quote(
+                .custom(
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    prices: Dictionary(
+                        uniqueKeysWithValues: Token.knownCases.map { token in
+                            (token, token.defaultUsdPrice)
+                        }
+                    ),
+                    fees: [
+                        .ethereum: 0.5,
+                        .base: 0.1
+                    ]
+                )
+            ),
+            .acrossQuote(.amt(1, .usdc), 0.01)
+        ],
+        when: .morphoVaultSupply(
+            from: .alice,
+            vault: .usdc,
+            amount: .max(.usdc),
+            on: .base
+        ),
+        expect: .success(
+            .multi([
+                .bridge(
+                    bridge: "Across",
+                    srcNetwork: .ethereum,
+                    destinationNetwork: .base,
+                    inputTokenAmount: .amt(3, .usdc),
+                    outputTokenAmount: .amt(1.97, .usdc)
+                ),
+                .multicall([
+                    .supplyToMorphoVault(
+                        tokenAmount: .amt(4.37, .usdc),
+                        vault: .usdc,
+                        network: .base
+                    ),
+                    .quotePay(payment: .amt(0.6, .usdc), payee: .stax, quote: .basic),
+                ]),
+            ])
+        )
+    ),
+
+    .init(
+        name: "Alice supplies to MorphoVault, bridging funds and paying with QuotePay (testMorphoVaultSupplyWithBridgeAndQuotePay)",
+        given: [
+            .tokenBalance(.alice, .amt(4, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(3, .usdc), .base),
+            .quote(
+                .custom(
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    prices: Dictionary(
+                        uniqueKeysWithValues: Token.knownCases.map { token in
+                            (token, token.defaultUsdPrice)
+                        }
+                    ),
+                    fees: [
+                        .ethereum: 0.5,
+                        .base: 0.1
+                    ]
+                )
+            ),
+            .acrossQuote(.amt(1, .usdc), 0.01)
+        ],
+        when: .morphoVaultSupply(
+            from: .alice,
+            vault: .usdc,
+            amount: .amt(5, .usdc),
+            on: .base
+        ),
+        expect: .success(
+            .multi([
+                .multicall([
+                    .bridge(
+                        bridge: "Across",
+                        srcNetwork: .ethereum,
+                        destinationNetwork: .base,
+                        inputTokenAmount: .amt(3.02, .usdc),
+                        outputTokenAmount: .amt(2, .usdc)
+                    ),
+                    .quotePay(payment: .amt(0.6, .usdc), payee: .stax, quote: .basic),
+                ]),
+                .supplyToMorphoVault(
+                    tokenAmount: .amt(5, .usdc),
+                    vault: .usdc,
+                    network: .base
+                )
+            ])
+        )
+    ),
+
 ]
