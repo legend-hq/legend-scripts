@@ -54,7 +54,6 @@ enum Call: CustomStringConvertible, Equatable {
         market: Morpho,
         network: Network
     )
-    case depositToMorphoVault(amount: TokenAmount, network: Network)
     case multicall(_ calls: [Call])
     case withdrawFromComet(tokenAmount: TokenAmount, market: Comet, network: Network)
     case wrapAsset(_ token: Token)
@@ -318,8 +317,6 @@ enum Call: CustomStringConvertible, Equatable {
             return "wrapAsset(\(token.symbol))"
         case let .supplyCollateralAndBorrowFromMorpho(borrowAmount, collateralAmount, market, network):
             return "supplyCollateralAndBorrowFromMorpho(borrow \(borrowAmount.amount) \(borrowAmount.token.symbol), supply \(collateralAmount.amount) \(collateralAmount.token.symbol) from \(market.description) on \(network.description))"
-        case let .depositToMorphoVault(amount, network):
-            return "depositToMorphoVault(\(amount.amount) \(amount.token.symbol) on \(network.description))"
         case let .unknownFunctionCall(name, function, value):
             return "unknownFunctionCall(\(name), \(function), \(value))"
         case let .unknownScriptCall(scriptSource, calldata):
@@ -885,8 +882,6 @@ indirect enum When {
             return from
         case let .swap(from, _, _, _, _):
             return from
-        // case let .morphoVaultSupply(from, _, _):
-        //     return from
         case let .payWith(_, intent):
             return intent.sender
         }
