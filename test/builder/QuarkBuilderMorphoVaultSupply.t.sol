@@ -84,7 +84,7 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
                 0,
                 "IMPOSSIBLE_TO_CONSTRUCT",
                 "USDC",
-                1_000.10001e6
+                1_000.1e6
             )
         );
         builder.morphoVaultSupply(

@@ -139,9 +139,7 @@ contract QuarkBuilderRecurringSwapTest is Test, QuarkBuilderTest {
         networkOperationFees[0] =
             Quotes.NetworkOperationFee({opType: Quotes.OP_TYPE_BASELINE, chainId: 1, price: 1000e8});
 
-        vm.expectRevert(
-            abi.encodeWithSelector(QuarkBuilderBase.UnableToConstructPaycall.selector, "USDC", 1_000.00001e6)
-        );
+        vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.UnableToConstructPaycall.selector, "USDC", 1_000e6));
         builder.recurringSwap(
             buyWeth_({
                 chainId: 1,

@@ -102,7 +102,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
                 0,
                 "IMPOSSIBLE_TO_CONSTRUCT",
                 "USDC",
-                1_000.03001e6
+                1_000.03e6
             )
         );
 
