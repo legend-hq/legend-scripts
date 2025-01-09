@@ -861,7 +861,6 @@ indirect enum When {
     case morphoBorrow(from: Account, borrowAmount: TokenAmount, collateralAmount: TokenAmount, on: Network)
     case morphoVaultSupply(from: Account, vault: MorphoVault, amount: TokenAmount, on: Network)
     case swap(from: Account, sellAmount: TokenAmount, buyAmount: TokenAmount, exchange: Exchange, on: Network)
-    // case morphoVaultSupply(from: Account, amount: TokenAmount, on: Network)
     case payWith(currency: Token, When)
 
     var sender: Account {
