@@ -258,16 +258,6 @@ enum Call: CustomStringConvertible, Equatable {
             }
         }
 
-        // if scriptAddress == getScriptAddress(MorphoVaultActions.creationCode) {
-        //     if let (vault, asset, amount) = try? MorphoVaultActions.depositDecode(input: calldata) {
-        //         let token = Token.from(network: network, address: asset)
-        //         return .depositToMorphoVault(
-        //             amount: TokenAmount(fromWei: amount, ofToken: token),
-        //             network: network
-        //         )
-        //     }
-        // }
-
         if scriptAddress == getScriptAddress(WrapperActions.creationCode) {
             if let _ = try? WrapperActions.wrapAllETHDecode(input: calldata) {
                 return .wrapAsset(.eth)
@@ -1226,29 +1216,6 @@ class Context {
                 ),
                 withFunctions: ffis
             )
-
-        // case let .morphoVaultSupply(from, amount, network):
-        //     return try await QuarkBuilder.morphoVaultSupply(
-        //         supplyIntent: .init(
-        //             amount: amount.amount,
-        //             assetSymbol: amount.token.symbol,
-        //             blockTimestamp: 1_000_000,
-        //             sender: from.address,
-        //             chainId: BigUInt(network.chainId),
-        //             preferAcross: true,
-        //             paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
-        //         ),
-        //         chainAccountsList: chainAccounts,
-        //         quote: .init(
-        //             quoteId: Hex(
-        //                 "0x00000000000000000000000000000000000000000000000000000000000000CC"),
-        //             issuedAt: 0,
-        //             expiresAt: BigUInt(Date(timeIntervalSinceNow: 1_000_000).timeIntervalSince1970),
-        //             assetQuotes: assetQuotes,
-        //             networkOperationFees: networkOperationFees
-        //         ),
-        //         withFunctions: ffis
-        //     )
 
         case let .transfer(from, to, amount, network):
             return try await QuarkBuilder.transfer(

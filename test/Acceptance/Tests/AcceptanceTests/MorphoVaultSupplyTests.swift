@@ -181,7 +181,15 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
         )
     ),
 
-    // reverts: unableToConstructActionIntent(true, "USDC", 1015000, "UNABLE_TO_CONSTRUCT", "USDC", 120000)
+    /*
+    +1.5 on Ethereum
+    +1.5 on Base
+    -1 for Across gasFee
+    -(1.5 * .01) for Across pctFee
+    -0.1 (Eth operation fee)
+    -0.02 (Base operation fee)
+    = 1.865 USDC supplied
+    */
     .init(
         name: "Alice supplies max to MorphoVault (testSimpleMorphoVaultSupplyMax)",
         given: [
@@ -197,18 +205,24 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
             on: .ethereum
         ),
         expect: .success(
-            .single(
+            .multi([
+                .bridge(
+                    bridge: "Across",
+                    srcNetwork: .base,
+                    destinationNetwork: .ethereum,
+                    inputTokenAmount: .amt(1.5, .usdc),
+                    outputTokenAmount: .amt(0.485, .usdc)
+                ),
                 .multicall([
                     .supplyToMorphoVault(
-                        tokenAmount: .amt(2.9, .usdc),
+                        tokenAmount: .amt(1.865, .usdc),
                         vault: .usdc,
                         network: .ethereum
                     ),
-                    .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
+                    .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                 ])
-            )
-        ),
-        skip: true
+            ])
+        )
     ),
 
     .init(
@@ -302,7 +316,15 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
         )
     ),
 
-    // reverts: unableToConstructActionIntent(true, "USDC", 1030000, "UNABLE_TO_CONSTRUCT", "USDC", 120000)
+    /*
+    +3 on Base 
+    +3 on Ethereum
+    -1 for Across gas fee
+    -(3 * 0.01) for Across pct fee
+    -0.1 for Ethereum operation fee
+    -0.02 for Base operation fee
+    = 4.85 USDC supplied to MorphoVault
+    */
     .init(
         name: "Alice supplies max to MorphoVault, bridging funds (testMorphoVaultSupplyMaxWithBridge)",
         given: [
@@ -319,27 +341,34 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
         ),
         expect: .success(
             .multi([
+                .bridge(
+                    bridge: "Across",
+                    srcNetwork: .ethereum,
+                    destinationNetwork: .base,
+                    inputTokenAmount: .amt(3, .usdc),
+                    outputTokenAmount: .amt(1.97, .usdc)
+                ),
                 .multicall([
-                    .bridge(
-                        bridge: "Across",
-                        srcNetwork: .ethereum,
-                        destinationNetwork: .base,
-                        inputTokenAmount: .amt(3, .usdc),
-                        outputTokenAmount: .amt(2, .usdc)
+                    .supplyToMorphoVault(
+                        tokenAmount: .amt(4.85, .usdc),
+                        vault: .usdc,
+                        network: .base
                     ),
                     .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                 ]),
-                .supplyToMorphoVault(
-                    tokenAmount: .amt(6, .usdc),
-                    vault: .usdc,
-                    network: .base
-                )
             ])
-        ),
-        skip: true
+        )
     ),
 
-    // reverts: unableToConstructActionIntent(true, "USDC", 1030000, "UNABLE_TO_CONSTRUCT", "USDC", 600000)
+    /*
+    +3 on Ethereum
+    +3 on Base
+    -1 for Across gas fee
+    -(3 * .01) for Across pct fee
+    -0.5 for Ethereum operation fee
+    -0.1 for Base operation fee
+    = 4.37 USDC supplied
+    */
     .init(
         name: "Alice supplies max to MorphoVault, bridging funds and paying with QuotePay (testMorphoVaultSupplyMaxWithBridgeAndQuotePay)",
         given: [
@@ -370,24 +399,23 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
         ),
         expect: .success(
             .multi([
+                .bridge(
+                    bridge: "Across",
+                    srcNetwork: .ethereum,
+                    destinationNetwork: .base,
+                    inputTokenAmount: .amt(3, .usdc),
+                    outputTokenAmount: .amt(1.97, .usdc)
+                ),
                 .multicall([
-                    .bridge(
-                        bridge: "Across",
-                        srcNetwork: .ethereum,
-                        destinationNetwork: .base,
-                        inputTokenAmount: .amt(3.02, .usdc),
-                        outputTokenAmount: .amt(2, .usdc)
+                    .supplyToMorphoVault(
+                        tokenAmount: .amt(4.37, .usdc),
+                        vault: .usdc,
+                        network: .base
                     ),
                     .quotePay(payment: .amt(0.6, .usdc), payee: .stax, quote: .basic),
                 ]),
-                .supplyToMorphoVault(
-                    tokenAmount: .amt(5.4, .usdc),
-                    vault: .usdc,
-                    network: .base
-                )
             ])
-        ),
-        skip: true
+        )
     ),
 
     .init(
