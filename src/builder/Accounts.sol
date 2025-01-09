@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.27;
 
+import {console} from "src/builder/console.sol";
+
 import {HashMap} from "src/builder/HashMap.sol";
 import {List} from "src/builder/List.sol";
 import {Math} from "src/lib/Math.sol";
@@ -351,8 +353,14 @@ library Accounts {
             ? PaymentInfo.totalCost(payment, List.toUint256Array(chainIdsInvolved))
             : 0;
 
-        return Accounts.totalBalance(assetSymbol, chainAccountsList) - paymentFees
-            - HashMap.getOrDefaultUint256(bridgeFees, abi.encode(assetSymbol), 0);
+        uint256 balance = Accounts.totalBalance(assetSymbol, chainAccountsList);
+        uint256 totalBridgeFees = HashMap.getOrDefaultUint256(bridgeFees, abi.encode(assetSymbol), 0);
+
+        if (balance < paymentFees || balance - paymentFees < totalBridgeFees) {
+            return 0;
+        }
+
+        return balance - paymentFees - totalBridgeFees;
     }
 
     function truncate(ChainAccounts[] memory chainAccountsList, uint256 length)

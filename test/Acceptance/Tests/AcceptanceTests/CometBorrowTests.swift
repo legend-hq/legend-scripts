@@ -201,4 +201,60 @@ let cometBorrowTests: [AcceptanceTest] = [
         ),
         skip: true
     ),
+    .init(
+        name:
+            "Alice borrows from Comet, supplying max weth collateral and paying with weth (testMorphoBorrowWithMaxCollateral)",
+        given: [
+            .tokenBalance(.alice, .amt(5, .weth), .base),
+            .quote(.basic),
+        ],
+        when: .payWith(
+            currency: .weth,
+            .cometBorrow(
+                from: .alice,
+                market: .cusdcv3,
+                borrowAmount: .amt(1, .usdt),
+                collateralAmounts: [.max(.weth)],
+                on: .base
+            )),
+        expect: .success(
+            .single(
+                .multicall([
+                    .supplyMultipleAssetsAndBorrowFromComet(
+                        borrowAmount: .amt(1, .usdt),
+                        collateralAmounts: [.init(fromWei: 4999995000000000000, ofToken: .weth)],
+                        market: .cusdcv3,
+                        network: .base
+                    ),
+                    .quotePay(payment: .init(fromWei: 5000000000000, ofToken: .weth), payee: .stax, quote: .basic),
+                ])
+            )
+        )
+    ),
+    .init(
+        name:
+            "Alice borrows from Comet, supplying max weth collateral and paying with weth when no weth balance (testMorphoBorrowWithMaxCollateral)",
+        given: [
+            .quote(.basic),
+        ],
+        when: .payWith(
+            currency: .weth,
+            .cometBorrow(
+                from: .alice,
+                market: .cusdcv3,
+                borrowAmount: .amt(1, .usdt),
+                collateralAmounts: [.max(.weth)],
+                on: .base
+            )),
+        expect: .revert(
+            .unableToConstructActionIntent(
+                false,
+                "",
+                0,
+                "IMPOSSIBLE_TO_CONSTRUCT",
+                Token.weth.symbol,
+                TokenAmount.amt(0, .weth).amount
+            )
+        )
+    ),
 ]

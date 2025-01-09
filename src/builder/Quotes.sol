@@ -80,7 +80,7 @@ library Quotes {
 
             chainCosts[i] = PaymentInfo.ChainCost({
                 chainId: networkOperationFee.chainId,
-                amount: (networkOperationFee.price * (10 ** decimals)) / Math.subtractFlooredAtOne(assetQuote.price, 1)
+                amount: (networkOperationFee.price * (10 ** decimals) + (assetQuote.price - 1)) / assetQuote.price
             });
         }
 

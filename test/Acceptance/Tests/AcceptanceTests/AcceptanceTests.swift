@@ -825,13 +825,7 @@ struct TokenAmount: Equatable {
     }
 
     static func == (lhs: TokenAmount, rhs: TokenAmount) -> Bool {
-        guard lhs.token == rhs.token else {
-            return false
-        }
-
-        // Compare amounts with a tolerance of 0.01%
-        let difference = lhs.amount > rhs.amount ? lhs.amount - rhs.amount : rhs.amount - lhs.amount
-        return difference * 10000 <= lhs.amount
+        return lhs.amount == rhs.amount && lhs.token == rhs.token
     }
 
     static func amt(_ amount: Double, _ token: Token) -> TokenAmount {

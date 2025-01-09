@@ -484,6 +484,18 @@ contract QuarkBuilderBase {
             return (Strings.OK, operation, action);
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_BORROW)) {
             CometBorrowIntent memory intent = abi.decode(actionIntent, (CometBorrowIntent));
+            for (uint256 i = 0; i < intent.collateralAmounts.length; ++i) {
+                if (intent.collateralAmounts[i] == type(uint256).max) {
+                    intent.collateralAmounts[i] = Accounts.getTotalAvailableBalance(
+                        chainAccountsList,
+                        payment,
+                        bridgeFees,
+                        List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                        intent.collateralAssetSymbols[i]
+                    );
+                }
+            }
+
             (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.cometBorrow(
                 Actions.CometBorrowInput({
                     chainAccountsList: chainAccountsList,
@@ -571,6 +583,15 @@ contract QuarkBuilderBase {
             return (Strings.OK, operation, action);
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_BORROW)) {
             MorphoBorrowIntent memory intent = abi.decode(actionIntent, (MorphoBorrowIntent));
+            if (intent.collateralAmount == type(uint256).max) {
+                intent.collateralAmount = Accounts.getTotalAvailableBalance(
+                    chainAccountsList,
+                    payment,
+                    bridgeFees,
+                    List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                    intent.collateralAssetSymbol
+                );
+            }
 
             (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.morphoBorrow(
                 Actions.MorphoBorrow({

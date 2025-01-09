@@ -65,7 +65,7 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                     ),
                     .quotePay(
                         // Slightly larger than 6 since quark builder adds a small buffer
-                        payment: .init(fromWei: 6000006000006000006, ofToken: .degen), payee: .stax, quote: .basic),
+                        payment: .amt(6, .degen), payee: .stax, quote: .basic),
                 ]),
             ])
         )

@@ -18,7 +18,7 @@ let cometSupplyTests: [AcceptanceTest] = [
                         tokenAmount: .amt(0.5, .weth), market: .cusdcv3, network: .ethereum
                     ),
                     .quotePay(
-                        payment: .amt(0.000025000000000062, .weth), payee: .stax, quote: .basic
+                        payment: .amt(0.000025, .weth), payee: .stax, quote: .basic
                     ),
                 ])
             )
@@ -88,7 +88,7 @@ let cometSupplyTests: [AcceptanceTest] = [
                 0,
                 "IMPOSSIBLE_TO_CONSTRUCT",
                 Token.usdc.symbol,
-                TokenAmount.amt(1000.03001, .usdc).amount
+                TokenAmount.amt(1000.03, .usdc).amount
             )
         )
     ),

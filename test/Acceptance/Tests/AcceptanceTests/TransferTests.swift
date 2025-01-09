@@ -188,7 +188,7 @@ let transferTests: [AcceptanceTest] = [
                     ),
                     // Total quote = 0.02 + 0.04 = 0.06
                     // Amount in terms of ETH = 0.06 / 4000 = 0.000015
-                    .quotePay(payment: .amt(0.000015000000000037, .weth), payee: .stax, quote: .basic),
+                    .quotePay(payment: .amt(0.000015, .weth), payee: .stax, quote: .basic),
                 ]),
                 .transferErc20(tokenAmount: .amt(0.3, .weth), recipient: .bob),
             ])
