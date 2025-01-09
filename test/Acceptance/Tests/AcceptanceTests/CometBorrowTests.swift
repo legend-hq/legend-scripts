@@ -1,5 +1,58 @@
 @preconcurrency import BigInt
 @preconcurrency import Eth
+import Testing
+
+@Test("Alice tries to supply collateral that she doesn't have")
+func testBorrowFundsUnavailable() async throws {
+    let test: AcceptanceTest = .init(
+        name: "Alice tries to supply collateral that she doesn't have",
+        given: [
+            .quote(.basic),
+        ],
+        when: .cometBorrow(
+            from: .alice,
+            market: .cusdcv3,
+            borrowAmount: .amt(1, .usdc),
+            collateralAmounts: [.amt(1, .link)],
+            on: .ethereum
+        ),
+        expect: .revert(
+            .badInputInsufficientFunds(
+                Token.link.symbol,
+                TokenAmount.amt(1, .link).amount,
+                TokenAmount.amt(0, .link).amount
+            )
+        )
+    )
+
+    try await testAcceptanceTests(test: test)
+}
+
+@Test("Alice tries to supply collateral that she doesn't have")
+func testBorrow() async throws {
+    let test: AcceptanceTest = .init(
+        name: "Alice tries to supply collateral that she doesn't have (testBorrowFundsUnavailable)",
+        given: [
+            .quote(.basic),
+        ],
+        when: .cometBorrow(
+            from: .alice,
+            market: .cusdcv3,
+            borrowAmount: .amt(1, .usdc),
+            collateralAmounts: [.amt(1, .link)],
+            on: .ethereum
+        ),
+        expect: .revert(
+            .badInputInsufficientFunds(
+                Token.link.symbol,
+                TokenAmount.amt(1, .link).amount,
+                TokenAmount.amt(0, .link).amount
+            )
+        )
+    )
+
+    try await testAcceptanceTests(test: test)
+}
 
 let cometBorrowTests: [AcceptanceTest] = [
     .init(

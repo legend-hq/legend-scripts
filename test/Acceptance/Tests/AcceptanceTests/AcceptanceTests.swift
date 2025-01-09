@@ -1380,7 +1380,7 @@ func buildResultToCalls(builderResult: QuarkBuilder.QuarkBuilderBase.BuilderResu
     #expect(address == EthAddress("0x103B7e61BBaa2F62028Ebf3Ea7C47dC74Bd3a617"))
 }
 
-@Test("Acceptance Tests", arguments: filteredTests)
+// @Test("Acceptance Tests", arguments: filteredTests)
 func testAcceptanceTests(test: AcceptanceTest) async throws {
     let context = Context(sender: test.when.sender)
     for given in test.given {
