@@ -81,12 +81,11 @@ let cometBorrowTests: [AcceptanceTest] = [
             )
         )
     ),
-    // somewhat invalid input, since Alice supplies USDT to cUSDCv3
     .init(
         name: "Alice borrows from Comet, paying with QuotePay (testCometBorrowWithQuotePay)",
         given: [
             .tokenBalance(.alice, .amt(3, .usdc), .ethereum),
-            .tokenBalance(.alice, .amt(5, .link), .base),
+            .tokenBalance(.alice, .amt(5, .wbtc), .base),
             .quote(
                 .custom(
                     quoteId: Hex("0x00000000000000000000000000000000000000000000000000000000000000CC"),
@@ -103,14 +102,14 @@ let cometBorrowTests: [AcceptanceTest] = [
             from: .alice,
             market: .cusdcv3,
             borrowAmount: .amt(1, .usdt),
-            collateralAmounts: [.amt(1, .link)],
+            collateralAmounts: [.amt(1, .wbtc)],
             on: .base
         ),
         expect: .success(
             .multi([
                 .supplyMultipleAssetsAndBorrowFromComet(
                     borrowAmount: .amt(1, .usdt),
-                    collateralAmounts: [.amt(1, .link)],
+                    collateralAmounts: [.amt(1, .wbtc)],
                     market: .cusdcv3,
                     network: .base
                 ),

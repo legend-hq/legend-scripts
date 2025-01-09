@@ -200,6 +200,7 @@ let cometRepayTests: [AcceptanceTest] = [
         name: "testCometRepayWithBridge",
         given: [
             .tokenBalance(.alice, .amt(4, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(5, .wbtc), .base),
             .quote(
                 .custom(
                     quoteId: Hex(
@@ -218,7 +219,7 @@ let cometRepayTests: [AcceptanceTest] = [
             from: .alice,
             market: .cusdcv3,
             repayAmount: .amt(2, .usdc),
-            collateralAmounts: [.amt(1, .link)],
+            collateralAmounts: [.amt(1, .wbtc)],
             on: .base
         ),
         expect: .success(
@@ -235,7 +236,7 @@ let cometRepayTests: [AcceptanceTest] = [
                 ]),
                 .repayAndWithdrawMultipleAssetsFromComet(
                     repayAmount: .amt(2, .usdc),
-                    collateralAmounts: [.amt(1, .link)],
+                    collateralAmounts: [.amt(1, .wbtc)],
                     market: .cusdcv3,
                     network: .base
                 ),

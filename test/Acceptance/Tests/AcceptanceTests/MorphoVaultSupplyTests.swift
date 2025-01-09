@@ -41,8 +41,8 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                         .degen: 0.01
                     ],
                     fees: [
-                        .base: 0.01,
-                        .arbitrum: 0.02,
+                        .base: 0.02,
+                        .arbitrum: 0.04,
                     ])
             ),
             .acrossQuote(.amt(1, .usdc), 0.01),
@@ -64,7 +64,8 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                         tokenAmount: .amt(4.97, .usdc), vault: .usdc, network: .base
                     ),
                     .quotePay(
-                        payment: .amt(3, .degen), payee: .stax, quote: .basic),
+                        // Slightly larger than 6 since quark builder adds a small buffer
+                        payment: .init(fromWei: 6000006000006000006, ofToken: .degen), payee: .stax, quote: .basic),
                 ]),
             ])
         )

@@ -707,7 +707,6 @@ enum Token: Hashable, Equatable {
             .eth: EthAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"),
             .weth: EthAddress("0x4200000000000000000000000000000000000006"),
             .usdc: EthAddress("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"),
-            .link: EthAddress("0x514910771af9ca656af840dff83e8264ecf986ca"), // Link is not actually deployed on Base
             .usdt: EthAddress("0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2"),
             .wbtc: EthAddress("0x0555E30da8f98308EdB960aa94C0Db47230d2B9c"),
             .degen: EthAddress("0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed"),
