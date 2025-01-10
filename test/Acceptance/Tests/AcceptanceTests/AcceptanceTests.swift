@@ -6,18 +6,6 @@ import Testing
 
 @testable import Acceptance
 
-let allTests: [AcceptanceTest] = transferTests +
-    cometBorrowTests +
-    cometRepayTests +
-    cometSupplyTests +
-    cometWithdrawTests +
-    morphoBorrowTests +
-    morphoVaultSupplyTests +
-    swapTests
-
-let tests = allTests.filter { !$0.skip }
-let filteredTests = tests.contains { $0.only } ? tests.filter { $0.only } : tests
-
 enum Call: CustomStringConvertible, Equatable {
     case bridge(
         bridge: String,
@@ -906,37 +894,17 @@ enum Expect {
     case success(CallExpect)
 }
 
-final class AcceptanceTest: CustomTestArgumentEncodable, CustomStringConvertible, Sendable {
-    let name: String
+final class AcceptanceTest: Sendable {
     let given: [Given]
     let when: When
     let expect: Expect
-    let only: Bool
-    let skip: Bool
 
     init(
-        name: String, given: [Given], when: When, expect: Expect, only: Bool = false,
-        skip: Bool = false
+        given: [Given], when: When, expect: Expect
     ) {
-        self.name = name
         self.given = given
         self.when = when
         self.expect = expect
-        self.only = only
-        self.skip = skip
-
-        if only, skip {
-            fatalError("Cannot set both `only` and `skip` for a test")
-        }
-    }
-
-    func encodeTestArgument(to encoder: some Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(name)
-    }
-
-    var description: String {
-        return name
     }
 }
 
@@ -1188,7 +1156,7 @@ class Context {
                 ),
                 withFunctions: ffis
             )
-        case let .morphoVaultSupply(from, vault, amount, network):
+        case let .morphoVaultSupply(from, _, amount, network):
             return try await QuarkBuilder.morphoVaultSupply(
                 intent: .init(
                     amount: amount.amount,
@@ -1380,7 +1348,6 @@ func buildResultToCalls(builderResult: QuarkBuilder.QuarkBuilderBase.BuilderResu
     #expect(address == EthAddress("0x103B7e61BBaa2F62028Ebf3Ea7C47dC74Bd3a617"))
 }
 
-@Test("Acceptance Tests", arguments: filteredTests)
 func testAcceptanceTests(test: AcceptanceTest) async throws {
     let context = Context(sender: test.when.sender)
     for given in test.given {
