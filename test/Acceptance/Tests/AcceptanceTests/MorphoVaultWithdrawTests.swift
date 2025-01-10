@@ -6,6 +6,7 @@ let morphoVaultWithdrawTests: [AcceptanceTest] = [
         given: [
             .tokenBalance(.alice, .amt(1, .usdc), .ethereum),
             .tokenBalance(.alice, .amt(1, .usdc), .base),
+            .morphoVaultSupply(.alice, .amt(5, .usdc), .usdc, .ethereum),
             .quote(.basic)
         ],
         when: .morphoVaultWithdraw(
@@ -31,6 +32,7 @@ let morphoVaultWithdrawTests: [AcceptanceTest] = [
     .init(
         name: "Alice withdraws from MorphoVault, paying the QuotePay with the withdrawn funds (testMorphoVaultWithdrawPayFromWithdraw)",
         given: [
+            .morphoVaultSupply(.alice, .amt(2, .usdc), .usdc, .ethereum),
             .quote(.basic),
         ],
         when: .morphoVaultWithdraw(
@@ -53,15 +55,32 @@ let morphoVaultWithdrawTests: [AcceptanceTest] = [
         )
     ),
 
+    // XXX MorphoVault balance checking not currently implemented
+    .init(
+        name: "Alice withdraws from MorphoVault more than she has supplied",
+        given: [
+            .morphoVaultSupply(.alice, .amt(1, .usdc), .usdc, .ethereum),
+            .quote(.basic),
+        ],
+        when: .morphoVaultWithdraw(
+            from: .alice,
+            vault: .usdc,
+            amount: .amt(5, .usdc),
+            on: .ethereum
+        ),
+        expect: .revert(
+            .unknownRevert(
+                "MorphoVaultWithdrawError",
+                "Insufficient supply balance"
+            )
+        ),
+        skip: true
+    ),
+
     .init(
         name: "Alice withdraws max from MorphoVault (testMorphoVaultWithdrawMax)",
         given: [
-            .morphoVaultSupply(
-                .alice,
-                .amt(5, .usdc),
-                .usdc,
-                .ethereum
-            ),
+            .morphoVaultSupply(.alice, .amt(5, .usdc), .usdc, .ethereum),
             .quote(.basic),
         ],
         when: .morphoVaultWithdraw(
@@ -87,12 +106,7 @@ let morphoVaultWithdrawTests: [AcceptanceTest] = [
     .init(
         name: "Alice withdraws max from MorphoVault, but the withdrawn amount is not enough to cover QuotePay cost (testMorphoVaultWithdrawMaxRevertsMaxCostTooHigh)",
         given: [
-            .morphoVaultSupply(
-                .alice,
-                .amt(5, .usdc),
-                .usdc,
-                .ethereum
-            ),
+            .morphoVaultSupply(.alice, .amt(5, .usdc), .usdc, .ethereum),
             .quote(
                 .custom(
                     quoteId: Hex(
