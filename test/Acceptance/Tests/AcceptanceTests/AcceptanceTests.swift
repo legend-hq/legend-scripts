@@ -13,6 +13,7 @@ let allTests: [AcceptanceTest] = transferTests +
     cometWithdrawTests +
     morphoBorrowTests +
     morphoVaultSupplyTests +
+    morphoVaultWithdrawTests +
     swapTests
 
 let tests = allTests.filter { !$0.skip }
@@ -41,6 +42,7 @@ enum Call: CustomStringConvertible, Equatable {
         network: Network
     )
     case supplyToMorphoVault(tokenAmount: TokenAmount, vault: MorphoVault, network: Network)
+    case withdrawFromMorphoVault(tokenAmount: TokenAmount, vault: MorphoVault, network: Network)
     case swap(
         sellAmount: TokenAmount,
         buyAmount: TokenAmount,
@@ -224,6 +226,21 @@ enum Call: CustomStringConvertible, Equatable {
                     vault: MorphoVault.from(network: network, address: vault),
                     network: network
                 )
+            } else if let (vaultAddress, amount) = try? MorphoVaultActions.withdrawDecode(input: calldata) {
+                let vault = MorphoVault.from(network: network, address: vaultAddress);
+                guard let tokenAddress = vault.asset(network: network) else {
+                    fatalError("No asset for \(vault.description) on network \(network.description)")
+                }
+                let token = Token.from(
+                    network: network,
+                    address: tokenAddress
+                )
+
+                return .withdrawFromMorphoVault(
+                    tokenAmount: TokenAmount(fromWei: amount, ofToken: token),
+                    vault: vault,
+                    network: network
+                )
             }
         }
 
@@ -309,6 +326,8 @@ enum Call: CustomStringConvertible, Equatable {
                 "withdrawFromComet(\(tokenAmount.amount) \(tokenAmount.token.symbol) from \(market.description) on \(network.description))"
         case let .supplyToMorphoVault(tokenAmount, vault, network):
             return "supplyToMorphoVault(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(vault.description) on \(network.description))"
+        case let .withdrawFromMorphoVault(tokenAmount, vault, network):
+            return "withdrawFromMorphoVault(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(vault.description) on \(network.description))"
         case let .swap(sellAmount, buyAmount, _, network):
             return "swap(\(sellAmount.amount) \(sellAmount.token.symbol) for \(buyAmount.amount) \(buyAmount.token.symbol) on \(network.description))"
         case let .multicall(calls):
@@ -860,6 +879,7 @@ indirect enum When {
     case cometWithdraw(from: Account, market: Comet, amount: TokenAmount, on: Network)
     case morphoBorrow(from: Account, borrowAmount: TokenAmount, collateralAmount: TokenAmount, on: Network)
     case morphoVaultSupply(from: Account, vault: MorphoVault, amount: TokenAmount, on: Network)
+    case morphoVaultWithdraw(from: Account, vault: MorphoVault, amount: TokenAmount, on: Network)
     case swap(from: Account, sellAmount: TokenAmount, buyAmount: TokenAmount, exchange: Exchange, on: Network)
     case payWith(currency: Token, When)
 
@@ -878,6 +898,8 @@ indirect enum When {
         case let .morphoBorrow(from, _, _, _):
             return from
         case let .morphoVaultSupply(from, _, _, _):
+            return from
+        case let .morphoVaultWithdraw(from, _, _, _):
             return from
         case let .swap(from, _, _, _, _):
             return from
@@ -1188,7 +1210,7 @@ class Context {
                 ),
                 withFunctions: ffis
             )
-        case let .morphoVaultSupply(from, vault, amount, network):
+        case let .morphoVaultSupply(from, _, amount, network):
             return try await QuarkBuilder.morphoVaultSupply(
                 intent: .init(
                     amount: amount.amount,
@@ -1196,6 +1218,28 @@ class Context {
                     blockTimestamp: BigUInt(1_000_000),
                     sender: from.address,
                     chainId: BigUInt(network.chainId),
+                    preferAcross: true,
+                    paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                ),
+                chainAccountsList: chainAccounts,
+                quote: .init(
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    issuedAt: 0,
+                    expiresAt: BigUInt(Date(timeIntervalSinceNow: 1_000_000).timeIntervalSince1970),
+                    assetQuotes: assetQuotes,
+                    networkOperationFees: networkOperationFees
+                ),
+                withFunctions: ffis
+            )
+        case let .morphoVaultWithdraw(from, _, amount, network):
+            return try await QuarkBuilder.morphoVaultWithdraw(
+                intent: .init(
+                    amount: amount.amount,
+                    assetSymbol: amount.token.symbol,
+                    blockTimestamp: BigUInt(1_000_000),
+                    chainId: BigUInt(network.chainId),
+                    withdrawer: from.address,
                     preferAcross: true,
                     paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
                 ),
