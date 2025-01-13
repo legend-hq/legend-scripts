@@ -15,8 +15,15 @@ libs = ["./lib"]
 [profile.ir]
 via_ir = true
 # TODO: optimizer is turned to false to ignore stack too deep issues
-optimizer = false
+optimizer = true
 optimizer_runs = 100000000
+
+[profile.ir.optimizer_details]
+inliner = false
+
+[profile.ir.optimizer_details.yulDetails]
+optimizer_steps = "dhfoDgvulfnTUtnIf[xa[r]EscLMcCTUtTOntnfDIulLculVcul[j]Tpeulxa[rul]xa[r]cLgvfCTUca[r]LSsTFOtfDnca[r]Iulc]jmul[jul]VcTOculjmul"
+
 
 [fmt]
 ignore = ["src/vendor/**/*"]

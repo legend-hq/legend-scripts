@@ -352,14 +352,15 @@ contract QuarkBuilderTest {
 
     function usdc_(uint256 chainId) internal pure returns (address) {
         if (chainId == 7777) return USDC_7777; // Mock with random chain's USDC
+        revert("no mock usdc for that chain id bye");
 
-        (string memory result, address assetAddress) = BuilderPackHelper.knownAssetAddress("USDC", chainId);
+        // (string memory result, address assetAddress) = BuilderPackHelper.knownAssetAddress("USDC", chainId);
 
-        if (Strings.isError(result)) {
-            revert("no mock usdc for that chain id bye");
-        }
+        // if (Strings.isError(result)) {
+        //     revert("no mock usdc for that chain id bye");
+        // }
 
-        return assetAddress;
+        // return assetAddress;
     }
 
     function usdt_(uint256 chainId) internal pure returns (address) {
