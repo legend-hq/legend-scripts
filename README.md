@@ -103,7 +103,7 @@ Make sure the following env variables are defined:
 ```sh
 # Required
 RPC_URL=
-ETHERSCAN_KEY=
+ETHERSCAN_API_KEY=
 VERIFICATION_CHAIN_ID=
 ```
 

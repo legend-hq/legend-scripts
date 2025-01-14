@@ -3,7 +3,7 @@
 set -eo pipefail
 
 if [ -n "$RPC_URL" ]; then
-  rpc_args="--rpc-url $VERIFICATION_RPC_URL"
+  rpc_args="--rpc-url $RPC_URL"
 else
   echo "Error: RPC_URL is not set"
   exit 1
@@ -14,8 +14,8 @@ if [ -z "$VERIFICATION_CHAIN_ID" ]; then
   exit 1
 fi
 
-if [ -z "$VERIFICATION_ETHERSCAN_API_KEY" ]; then
-  echo "Error: VERIFICATION_ETHERSCAN_API_KEY is not set"
+if [ -z "$ETHERSCAN_API_KEY" ]; then
+  echo "Error: ETHERSCAN_API_KEY is not set"
   exit 1
 fi
 
@@ -105,9 +105,11 @@ for i in "${!contract_paths[@]}"; do
   address=$(echo "$output" | grep "Code Address:" | cut -d: -f2 | tr -d ' ')
 
   if [ -z "$address" ] || [ "$address" == "0x" ]; then
-    echo "Failed to retrieve code address for bytecode $contract_path."
+    echo "Failed to retrieve code address for bytecode $contract_path"
     continue
   fi
+
+  echo "Attempting to verify $contract_path at $address"
 
   # Attempt to verify the contract
   verification_output=$(FOUNDRY_PROFILE=ir forge verify-contract $address $contract_path --watch --chain-id $VERIFICATION_CHAIN_ID)
