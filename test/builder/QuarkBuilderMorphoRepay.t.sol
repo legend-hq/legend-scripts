@@ -165,8 +165,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             ),
             "calldata is MorphoActions.repayAndWithdrawCollateral(MorphoInfo.getMorphoAddress(1), MorphoInfo.getMarketParams(1, WBTC, USDC), 1e6, 1e8,  address(0xa11ce),  address(0xa11ce));"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 1);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(MorphoActions).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -273,10 +272,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
             "calldata is Multicall.run([wrapperActionsAddress, morphoActionsAddress], [WrapperActions.wrapAllETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2),  MorphoActions.repayAndWithdrawCollateral(MorphoInfo.getMorphoAddress(8453), MorphoInfo.getMarketParams(8453, WETH, USDC), 1e18, 0, 0e18, address(0xa11ce), address(0xa11ce))"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 3);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(WrapperActions).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[1], type(MorphoActions).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -385,10 +381,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
             "calldata is Multicall.run([morphoActionsAddress, quotePayAddress], [MorphoActions.repayAndWithdrawCollateral(MorphoInfo.getMorphoAddress(1), MorphoInfo.getMarketParams(1, WBTC, USDC), 1e6, 0), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.1e6, QUOTE_ID)]);"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 3);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(MorphoActions).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[1], type(QuotePay).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -533,10 +526,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
     //             "calldata is Multicall.run([cctpBridgeActionsAddress, quotePayAddress], [CCCTPBridgeActions.bridgeUSDC(0xBd3fa81B58Ba92a82136038B25aDec7066af3155, 2e6, 6, 0xb0b, USDC_1)), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.3e6, QUOTE_ID)]);"
     //         );
     //     }
-    //     assertEq(result.quarkOperations[0].scriptSources.length, 3);
-    //     assertEq(result.quarkOperations[0].scriptSources[0], type(CCTPBridgeActions).creationCode);
-    //     assertEq(result.quarkOperations[0].scriptSources[1], type(QuotePay).creationCode);
-    //     assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+    //     assertEq(result.quarkOperations[0].scriptSources.length, 0);
     //     assertEq(
     //         result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
     //     );
@@ -554,8 +544,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
     //         ),
     //         "calldata is MorphoActions.repayAndWithdrawCollateral(MorphoInfo.getMorphoAddress(8453), MorphoInfo.getMarketParams(8453, WETH, USDC), 2e6, 0, 0);"
     //     );
-    //     assertEq(result.quarkOperations[1].scriptSources.length, 1);
-    //     assertEq(result.quarkOperations[1].scriptSources[0], type(MorphoActions).creationCode);
+    //     assertEq(result.quarkOperations[1].scriptSources.length, 0);
     //     assertEq(
     //         result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
     //     );
@@ -688,10 +677,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
     //             "calldata is Multicall.run([morphoActionsAddress, quotePayAddress], [MorphoActions.repayAndWithdrawCollateral(MorphoInfo.getMorphoAddress(1), MorphoInfo.getMarketParams(1, WBTC, USDC), type(uint256).max, 0), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.1e6, QUOTE_ID)]);"
     //         );
     //     }
-    //     assertEq(result.quarkOperations[0].scriptSources.length, 3);
-    //     assertEq(result.quarkOperations[0].scriptSources[0], type(MorphoActions).creationCode);
-    //     assertEq(result.quarkOperations[0].scriptSources[1], type(QuotePay).creationCode);
-    //     assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+    //     assertEq(result.quarkOperations[0].scriptSources.length, 0);
     //     assertEq(
     //         result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
     //     );
@@ -817,10 +803,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
     //             "calldata is Multicall.run([cctpBridgeActionsAddress, quotePayAddress], [CCTPBridgeActions.bridgeUSDC(0xBd3fa81B58Ba92a82136038B25aDec7066af3155, 10.01e6, 6, 0xb0b, USDC_1)), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.2e6, QUOTE_ID)]);"
     //         );
     //     }
-    //     assertEq(result.quarkOperations[0].scriptSources.length, 3);
-    //     assertEq(result.quarkOperations[0].scriptSources[0], type(CCTPBridgeActions).creationCode);
-    //     assertEq(result.quarkOperations[0].scriptSources[1], type(QuotePay).creationCode);
-    //     assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+    //     assertEq(result.quarkOperations[0].scriptSources.length, 0);
     //     assertEq(
     //         result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
     //     );
@@ -843,8 +826,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
     //         "calldata is MorphoActions.repayAndWithdrawCollateral(MorphoInfo.getMorphoAddress(8453), MorphoInfo.getMarketParams(8453, WETH, USDC), type(uint256).max, 0);"
     //     );
 
-    //     assertEq(result.quarkOperations[1].scriptSources.length, 1);
-    //     assertEq(result.quarkOperations[1].scriptSources[0], type(MorphoActions).creationCode);
+    //     assertEq(result.quarkOperations[1].scriptSources.length, 0);
     //     assertEq(
     //         result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
     //     );

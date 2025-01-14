@@ -85,16 +85,13 @@ library QuarkOperationHelper {
     {
         address[] memory callContracts = new address[](quarkOperations.length);
         bytes[] memory callDatas = new bytes[](quarkOperations.length);
-        // We add an extra space for the Multicall script source
-        bytes[] memory scriptSources = new bytes[](quarkOperations.length + 1);
+        // We don't provide `scriptSources` to save on calldata
+        bytes[] memory scriptSources = new bytes[](0);
 
         for (uint256 i = 0; i < quarkOperations.length; ++i) {
             callContracts[i] = quarkOperations[i].scriptAddress;
             callDatas[i] = quarkOperations[i].scriptCalldata;
-            // Note: For simplicity, we assume there is one script source per quark operation for now
-            scriptSources[i] = quarkOperations[i].scriptSources[0];
         }
-        scriptSources[quarkOperations.length] = type(Multicall).creationCode;
 
         bytes memory multicallCalldata = abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas);
 

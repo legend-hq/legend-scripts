@@ -641,18 +641,15 @@ library Actions {
         Accounts.QuarkSecret memory accountSecret =
             Accounts.findQuarkSecret(bridge.sender, srcChainAccounts.quarkSecrets);
 
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = CCTP.bridgeScriptSource();
-
         // Construct QuarkOperation
         IQuarkWallet.QuarkOperation memory quarkOperation = IQuarkWallet.QuarkOperation({
             nonce: accountSecret.nonceSecret,
             isReplayable: false,
-            scriptAddress: CodeJarHelper.getCodeAddress(scriptSources[0]),
+            scriptAddress: CodeJarHelper.getCodeAddress(CCTP.bridgeScriptSource()),
             scriptCalldata: CCTP.encodeBridgeUSDC(
                 bridge.srcChainId, bridge.destinationChainId, bridge.amount, bridge.recipient, srcUSDCPositions.asset
             ),
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: bridge.blockTimestamp + BRIDGE_EXPIRY_BUFFER
         });
 
@@ -707,9 +704,6 @@ library Actions {
         Accounts.QuarkSecret memory accountSecret =
             Accounts.findQuarkSecret(bridge.sender, srcChainAccounts.quarkSecrets);
 
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = Across.bridgeScriptSource();
-
         // Make FFI call to fetch a quote from Across API
         (uint256 gasFee, uint256 variableFeePct) = FFI.requestAcrossQuote(
             srcAssetPositions.asset,
@@ -735,7 +729,7 @@ library Actions {
         IQuarkWallet.QuarkOperation memory quarkOperation = IQuarkWallet.QuarkOperation({
             nonce: accountSecret.nonceSecret,
             isReplayable: false,
-            scriptAddress: CodeJarHelper.getCodeAddress(scriptSources[0]),
+            scriptAddress: CodeJarHelper.getCodeAddress(Across.bridgeScriptSource()),
             scriptCalldata: Across.encodeBridgeAction(
                 bridge.srcChainId,
                 bridge.destinationChainId,
@@ -748,7 +742,7 @@ library Actions {
                 // TODO: Determine when to set this to true. Probably requires reading QuarkState
                 false // useNativeToken
             ),
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: bridge.blockTimestamp + BRIDGE_EXPIRY_BUFFER
         });
 
@@ -784,9 +778,6 @@ library Actions {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(CometSupplyMultipleAssetsAndBorrow).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(borrowInput.chainId, borrowInput.chainAccountsList);
 
@@ -822,7 +813,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(CometSupplyMultipleAssetsAndBorrow).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: borrowInput.blockTimestamp + STANDARD_EXPIRY_BUFFER
         });
 
@@ -858,9 +849,6 @@ library Actions {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(CometRepayAndWithdrawMultipleAssets).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(repayInput.chainId, repayInput.chainAccountsList);
 
@@ -895,7 +883,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(CometRepayAndWithdrawMultipleAssets).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: repayInput.blockTimestamp + STANDARD_EXPIRY_BUFFER
         });
 
@@ -931,9 +919,6 @@ library Actions {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(CometSupplyActions).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(cometSupply.chainId, cometSupply.chainAccountsList);
 
@@ -956,7 +941,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(CometSupplyActions).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: cometSupply.blockTimestamp + STANDARD_EXPIRY_BUFFER
         });
 
@@ -988,9 +973,6 @@ library Actions {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(CometWithdrawActions).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(cometWithdraw.chainId, cometWithdraw.chainAccountsList);
 
@@ -1014,7 +996,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(CometWithdrawActions).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: cometWithdraw.blockTimestamp + STANDARD_EXPIRY_BUFFER
         });
 
@@ -1046,9 +1028,6 @@ library Actions {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(TransferActions).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(transfer.chainId, transfer.chainAccountsList);
 
@@ -1075,7 +1054,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(TransferActions).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: transfer.blockTimestamp + TRANSFER_EXPIRY_BUFFER
         });
 
@@ -1108,9 +1087,6 @@ library Actions {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(MorphoActions).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(borrowInput.chainId, borrowInput.chainAccountsList);
 
@@ -1137,7 +1113,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(MorphoActions).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: borrowInput.blockTimestamp + STANDARD_EXPIRY_BUFFER
         });
 
@@ -1175,9 +1151,6 @@ library Actions {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(MorphoActions).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(repayInput.chainId, repayInput.chainAccountsList);
 
@@ -1203,7 +1176,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(MorphoActions).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: repayInput.blockTimestamp + STANDARD_EXPIRY_BUFFER
         });
 
@@ -1242,9 +1215,6 @@ library Actions {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(MorphoVaultActions).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(vaultSupply.chainId, vaultSupply.chainAccountsList);
 
@@ -1266,7 +1236,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(MorphoVaultActions).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: vaultSupply.blockTimestamp + STANDARD_EXPIRY_BUFFER
         });
 
@@ -1299,9 +1269,6 @@ library Actions {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(MorphoVaultActions).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(vaultWithdraw.chainId, vaultWithdraw.chainAccountsList);
 
@@ -1323,7 +1290,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(MorphoVaultActions).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: vaultWithdraw.blockTimestamp + STANDARD_EXPIRY_BUFFER
         });
 
@@ -1351,15 +1318,11 @@ library Actions {
         return (quarkOperation, action);
     }
 
-    // TODO: Commenting because it is currently unused and will result in stack too deep
     function morphoClaimRewards(MorphoClaimRewards memory claimRewards, PaymentInfo.Payment memory payment)
         internal
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(MorphoRewardsActions).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(claimRewards.chainId, claimRewards.chainAccountsList);
 
@@ -1390,7 +1353,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(MorphoRewardsActions).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: claimRewards.blockTimestamp + STANDARD_EXPIRY_BUFFER
         });
 
@@ -1421,9 +1384,6 @@ library Actions {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(QuotePay).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(quotePayInfo.chainId, quotePayInfo.chainAccountsList);
 
@@ -1441,7 +1401,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(QuotePay).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: quotePayInfo.blockTimestamp + STANDARD_EXPIRY_BUFFER
         });
 
@@ -1475,9 +1435,6 @@ library Actions {
         PaymentInfo.Payment memory payment,
         bool isRecurring
     ) internal pure returns (IQuarkWallet.QuarkOperation memory, Action memory) {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(WrapperActions).creationCode;
-
         Accounts.ChainAccounts memory accounts =
             Accounts.findChainAccounts(wrapOrUnwrap.chainId, wrapOrUnwrap.chainAccountsList);
 
@@ -1493,7 +1450,7 @@ library Actions {
             scriptCalldata: TokenWrapper.encodeActionToWrapOrUnwrap(
                 wrapOrUnwrap.chainId, wrapOrUnwrap.assetSymbol, wrapOrUnwrap.amountNeeded
             ),
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: wrapOrUnwrap.blockTimestamp + STANDARD_EXPIRY_BUFFER
         });
 
@@ -1527,9 +1484,6 @@ library Actions {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Action memory)
     {
-        bytes[] memory scriptSources = new bytes[](1);
-        scriptSources[0] = type(ApproveAndSwap).creationCode;
-
         Accounts.QuarkSecret memory accountSecret;
         SwapActionContext memory swapActionContext;
         // Local scope to avoid stack too deep
@@ -1583,7 +1537,7 @@ library Actions {
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(ApproveAndSwap).creationCode),
             scriptCalldata: scriptCalldata,
-            scriptSources: scriptSources,
+            scriptSources: new bytes[](0),
             expiry: swap.blockTimestamp + SWAP_EXPIRY_BUFFER
         });
 
@@ -1655,9 +1609,6 @@ library Actions {
         IQuarkWallet.QuarkOperation memory quarkOperation;
         // Local scope to avoid stack too deep
         {
-            bytes[] memory scriptSources = new bytes[](1);
-            scriptSources[0] = type(RecurringSwap).creationCode;
-
             // TODO: Handle wrapping ETH? Do we need to?
             bytes memory scriptCalldata = abi.encodeWithSelector(RecurringSwap.swap.selector, swapConfig);
 
@@ -1668,7 +1619,7 @@ library Actions {
                 isReplayable: true,
                 scriptAddress: CodeJarHelper.getCodeAddress(type(RecurringSwap).creationCode),
                 scriptCalldata: scriptCalldata,
-                scriptSources: scriptSources,
+                scriptSources: new bytes[](0),
                 expiry: type(uint256).max
             });
         }

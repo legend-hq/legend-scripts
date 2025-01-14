@@ -156,8 +156,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
             ),
             "calldata is CometSupplyMultipleAssetsAndBorrow.run(COMET_1_USDC, [LINK], [1e18], USDC, 1e6);"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 1);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(CometSupplyMultipleAssetsAndBorrow).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -278,10 +277,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
             "calldata is Multicall.run([wrapperActionsAddress, cometSupplyMultipleAssetsAndBorrowAddress], [WrapperActions.wrapAllETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2), CometSupplyMultipleAssetsAndBorrow.run(COMET_1, collateralTokens, collateralAmounts, usdc_(1), 1e6)"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 3);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(WrapperActions).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[1], type(CometSupplyMultipleAssetsAndBorrow).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -402,8 +398,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
             ),
             "calldata is CometSupplyMultipleAssetsAndBorrow.run(COMET_1_USDC, [LINK_8453], [1e18], USDT_8453, 1e6);"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 1, "one script source");
-        assertEq(result.quarkOperations[0].scriptSources[0], type(CometSupplyMultipleAssetsAndBorrow).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0, "empty script source");
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -417,8 +412,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 1.1e6, QUOTE_ID),
             "calldata is QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT, USDC_1, 1.1e6, QUOTE_ID);"
         );
-        assertEq(result.quarkOperations[1].scriptSources.length, 1, "one script source");
-        assertEq(result.quarkOperations[1].scriptSources[0], type(QuotePay).creationCode);
+        assertEq(result.quarkOperations[1].scriptSources.length, 0, "empty script source");
         assertEq(
             result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -587,10 +581,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
             "calldata is Multicall.run([cometSupplyMultipleAssetsAndBorrowAddress, quotePayAddress], [CometSupplyMultipleAssetsAndBorrow.run(COMET_1_USDC, [LINK_1], [1e18], USDC_1, 2e6), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT, USDC_1, 1.5e6, QUOTE_ID)]);"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 3);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(CometSupplyMultipleAssetsAndBorrow).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[1], type(QuotePay).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -722,10 +713,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
             "calldata is Multicall.run([cctpBridgeActionsAddress, quotePayAddress], [CCTPBridgeActions.bridgeUSDC(0xBd3fa81B58Ba92a82136038B25aDec7066af3155, 2.2e6, 6, 0xa11ce, USDC_1), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT, USDC_1, 0.3e6, QUOTE_ID)]);"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 3);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(CCTPBridgeActions).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[1], type(QuotePay).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -754,8 +742,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
             ),
             "calldata is CometSupplyMultipleAssetsAndBorrow.run(COMET_1_USDC, [USDC_8453], [2e6], WETH_8453, 1e18);"
         );
-        assertEq(result.quarkOperations[1].scriptSources.length, 1, "one script source");
-        assertEq(result.quarkOperations[1].scriptSources[0], type(CometSupplyMultipleAssetsAndBorrow).creationCode);
+        assertEq(result.quarkOperations[1].scriptSources.length, 0, "empty script source");
         assertEq(
             result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );

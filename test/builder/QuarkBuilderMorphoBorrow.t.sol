@@ -151,8 +151,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
             ),
             "calldata is MorphoActions.supplyCollateralAndBorrow(MorphoInfo.getMorphoAddress(1), MorphoInfo.getMarketParams(1, WBTC, USDC), 1e8, 1e6);"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 1);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(MorphoActions).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -251,10 +250,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
             "calldata is Multicall.run([wrapperActionsAddress, MorphoActionsAddress], [WrapperActions.wrapAllETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2), MorphoActions.supplyCollateralAndBorrow(MorphoInfo.getMorphoAddress(8453), MorphoInfo.getMarketParams(8453, WETH, USDC), 1e18, 1e6)"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 3);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(WrapperActions).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[1], type(MorphoActions).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -356,10 +352,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
             "calldata is Multicall.run([morphoActionsAddress, quotePayAddress], [MorphoActions.supplyCollateralAndBorrow(MorphoInfo.getMorphoAddress(1), MorphoInfo.getMarketParams(1, WBTC, USDC), 1e8, 1e6), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.1e6, QUOTE_ID)]);"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 3);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(MorphoActions).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[1], type(QuotePay).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
@@ -476,10 +469,7 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
             "calldata is Multicall.run([morphoActionsAddress, quotePayAddress], [MorphoActions.supplyCollateralAndBorrow(MorphoInfo.getMorphoAddress(), MorphoInfo.getMarketParams(1, WBTC, USDC), 1e8, 1e6, address(0xa11ce), address(0xa11ce)), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.1e6, QUOTE_ID)]);"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 3);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(MorphoActions).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[1], type(QuotePay).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
