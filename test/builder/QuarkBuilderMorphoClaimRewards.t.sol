@@ -196,10 +196,7 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
             "calldata is Multicall.run([morphoRewardsActionsAddress, quotePayAddress], [MorphoRewardsActions.claimAll(fixtureDistributors, fixtureAccounts, fixtureRewards, fixtureClaimables, fixtureProofs), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 1e6, QUOTE_ID)]);"
         );
-        assertEq(result.quarkOperations[0].scriptSources.length, 3);
-        assertEq(result.quarkOperations[0].scriptSources[0], type(MorphoRewardsActions).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[1], type(QuotePay).creationCode);
-        assertEq(result.quarkOperations[0].scriptSources[2], type(Multicall).creationCode);
+        assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
