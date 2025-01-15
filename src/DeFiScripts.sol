@@ -300,6 +300,16 @@ contract ApproveAndSwap {
     // To handle non-standard ERC20 tokens (i.e. USDT)
     using SafeERC20 for IERC20;
 
+    /// @notice Emitted when an approve and swap is executed
+    event ApproveAndSwapExecuted(
+        address indexed sender,
+        address indexed swapContract,
+        address sellToken,
+        address buyToken,
+        uint256 sellAmount,
+        uint256 buyAmount
+    );
+
     /**
      * Approve a specified contract for an amount of token and execute the data against it
      * @param to The contract address to approve execute on
@@ -318,6 +328,8 @@ contract ApproveAndSwap {
         bytes calldata data
     ) external {
         IERC20(sellToken).forceApprove(to, sellAmount);
+
+        uint256 sellTokenBalanceBefore = IERC20(sellToken).balanceOf(address(this));
         uint256 buyTokenBalanceBefore = IERC20(buyToken).balanceOf(address(this));
 
         (bool success, bytes memory returnData) = to.call(data);
@@ -325,13 +337,20 @@ contract ApproveAndSwap {
             revert DeFiScriptErrors.ApproveAndSwapFailed(returnData);
         }
 
+        uint256 sellTokenBalanceAfter = IERC20(sellToken).balanceOf(address(this));
         uint256 buyTokenBalanceAfter = IERC20(buyToken).balanceOf(address(this));
+
+        uint256 actualSellAmount = sellTokenBalanceBefore - sellTokenBalanceAfter;
         uint256 actualBuyAmount = buyTokenBalanceAfter - buyTokenBalanceBefore;
+
         if (actualBuyAmount < buyAmount) {
             revert DeFiScriptErrors.TooMuchSlippage(buyAmount, actualBuyAmount);
         }
 
         // Approvals to external contracts should always be reset to 0
         IERC20(sellToken).forceApprove(to, 0);
+
+        // Emit the approve and swap event
+        emit ApproveAndSwapExecuted(address(this), to, sellToken, buyToken, actualSellAmount, actualBuyAmount);
     }
 }
