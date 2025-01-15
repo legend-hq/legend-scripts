@@ -1087,9 +1087,7 @@ class Context {
         case let .morphoBorrow(account, borrowAmount, collateralAmount, network):
             let morpho = Morpho.morpho(collateralAmount.token, borrowAmount.token)
             let (currentBorrow, currentCollateralSupply) = morphoPositions[network, default: [:]][morpho, default: [:]][account, default: (BigUInt(0), BigUInt(0))]
-
             morphoPositions[network, default: [:]][morpho, default: [:]][account] = (currentBorrow + borrowAmount.amount, currentCollateralSupply + collateralAmount.amount)
-
         case let .morphoVaultSupply(account, amount, vault, network):
             let currentSupply = morphoVaultPositions[network, default: [:]][vault, default: [:]][account, default: BigUInt(0)]
 
