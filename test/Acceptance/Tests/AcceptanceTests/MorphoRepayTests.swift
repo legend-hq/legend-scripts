@@ -2,7 +2,7 @@
 
 let morphoRepayTests: [AcceptanceTest] = [
     .init(
-        name: " (testMorphoRepayFundsUnavailable)",
+        name: "Alice tries to repay with funds she doesn't have (testMorphoRepayFundsUnavailable)",
         given: [.quote(.basic)],
         when: .morphoRepay(
             from: .alice,
@@ -20,7 +20,7 @@ let morphoRepayTests: [AcceptanceTest] = [
     ),
 
     .init(
-        name: " (testMorphoRepayMaxCostTooHigh)",
+        name: "Alice tries to repay Morpho balance, but does not have enough USDC for QuotePay (testMorphoRepayMaxCostTooHigh)",
         given: [
             .quote(
                 .custom(
@@ -56,7 +56,7 @@ let morphoRepayTests: [AcceptanceTest] = [
     ),
 
     .init(
-        name: " (testMorphoRepay)",
+        name: "Alice repays Morpho borrow (testMorphoRepay)",
         given: [
             .tokenBalance(.alice, .amt(1.1, .usdc), .ethereum),
             .quote(.basic)
@@ -83,7 +83,7 @@ let morphoRepayTests: [AcceptanceTest] = [
     ),
 
     .init(
-        name: " (testMorphoRepayWithAutoWrapper)",
+        name: "Alice repays MorphoBorrow of WETH with ETH (testMorphoRepayWithAutoWrapper)",
         given: [
             .tokenBalance(.alice, .amt(1, .eth), .base),
             .tokenBalance(.alice, .amt(1, .usdc), .base),
@@ -112,7 +112,7 @@ let morphoRepayTests: [AcceptanceTest] = [
     ),
 
     .init(
-        name: " (testMorphoRepayWithQuotePay)",
+        name: "Alice repays Morpho borrow, paying with QuotePay (testMorphoRepayWithQuotePay)",
         given: [
             .tokenBalance(.alice, .amt(2, .usdc), .ethereum),
             .quote(.basic)
@@ -139,7 +139,7 @@ let morphoRepayTests: [AcceptanceTest] = [
     ),
 
     .init(
-        name: " (testMorphoRepayWithBridge)",
+        name: "Alice repays Morpho borrow on Base with funds bridged from Ethereum (testMorphoRepayWithBridge)",
         given: [
             .tokenBalance(.alice, .amt(4, .usdc), .ethereum),
             .quote(
@@ -190,7 +190,7 @@ let morphoRepayTests: [AcceptanceTest] = [
     ),
 
     .init(
-        name: " (testMorphoRepayMax)",
+        name: "Alice repays max Morpho borrow (testMorphoRepayMax)",
         given: [
             .tokenBalance(.alice, .amt(20, .usdc), .ethereum),
             .quote(.basic),
@@ -217,7 +217,7 @@ let morphoRepayTests: [AcceptanceTest] = [
     ),
 
     .init(
-        name: " (testMorphoRepayMaxWithBridge)",
+        name: "Alice repays max Morpho borrow on Base with funds bridged from Ethereum (testMorphoRepayMaxWithBridge)",
         given: [
             .quote(
                 .custom(
