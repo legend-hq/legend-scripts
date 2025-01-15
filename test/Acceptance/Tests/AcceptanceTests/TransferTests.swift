@@ -168,6 +168,38 @@ struct TransferTests {
         )
     }
 
+    @Test("Alice transfers MAX USDC (uint256.max) to Bob on Arbitrum via Bridge")
+    func testTransferMaxUsdcUint256ViaBridgeBackwards() async throws {
+        try await testAcceptanceTests(
+            test: .init(
+                given: [
+                    .tokenBalance(.alice, .amt(50, .usdc), .arbitrum),
+                    .tokenBalance(.alice, .amt(50, .usdc), .base),
+                    .quote(.basic),
+                    .acrossQuote(.amt(1, .usdc), 0.01),
+                ],
+                when: .transfer(
+                    from: .alice, to: .bob, amount: .max(.usdc), on: .base
+                ),
+                expect: .success(
+                    .multi([
+                        .bridge(
+                            bridge: "Across",
+                            srcNetwork: .arbitrum,
+                            destinationNetwork: .base,
+                            inputTokenAmount: .amt(50, .usdc),
+                            outputTokenAmount: .amt(48.5, .usdc)
+                        ),
+                        .multicall([
+                            .transferErc20(tokenAmount: .amt(98.44, .usdc), recipient: .bob),
+                            .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
+                        ]),
+                    ])
+                )
+            )
+        )
+    }
+
     @Test("Alice bridges sumSrcBalance via Across when inputAmount > sumSrcBalance")
     func testBridgeSumSrcBalance() async throws {
         try await testAcceptanceTests(
