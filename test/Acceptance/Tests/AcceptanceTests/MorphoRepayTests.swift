@@ -270,5 +270,33 @@ let morphoRepayTests: [AcceptanceTest] = [
                 )
             ])
         )
+    ),
+
+    .init(
+        name: "Alice partially repays Morpho borrow using max",
+        given: [
+            .morphoBorrow(.alice, .amt(20, .usdc), .amt(1.0, .wbtc), .ethereum),
+            .tokenBalance(.alice, .amt(5, .usdc), .ethereum),
+            .quote(.basic),
+        ],
+        when: .morphoRepay(
+            from: .alice,
+            repayAmount: .max(.usdc),
+            collateralAmount: .amt(0, .wbtc),
+            on: .ethereum
+        ),
+        expect: .success(
+            .single(
+                .multicall([
+                    .repayAndWithdrawCollateralFromMorpho(
+                        repayAmount: .amt(4.9, .usdc),
+                        collateralAmount: .amt(0, .wbtc),
+                        market: .morpho(.wbtc, .usdc),
+                        network: .ethereum
+                    ),
+                    .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
+                ])
+            )
+        )
     )
 ]
