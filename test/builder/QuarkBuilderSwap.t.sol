@@ -155,7 +155,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         // The 30e6 is the suggested amount (total available funds) to swap
         vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 65e6, 60e6));
         builder.swap(
-            buyWeth_(1, usdc_(1), 65e6, 0.01e18, address(0xa11ce), BLOCK_TIMESTAMP, "USDC"), // swap 30 USDC on chain 1 to 0.01 WETH
+            buyWeth_(1, usdc_(1), 65e6, 0.01e18, address(0xa11ce), BLOCK_TIMESTAMP, "USDC"), // swap 65 USDC on chain 1 to 0.01 WETH
             chainAccountsList_(60e6), // holding 60 USDC in total across 1, 8453
             quote_({chainIds: Arrays.uintArray(1, 8453, 7777), prices: Arrays.uintArray(3e8, 0.1e8, 0.1e8)}) // but operations cost 3 USDC
         );
@@ -197,7 +197,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         assertEq(
             result.quarkOperations[0].scriptCalldata,
             abi.encodeCall(ApproveAndSwap.run, (ZERO_EX_ENTRY_POINT, USDC_1, 3000e6, WETH_1, 1e18, ZERO_EX_SWAP_DATA)),
-            "calldata is ApproveAndSwap.run(ZERO_EX_ENTRY_POINT, USDC_1, 3500e6, WETH_1, 1e18, ZERO_EX_SWAP_DATA);"
+            "calldata is ApproveAndSwap.run(ZERO_EX_ENTRY_POINT, USDC_1, 3000e6, WETH_1, 1e18, ZERO_EX_SWAP_DATA);"
         );
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 3 days, "expiry is current blockTimestamp + 3 days"
@@ -595,7 +595,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
                     usdc_(1)
                 )
             ),
-            "calldata is CCTPBridgeActions.bridgeUSDC(address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155), 2e6, 6, bytes32(uint256(uint160(0xb0b))), usdc_(1)));"
+            "calldata is CCTPBridgeActions.bridgeUSDC(address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155), 1000e6, 6, bytes32(uint256(uint160(0xb0b))), usdc_(1)));"
         );
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
@@ -755,7 +755,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
             abi.encodeWithSelector(
                 ApproveAndSwap.run.selector, ZERO_EX_ENTRY_POINT, USDC_8453, 3000e6, WETH_8453, 1e18, ZERO_EX_SWAP_DATA
             ),
-            "calldata is ApproveAndSwap.run(ZERO_EX_ENTRY_POINT, USDC_8453, 3500e6, WETH_8453, 1e18, ZERO_EX_SWAP_DATA);"
+            "calldata is ApproveAndSwap.run(ZERO_EX_ENTRY_POINT, USDC_8453, 3000e6, WETH_8453, 1e18, ZERO_EX_SWAP_DATA);"
         );
         assertEq(
             result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 3 days, "expiry is current blockTimestamp + 3 days"

@@ -771,6 +771,10 @@ enum Token: Hashable, Equatable {
             .usdt: EthAddress("0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9"),
             .wbtc: EthAddress("0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f"),
         ],
+        .unknown(7777): [
+            .usdc: EthAddress("0x7777000000000000000000000000000000000001"),
+            .weth: EthAddress("0x7777000000000000000000000000000000000002"),
+        ]
     ]
 
     static var networkAddressToken: [Network: [EthAddress: Token]] {
