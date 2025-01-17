@@ -9,9 +9,6 @@ library MockAcrossFFIConstants {
 }
 
 contract MockAcrossFFI is IAcrossFFI {
-    uint256 public constant GAS_FEE = 1e6;
-    uint256 public constant VARIABLE_FEE_PCT = 0.01e18;
-
     function requestAcrossQuote(
         address, /* inputToken */
         address, /* outputToken */

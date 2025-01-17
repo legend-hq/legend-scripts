@@ -12,6 +12,7 @@ import {SwapActionsBuilder} from "src/builder/actions/SwapActionsBuilder.sol";
 import {Actions} from "src/builder/actions/Actions.sol";
 import {Accounts} from "src/builder/Accounts.sol";
 import {CodeJarHelper} from "src/builder/CodeJarHelper.sol";
+import {FFI} from "src/builder/FFI.sol";
 import {QuarkBuilder} from "src/builder/QuarkBuilder.sol";
 import {QuarkBuilderBase} from "src/builder/QuarkBuilderBase.sol";
 import {Multicall} from "src/Multicall.sol";
@@ -21,10 +22,17 @@ import {QuotePay} from "src/QuotePay.sol";
 import {Quotes} from "src/builder/Quotes.sol";
 
 import {Arrays} from "test/builder/lib/Arrays.sol";
+import {MockZeroExFFI, MockZeroExFFIConstants} from "test/builder/mocks/ZeroExFFI.sol";
 
 contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
     address constant ZERO_EX_ENTRY_POINT = 0xDef1C0ded9bec7F1a1670819833240f027b25EfF;
     bytes constant ZERO_EX_SWAP_DATA = hex"abcdef";
+
+    function setUp() public {
+        // Deploy mock FFI for calling 0x API
+        MockZeroExFFI mockFFI = new MockZeroExFFI();
+        vm.etch(FFI.ZERO_EX_FFI_ADDRESS, address(mockFFI).code);
+    }
 
     function buyUsdc_(
         uint256 chainId,
@@ -499,8 +507,15 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         callContracts[0] = approveAndSwapAddress;
         callContracts[1] = quotePayAddress;
         bytes[] memory callDatas = new bytes[](2);
+        // BuyAmount and SwapData get adjusted
         callDatas[0] = abi.encodeWithSelector(
-            ApproveAndSwap.run.selector, ZERO_EX_ENTRY_POINT, USDC_1, 9000e6, WETH_1, 3e18, ZERO_EX_SWAP_DATA
+            ApproveAndSwap.run.selector,
+            ZERO_EX_ENTRY_POINT,
+            USDC_1,
+            9000e6,
+            WETH_1,
+            MockZeroExFFIConstants.BUY_AMOUNT,
+            MockZeroExFFIConstants.SWAP_DATA
         );
         callDatas[1] = abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 5e6, QUOTE_ID);
         assertEq(
@@ -527,7 +542,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
             abi.encode(
                 Actions.SwapActionContext({
                     chainId: 1,
-                    feeAmount: 10,
+                    feeAmount: MockZeroExFFIConstants.FEE_AMOUNT,
                     feeAssetSymbol: "WETH",
                     feeToken: WETH_1,
                     feeTokenPrice: WETH_PRICE,
@@ -538,7 +553,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
                     outputToken: WETH_1,
                     outputTokenPrice: WETH_PRICE,
                     outputAssetSymbol: "WETH",
-                    outputAmount: 3e18,
+                    outputAmount: MockZeroExFFIConstants.BUY_AMOUNT,
                     isExactOut: false
                 })
             ),
