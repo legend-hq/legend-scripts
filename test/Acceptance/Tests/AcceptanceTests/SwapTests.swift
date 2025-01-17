@@ -8,6 +8,7 @@ let swapTests: [AcceptanceTest] = [
             .tokenBalance(.alice, .amt(4_005.0, .usdc), .base),
             .quote(.basic),
             .acrossQuote(.amt(1, .usdc), 0.01),
+            .zeroExQuote(.amt(1.5, .weth), .updatedZeroEx, .base)
         ],
         when: .swap(from: .alice, sellAmount: .max(.usdc), buyAmount: .amt(2.0, .weth), exchange: .zeroEx, on: .base),
         expect: .success(
@@ -21,9 +22,11 @@ let swapTests: [AcceptanceTest] = [
                 ),
                 .multicall([
                     .swap(
-                        sellAmount: .amt(7_968.83, .usdc), 
-                        buyAmount: .amt(2.0, .weth), 
-                        exchange: .zeroEx, 
+                        // 4005+(4005*0.99-1)-0.12=7968.83
+                        sellAmount: .amt(7_968.83, .usdc),
+                        // buyAmount and exchange are updated to reflect the new quote
+                        buyAmount: .amt(1.5, .weth),
+                        exchange: .updatedZeroEx,
                         network: .base
                     ),
                     .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
@@ -168,9 +171,9 @@ let swapTests: [AcceptanceTest] = [
             .single(
                 .multicall([
                     .swap(
-                        sellAmount: .amt(3000, .usdc), 
-                        buyAmount: .amt(1, .weth), 
-                        exchange: .zeroEx, 
+                        sellAmount: .amt(3000, .usdc),
+                        buyAmount: .amt(1, .weth),
+                        exchange: .zeroEx,
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
@@ -198,9 +201,9 @@ let swapTests: [AcceptanceTest] = [
                 .multicall([
                     .wrapAsset(.eth),
                     .swap(
-                        sellAmount: .amt(1, .weth), 
-                        buyAmount: .amt(3000, .usdc), 
-                        exchange: .zeroEx, 
+                        sellAmount: .amt(1, .weth),
+                        buyAmount: .amt(3000, .usdc),
+                        exchange: .zeroEx,
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
@@ -227,9 +230,9 @@ let swapTests: [AcceptanceTest] = [
             .single(
                 .multicall([
                     .swap(
-                        sellAmount: .amt(3000, .usdc), 
-                        buyAmount: .amt(1, .weth), 
-                        exchange: .zeroEx, 
+                        sellAmount: .amt(3000, .usdc),
+                        buyAmount: .amt(1, .weth),
+                        exchange: .zeroEx,
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
@@ -254,6 +257,7 @@ let swapTests: [AcceptanceTest] = [
                     fees: [.ethereum: 5]
                 )
             ),
+            .zeroExQuote(.amt(2.5, .weth), .updatedZeroEx, .base)
         ],
         when: .swap(
             from: .alice,
@@ -266,9 +270,10 @@ let swapTests: [AcceptanceTest] = [
             .single(
                 .multicall([
                     .swap(
-                        sellAmount: .amt(9000, .usdc), 
-                        buyAmount: .amt(3, .weth), 
-                        exchange: .zeroEx, 
+                        sellAmount: .amt(9000, .usdc),
+                        // buyAmount and exchange are updated to reflect the new quote
+                        buyAmount: .amt(2.5, .weth),
+                        exchange: .updatedZeroEx,
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(5, .usdc), payee: .stax, quote: .basic),
@@ -306,9 +311,9 @@ let swapTests: [AcceptanceTest] = [
                     .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                 ]),
                 .swap(
-                    sellAmount: .amt(3000, .usdc), 
-                    buyAmount: .amt(1, .weth), 
-                    exchange: .zeroEx, 
+                    sellAmount: .amt(3000, .usdc),
+                    buyAmount: .amt(1, .weth),
+                    exchange: .zeroEx,
                     network: .base
                 )
             ])
@@ -358,9 +363,9 @@ let swapTests: [AcceptanceTest] = [
                     .quotePay(payment: .amt(6, .usdc), payee: .stax, quote: .basic),
                 ]),
                 .swap(
-                    sellAmount: .amt(3000, .usdc), 
-                    buyAmount: .amt(1, .weth), 
-                    exchange: .zeroEx, 
+                    sellAmount: .amt(3000, .usdc),
+                    buyAmount: .amt(1, .weth),
+                    exchange: .zeroEx,
                     network: .base
                 )
             ])

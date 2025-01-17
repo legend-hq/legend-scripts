@@ -11,6 +11,7 @@ import {Across, BridgeRoutes} from "src/builder/BridgeRoutes.sol";
 import {BuilderPackHelper} from "src/builder/BuilderPackHelper.sol";
 import {EIP712Helper} from "src/builder/EIP712Helper.sol";
 import {Errors} from "src/builder/Errors.sol";
+import {FFI} from "src/builder/FFI.sol";
 import {Math} from "src/lib/Math.sol";
 import {MorphoInfo} from "src/builder/MorphoInfo.sol";
 import {Strings} from "src/builder/Strings.sol";
@@ -22,7 +23,7 @@ import {List} from "src/builder/List.sol";
 import {HashMap} from "src/builder/HashMap.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.5.7";
+string constant QUARK_BUILDER_VERSION = "0.5.8";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -714,6 +715,15 @@ contract QuarkBuilderBase {
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     sellAssetSymbol
                 );
+
+                // We grab a new quote from 0x after calculating what the max sell amount is
+                (bytes memory swapData, uint256 buyAmount, address feeToken, uint256 feeAmount) = FFI
+                    .requestZeroExExactInSwapQuote(intent.buyToken, intent.sellToken, intent.sellAmount, intent.chainId);
+
+                intent.swapData = swapData;
+                intent.buyAmount = buyAmount;
+                intent.feeToken = feeToken;
+                intent.feeAmount = feeAmount;
             }
 
             (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.zeroExSwap(

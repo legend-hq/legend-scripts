@@ -282,8 +282,8 @@ enum Call: CustomStringConvertible, Equatable {
                         address: buyToken
                     ),
                     exchange: Exchange.from(
-                        network: network, 
-                        address: to, 
+                        network: network,
+                        address: to,
                         data: data
                     ),
                     network: network
@@ -546,7 +546,7 @@ struct Morpho: Hashable, Equatable {
 
     static func address(_ network: Network) -> EthAddress {
         switch network {
-            case .ethereum, .base, .baseSepolia: 
+            case .ethereum, .base, .baseSepolia:
                 return EthAddress("0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb")
             case .sepolia:
                 return EthAddress("0xd011EE229E7459ba1ddd22631eF7bF528d424A14")
@@ -638,17 +638,21 @@ enum MorphoVault: Hashable, Equatable {
 
 enum Exchange: Hashable, Equatable {
     case zeroEx
+    case updatedZeroEx
     case unknownExchange(EthAddress, Hex)
 
     static let knownCases: [Exchange] = [.zeroEx]
 
     static let ZERO_EX_ENTRYPOINT = EthAddress("0xDef1C0ded9bec7F1a1670819833240f027b25EfF")
-    static let ZERO_EX_SWAP_DATA = Hex("0xabcdef")
+    static let ZERO_EX_SWAP_DATA: Hex = Hex("0xabcdef")
+    static let UPDATED_ZERO_EX_SWAP_DATA: Hex = Hex("0xdef1")
 
     var description: String {
         switch self {
         case .zeroEx:
             return "0x"
+        case .updatedZeroEx:
+            return "Updated 0x"
         case let .unknownExchange(address, calldata):
             return "Exchange at \(address.description) with calldata \(calldata.description)"
         }
@@ -656,7 +660,7 @@ enum Exchange: Hashable, Equatable {
 
     var entryPoint: EthAddress {
         switch self {
-        case .zeroEx:
+        case .zeroEx, .updatedZeroEx:
             return Exchange.ZERO_EX_ENTRYPOINT
         case let .unknownExchange(address, _):
             return address
@@ -667,6 +671,8 @@ enum Exchange: Hashable, Equatable {
         switch self {
         case .zeroEx:
             return Exchange.ZERO_EX_SWAP_DATA
+        case .updatedZeroEx:
+            return Exchange.UPDATED_ZERO_EX_SWAP_DATA
         case let .unknownExchange(_, data):
             return data
         }
@@ -676,6 +682,8 @@ enum Exchange: Hashable, Equatable {
         switch (network, address, data) {
         case (_, ZERO_EX_ENTRYPOINT, ZERO_EX_SWAP_DATA):
             return .zeroEx
+        case (_, ZERO_EX_ENTRYPOINT, UPDATED_ZERO_EX_SWAP_DATA):
+            return .updatedZeroEx
         case _:
             return .unknownExchange(address, data)
         }
@@ -909,6 +917,8 @@ enum Given {
     case morphoVaultSupply(Account, TokenAmount, MorphoVault, Network)
     case morphoBorrow(Account, TokenAmount, TokenAmount, Network);
     case acrossQuote(TokenAmount, Double)
+    // Buy Amount, Fee Token, Fee Amount
+    case zeroExQuote(TokenAmount, Exchange, Network)
 }
 
 indirect enum When {
@@ -1104,6 +1114,18 @@ class Context {
                 .ok(
                     ABI.Value.tuple2(
                         .uint256(gasFee.amount), .uint256(BigUInt(feePct * 1e18))
+                    ).encoded)
+            }
+        case let .zeroExQuote(buyAmount, exchange, network):
+            guard let feeTokenAddress = buyAmount.token.address(network: network) else {
+                fatalError("Cannot give quote for unknown token")
+            }
+            let feeAmount = buyAmount.amount / BigUInt(100);
+            ffis[EthAddress("0x0000000000000000000000000000000000FF1011")] = { _ in
+                .ok(
+                    // bytes memory swapData, uint256 buyAmount, address feeToken, uint256 feeAmount
+                    ABI.Value.tuple4(
+                        .bytes(exchange.swapData), .uint256(buyAmount.amount), .address(feeTokenAddress), .uint256(feeAmount)
                     ).encoded)
             }
         }
@@ -1367,7 +1389,7 @@ class Context {
                     buyToken: buyToken,
                     buyAmount: buyAmount.amount,
                     feeToken: buyToken,
-                    feeAmount: BigUInt(10),
+                    feeAmount: buyAmount.amount / BigUInt(100),
                     sender: from.address,
                     isExactOut: false,
                     blockTimestamp: BigUInt(1_000_000),
@@ -1436,7 +1458,7 @@ class Context {
                     guard let asset = token.address(network: network) else {
                         return nil
                     }
-                    
+
                     return QuarkBuilder.Accounts.CometCollateralPosition(
                         asset: asset,
                         accounts: accountAmounts.map { account, _ in account.address },
@@ -1452,7 +1474,7 @@ class Context {
             guard let asset = vault.asset(network: network) else {
                 return nil
             }
-            
+
             return QuarkBuilder.Accounts.MorphoVaultPositions(
                 asset: asset,
                 accounts: accountPositions.map { $0.key.address },
