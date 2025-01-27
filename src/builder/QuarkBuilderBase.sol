@@ -23,7 +23,7 @@ import {List} from "src/builder/List.sol";
 import {HashMap} from "src/builder/HashMap.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.5.8";
+string constant QUARK_BUILDER_VERSION = "0.5.9";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -266,6 +266,7 @@ contract QuarkBuilderBase {
         // Track the amount of each asset that will be bridged to the destination chain
         HashMap.Map memory amountsOnDst = HashMap.newMap();
         HashMap.Map memory bridgeFees = HashMap.newMap();
+        HashMap.Map memory unbridgeableBalances = HashMap.newMap();
 
         for (uint256 i = 0; i < actionIntent.assetSymbolOuts.length; ++i) {
             string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
@@ -314,7 +315,7 @@ contract QuarkBuilderBase {
                     payment
                 );
 
-                if (amountLeftToBridge > 0 && unbridgeableBalance > 0) {
+                if (amountLeftToBridge > 0 && unbridgeableBalance > 0 && !isMaxBridge) {
                     // Bad Input :: the specified amount exceeds the bridgeable balance
                     revert BadInputUnbridgeableFunds(assetSymbolOut, amountNeededOnDst, amountLeftToBridge);
                 }
@@ -325,6 +326,8 @@ contract QuarkBuilderBase {
                 );
                 // Track how much fees for bridge
                 HashMap.addOrPutUint256(bridgeFees, abi.encode(assetSymbolOut), totalBridgeFees);
+                // Track the unbridgeable balance
+                HashMap.addOrPutUint256(unbridgeableBalances, abi.encode(assetSymbolOut), unbridgeableBalance);
 
                 for (uint256 j = 0; j < bridgeQuarkOperations.length; ++j) {
                     List.addQuarkOperation(quarkOperations, bridgeQuarkOperations[j]);
@@ -366,6 +369,7 @@ contract QuarkBuilderBase {
             chainAccountsList,
             payment,
             bridgeFees,
+            unbridgeableBalances,
             getUniqueChainIdsForActions(List.toActionArray(actions)),
             actionIntent.actionType,
             actionIntent.intent
@@ -455,6 +459,7 @@ contract QuarkBuilderBase {
         Accounts.ChainAccounts[] memory chainAccountsList,
         PaymentInfo.Payment memory payment,
         HashMap.Map memory bridgeFees,
+        HashMap.Map memory unbridgeableBalances,
         List.DynamicArray memory chainIdsInvolved,
         string memory actionType,
         bytes memory actionIntent
@@ -466,6 +471,7 @@ contract QuarkBuilderBase {
                     chainAccountsList,
                     payment,
                     bridgeFees,
+                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.assetSymbol
                 );
@@ -491,6 +497,7 @@ contract QuarkBuilderBase {
                         chainAccountsList,
                         payment,
                         bridgeFees,
+                        unbridgeableBalances,
                         List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                         intent.collateralAssetSymbols[i]
                     );
@@ -519,6 +526,7 @@ contract QuarkBuilderBase {
                     chainAccountsList,
                     payment,
                     bridgeFees,
+                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.assetSymbol
                 );
@@ -545,6 +553,7 @@ contract QuarkBuilderBase {
                     chainAccountsList,
                     payment,
                     bridgeFees,
+                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.assetSymbol
                 );
@@ -589,6 +598,7 @@ contract QuarkBuilderBase {
                     chainAccountsList,
                     payment,
                     bridgeFees,
+                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.collateralAssetSymbol
                 );
@@ -623,6 +633,7 @@ contract QuarkBuilderBase {
                     chainAccountsList,
                     payment,
                     bridgeFees,
+                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.assetSymbol
                 );
@@ -670,6 +681,7 @@ contract QuarkBuilderBase {
                     chainAccountsList,
                     payment,
                     bridgeFees,
+                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.assetSymbol
                 );
@@ -712,6 +724,7 @@ contract QuarkBuilderBase {
                     chainAccountsList,
                     payment,
                     bridgeFees,
+                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     sellAssetSymbol
                 );

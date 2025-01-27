@@ -28,7 +28,7 @@ enum Call: CustomStringConvertible, Equatable {
         inputTokenAmount: TokenAmount,
         outputTokenAmount: TokenAmount
     )
-    case transferErc20(tokenAmount: TokenAmount, recipient: Account)
+    case transferErc20(tokenAmount: TokenAmount, recipient: Account, network: Network)
     case supplyToComet(tokenAmount: TokenAmount, market: Comet, network: Network)
     case supplyMultipleAssetsAndBorrowFromComet(
         borrowAmount: TokenAmount,
@@ -123,7 +123,8 @@ enum Call: CustomStringConvertible, Equatable {
                     tokenAmount: Token.getTokenAmount(
                         amount: amount, network: network, address: token
                     ),
-                    recipient: Account.from(address: recipient)
+                    recipient: Account.from(address: recipient),
+                    network: network
                 )
             }
         }
@@ -314,9 +315,9 @@ enum Call: CustomStringConvertible, Equatable {
         case let .bridge(bridge, chainId, destinationChainId, inputTokenAmount, outputTokenAmount):
             return
                 "bridge(\(bridge), \(inputTokenAmount.amount) \(inputTokenAmount.token.symbol) to receive \(outputTokenAmount.amount) \(outputTokenAmount.token.symbol) from \(chainId.description) to \(destinationChainId.description))"
-        case let .transferErc20(tokenAmount, recipient):
+        case let .transferErc20(tokenAmount, recipient, network):
             return
-                "transferErc20(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(recipient.description))"
+                "transferErc20(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(recipient.description) on \(network.description))"
         case let .quotePay(payment, payee, quoteId):
             return
                 "quotePay(\(payment.amount) \(payment.token.symbol) to \(payee.description), quoteId: \(quoteId))"
@@ -366,7 +367,7 @@ enum Call: CustomStringConvertible, Equatable {
         switch self {
         case let .multicall(calls):
             return
-                "multicall:\n\(calls.map { "\n\t\t- \($0.descriptionExt)" }.joined(separator: "\n"))\n"
+                "multicall:\n\(calls.map { "\n\t\t\t- \($0.descriptionExt)" }.joined(separator: "\n"))\n"
         default:
             return description
         }
@@ -378,7 +379,7 @@ extension Array where Element == Call {
         if count == 1 {
             return self[0].descriptionExt
         } else {
-            return "multicall:\n\(map { "\n\t\t- \($0.descriptionExt)" }.joined(separator: "\n"))\n"
+            return "multi operation:\n\(map { "\n\t\t- \($0.descriptionExt)" }.joined(separator: "\n"))\n"
         }
     }
 }
@@ -917,6 +918,7 @@ enum Given {
     case morphoVaultSupply(Account, TokenAmount, MorphoVault, Network)
     case morphoBorrow(Account, TokenAmount, TokenAmount, Network);
     case acrossQuote(TokenAmount, Double)
+    case acrossQuoteWithMin(TokenAmount, Double, TokenAmount)
     // Buy Amount, Fee Token, Fee Amount
     case zeroExQuote(TokenAmount, Exchange, Network)
 }
@@ -1112,8 +1114,15 @@ class Context {
         case let .acrossQuote(gasFee, feePct):
             ffis[EthAddress("0x0000000000000000000000000000000000FF1010")] = { _ in
                 .ok(
-                    ABI.Value.tuple2(
-                        .uint256(gasFee.amount), .uint256(BigUInt(feePct * 1e18))
+                    ABI.Value.tuple3(
+                        .uint256(gasFee.amount), .uint256(BigUInt(feePct * 1e18)), .uint256(0)
+                    ).encoded)
+            }
+        case let .acrossQuoteWithMin(gasFee, feePct, minAmount):
+            ffis[EthAddress("0x0000000000000000000000000000000000FF1010")] = { _ in
+                .ok(
+                    ABI.Value.tuple3(
+                        .uint256(gasFee.amount), .uint256(BigUInt(feePct * 1e18)), .uint256(minAmount.amount)
                     ).encoded)
             }
         case let .zeroExQuote(buyAmount, exchange, network):

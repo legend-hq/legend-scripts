@@ -9,4 +9,8 @@ library Math {
     function subtractFlooredAtOne(uint256 a, uint256 b) internal pure returns (uint256) {
         return a > b ? a - b : 1;
     }
+
+    function max(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a > b ? a : b;
+    }
 }

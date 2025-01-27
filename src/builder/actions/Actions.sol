@@ -576,11 +576,18 @@ library Actions {
                         bridgeInfo.preferAcross
                     );
 
-                    amountLeftToBridge -= outputAmount;
-                    totalBridgeFees += (inputAmount - outputAmount);
+                    // If outputAmount is 0, it means we are not able to bridge the funds
+                    if (outputAmount == 0) {
+                        unbridgeableBalance += Accounts.getBalanceOnChain(
+                            bridgeInfo.assetSymbol, srcChainAccounts.chainId, chainAccountsList
+                        );
+                    } else {
+                        amountLeftToBridge = Math.subtractFlooredAtZero(amountLeftToBridge, outputAmount);
+                        totalBridgeFees += (inputAmount - outputAmount);
 
-                    List.addAction(actions, action);
-                    List.addQuarkOperation(quarkOperations, operation);
+                        List.addAction(actions, action);
+                        List.addQuarkOperation(quarkOperations, operation);
+                    }
                 }
             }
         }
@@ -683,7 +690,12 @@ library Actions {
     function bridgeAcross(BridgeAsset memory bridge, PaymentInfo.Payment memory payment)
         internal
         pure
-        returns (IQuarkWallet.QuarkOperation memory, Action memory, uint256, uint256)
+        returns (
+            IQuarkWallet.QuarkOperation memory quarkOperation,
+            Action memory action,
+            uint256 inputAmount,
+            uint256 outputAmount
+        )
     {
         console.log("Bridging via Across", bridge.assetSymbol);
         console.log("Bridging from", bridge.srcChainId);
@@ -705,7 +717,7 @@ library Actions {
             Accounts.findQuarkSecret(bridge.sender, srcChainAccounts.quarkSecrets);
 
         // Make FFI call to fetch a quote from Across API
-        (uint256 gasFee, uint256 variableFeePct) = FFI.requestAcrossQuote(
+        (uint256 gasFee, uint256 variableFeePct, uint256 minDeposit) = FFI.requestAcrossQuote(
             srcAssetPositions.asset,
             dstAssetPositions.asset,
             bridge.srcChainId,
@@ -715,18 +727,31 @@ library Actions {
 
         // The quote should consist of a fixed gas fee and variable fee. To calculate the input
         // amount, we scale the bridge.amount by the variable fee and add the fixed gas fee to it.
-        uint256 inputAmount = bridge.amount * (1e18 + variableFeePct) / 1e18 + gasFee;
-        uint256 outputAmount = bridge.amount;
+        inputAmount = bridge.amount * (1e18 + variableFeePct) / 1e18 + gasFee;
+        outputAmount = bridge.amount;
 
-        // if inputAmount exceeds balance on chain revert to balance on chain and compute output amount
+        // If minDeposit is larger than the inputAmount, then set the inputAmount to be the minDeposit
+        if (minDeposit > inputAmount) {
+            inputAmount = minDeposit;
+            outputAmount = minDeposit * (1e18 - variableFeePct) / 1e18 - gasFee;
+        }
+
+        // If inputAmount exceeds the balance on chain, set the inputAmount to be the balance on chain.
+        // However, if the balance on chain is less than the minDeposit, this means that a bridge is not
+        // possible on this chain so we should skip bridging from it.
         uint256 sumSrcBalance = Accounts.sumBalances(srcAssetPositions);
         if (inputAmount > sumSrcBalance) {
-            inputAmount = sumSrcBalance;
-            outputAmount = sumSrcBalance * (1e18 - variableFeePct) / 1e18 - gasFee;
+            if (minDeposit > sumSrcBalance) {
+                // Bridging is not possible
+                return (quarkOperation, action, 0, 0);
+            } else {
+                inputAmount = sumSrcBalance;
+                outputAmount = sumSrcBalance * (1e18 - variableFeePct) / 1e18 - gasFee;
+            }
         }
 
         // Construct QuarkOperation
-        IQuarkWallet.QuarkOperation memory quarkOperation = IQuarkWallet.QuarkOperation({
+        quarkOperation = IQuarkWallet.QuarkOperation({
             nonce: accountSecret.nonceSecret,
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(Across.bridgeScriptSource()),
@@ -759,7 +784,7 @@ library Actions {
             bridgeType: BRIDGE_TYPE_ACROSS
         });
 
-        Action memory action = Actions.Action({
+        action = Actions.Action({
             chainId: bridge.srcChainId,
             quarkAccount: bridge.sender,
             actionType: ACTION_TYPE_BRIDGE,

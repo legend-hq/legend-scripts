@@ -345,6 +345,7 @@ library Accounts {
         Accounts.ChainAccounts[] memory chainAccountsList,
         PaymentInfo.Payment memory payment,
         HashMap.Map memory bridgeFees,
+        HashMap.Map memory unbridgeableBalances,
         List.DynamicArray memory chainIdsInvolved,
         string memory assetSymbol
     ) internal pure returns (uint256) {
@@ -355,12 +356,22 @@ library Accounts {
 
         uint256 balance = Accounts.totalBalance(assetSymbol, chainAccountsList);
         uint256 totalBridgeFees = HashMap.getOrDefaultUint256(bridgeFees, abi.encode(assetSymbol), 0);
+        uint256 unbridgeableBalance = HashMap.getOrDefaultUint256(unbridgeableBalances, abi.encode(assetSymbol), 0);
 
-        if (balance < paymentFees || balance - paymentFees < totalBridgeFees) {
+        if (balance < totalBridgeFees || balance - totalBridgeFees < unbridgeableBalance) {
             return 0;
         }
 
-        return balance - paymentFees - totalBridgeFees;
+        // If payment fees are higher than the unbridgeable balance, it means that we cannot use the unbridgeable
+        // funds to pay for the fees, so fees need to be paid on the destination chain
+        if (paymentFees > unbridgeableBalance) {
+            if (balance - totalBridgeFees - unbridgeableBalance < paymentFees) {
+                return 0;
+            }
+            return balance - totalBridgeFees - paymentFees - unbridgeableBalance;
+        } else {
+            return balance - totalBridgeFees - unbridgeableBalance;
+        }
     }
 
     function truncate(ChainAccounts[] memory chainAccountsList, uint256 length)
