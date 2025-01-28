@@ -50,7 +50,6 @@ contract QuarkBuilderBase {
 
     error BadInputInsufficientFunds(string assetSymbol, uint256 requiredAmount, uint256 actualAmount);
     error BadInputInsufficientFundsForRecurring(string assetSymbol, uint256 requiredAmount, uint256 actualAmount);
-    error BadInputUnbridgeableFunds(string assetSymbol, uint256 requiredAmount, uint256 amountLeftToBridge);
     error InvalidActionType();
     error InvalidInput();
     error MaxCostTooHigh();
@@ -299,7 +298,6 @@ contract QuarkBuilderBase {
                     IQuarkWallet.QuarkOperation[] memory bridgeQuarkOperations,
                     Actions.Action[] memory bridgeActions,
                     uint256 amountLeftToBridge,
-                    uint256 unbridgeableBalance,
                     uint256 totalBridgeFees
                 ) = Actions.constructBridgeOperations(
                     Actions.BridgeOperationInfo({
@@ -313,11 +311,6 @@ contract QuarkBuilderBase {
                     chainAccountsList,
                     payment
                 );
-
-                if (amountLeftToBridge > 0 && unbridgeableBalance > 0 && !isMaxBridge) {
-                    // Bad Input :: the specified amount exceeds the bridgeable balance
-                    revert BadInputUnbridgeableFunds(assetSymbolOut, amountNeededOnDst, amountLeftToBridge);
-                }
 
                 // Track how much of the asset will be on the dst chain after bridging
                 HashMap.addOrPutUint256(

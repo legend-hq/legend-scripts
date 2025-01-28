@@ -491,7 +491,7 @@ library Actions {
         BridgeOperationInfo memory bridgeInfo,
         Accounts.ChainAccounts[] memory chainAccountsList,
         PaymentInfo.Payment memory payment
-    ) internal pure returns (IQuarkWallet.QuarkOperation[] memory, Action[] memory, uint256, uint256, uint256) {
+    ) internal pure returns (IQuarkWallet.QuarkOperation[] memory, Action[] memory, uint256, uint256) {
         /*
          * at most one bridge operation per non-destination chain,
          * and at most one transferIntent operation on the destination chain.
@@ -521,7 +521,6 @@ library Actions {
             amountLeftToBridge -= counterpartTokenAmountToUse;
         }
 
-        uint256 unbridgeableBalance = 0;
         uint256 totalBridgeFees = 0;
         // Iterate chainAccountList and find chains that can provide enough funds to bridge.
         // One optimization is to allow the client to provide optimal routes.
@@ -539,8 +538,6 @@ library Actions {
 
             // Skip if there is no bridge route for the current chain to the target chain
             if (!BridgeRoutes.canBridge(srcChainAccounts.chainId, bridgeInfo.dstChainId, bridgeInfo.assetSymbol)) {
-                unbridgeableBalance +=
-                    Accounts.getBalanceOnChain(bridgeInfo.assetSymbol, srcChainAccounts.chainId, chainAccountsList);
                 continue;
             }
 
@@ -576,10 +573,8 @@ library Actions {
                         bridgeInfo.preferAcross
                     );
 
-                    // If outputAmount is 0, it means we are not able to bridge the funds
-                    if (outputAmount == 0) {
-                        unbridgeableBalance += srcAccountBalances[j].balance;
-                    } else {
+                    // We only want to append the quark operation and action if a non-zero amount is bridged
+                    if (outputAmount > 0) {
                         amountLeftToBridge = Math.subtractFlooredAtZero(amountLeftToBridge, outputAmount);
                         totalBridgeFees += (inputAmount - outputAmount);
 
@@ -595,7 +590,6 @@ library Actions {
             List.toQuarkOperationArray(quarkOperations),
             List.toActionArray(actions),
             amountLeftToBridge,
-            unbridgeableBalance,
             totalBridgeFees
         );
     }
