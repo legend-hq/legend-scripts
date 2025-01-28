@@ -40,7 +40,7 @@ let transferTests: [AcceptanceTest] = [
         expect: .success(
             .single(
                 .multicall([
-                    .transferErc20(tokenAmount: .amt(10, .usdc), recipient: .bob),
+                    .transferErc20(tokenAmount: .amt(10, .usdc), recipient: .bob, network: .optimism),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                 ])))
     ),
