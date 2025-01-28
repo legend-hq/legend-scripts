@@ -578,9 +578,7 @@ library Actions {
 
                     // If outputAmount is 0, it means we are not able to bridge the funds
                     if (outputAmount == 0) {
-                        unbridgeableBalance += Accounts.getBalanceOnChain(
-                            bridgeInfo.assetSymbol, srcChainAccounts.chainId, chainAccountsList
-                        );
+                        unbridgeableBalance += srcAccountBalances[j].balance;
                     } else {
                         amountLeftToBridge = Math.subtractFlooredAtZero(amountLeftToBridge, outputAmount);
                         totalBridgeFees += (inputAmount - outputAmount);

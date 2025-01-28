@@ -334,18 +334,20 @@ library Accounts {
     }
 
     /*
-    * @notice Get the total asset balance net fees for a given token symbol across chains
+    * @notice Get the total asset balance net of fees for a given token symbol on the destination chain
     * @param chainAccountsList The list of chain accounts to check
     * @param payment The payment currency and cost per chains
+    * @param amountsOnDst A map of the amount of assets on the dst chain after bridging
     * @param bridgeFees A map of bridge fees by asset symbol
-    * @param chainIdsInvolved The list of chainIdsInvovled for the current intent
+    * @param chainIdsInvolved The list of chainIds involved for the current intent
+    * @param assetSymbol The symbol of the asset to check the balance for
     * @return The total available asset balance less the fees
     */
-    function getTotalAvailableBalance(
+    function getTotalAvailableBalanceOnDst(
         Accounts.ChainAccounts[] memory chainAccountsList,
         PaymentInfo.Payment memory payment,
+        HashMap.Map memory amountsOnDst,
         HashMap.Map memory bridgeFees,
-        HashMap.Map memory unbridgeableBalances,
         List.DynamicArray memory chainIdsInvolved,
         string memory assetSymbol
     ) internal pure returns (uint256) {
@@ -354,17 +356,18 @@ library Accounts {
             ? PaymentInfo.totalCost(payment, List.toUint256Array(chainIdsInvolved))
             : 0;
 
-        uint256 balance = Accounts.totalBalance(assetSymbol, chainAccountsList);
+        uint256 balanceOnChainAfterBridge = HashMap.getOrDefaultUint256(amountsOnDst, abi.encode(assetSymbol), 0);
         uint256 totalBridgeFees = HashMap.getOrDefaultUint256(bridgeFees, abi.encode(assetSymbol), 0);
-        uint256 unbridgeableBalance = HashMap.getOrDefaultUint256(unbridgeableBalances, abi.encode(assetSymbol), 0);
-        uint256 remainingBalance = Math.subtractFlooredAtZero(balance, totalBridgeFees, unbridgeableBalance);
 
-        // If payment fees are higher than the unbridgeable balance, it means that we cannot use the unbridgeable
+        uint256 aggregateBalance = Accounts.totalBalance(assetSymbol, chainAccountsList);
+        uint256 unbridgedBalance = aggregateBalance - balanceOnChainAfterBridge - totalBridgeFees;
+
+        // If payment fees are higher than the unbridged balance, it means that we cannot use the unbridged
         // funds to pay for the fees, so fees need to be paid on the destination chain
-        if (paymentFees > unbridgeableBalance) {
-            return Math.subtractFlooredAtZero(remainingBalance, paymentFees);
+        if (paymentFees > unbridgedBalance) {
+            return Math.subtractFlooredAtZero(balanceOnChainAfterBridge, paymentFees);
         } else {
-            return remainingBalance;
+            return balanceOnChainAfterBridge;
         }
     }
 

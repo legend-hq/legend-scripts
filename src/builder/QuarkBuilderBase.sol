@@ -266,7 +266,6 @@ contract QuarkBuilderBase {
         // Track the amount of each asset that will be bridged to the destination chain
         HashMap.Map memory amountsOnDst = HashMap.newMap();
         HashMap.Map memory bridgeFees = HashMap.newMap();
-        HashMap.Map memory unbridgeableBalances = HashMap.newMap();
 
         for (uint256 i = 0; i < actionIntent.assetSymbolOuts.length; ++i) {
             string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
@@ -320,14 +319,12 @@ contract QuarkBuilderBase {
                     revert BadInputUnbridgeableFunds(assetSymbolOut, amountNeededOnDst, amountLeftToBridge);
                 }
 
-                // Track how much is actually bridged for each asset
+                // Track how much of the asset will be on the dst chain after bridging
                 HashMap.addOrPutUint256(
                     amountsOnDst, abi.encode(assetSymbolOut), amountNeededOnDst - amountLeftToBridge
                 );
                 // Track how much fees for bridge
                 HashMap.addOrPutUint256(bridgeFees, abi.encode(assetSymbolOut), totalBridgeFees);
-                // Track the unbridgeable balance
-                HashMap.addOrPutUint256(unbridgeableBalances, abi.encode(assetSymbolOut), unbridgeableBalance);
 
                 for (uint256 j = 0; j < bridgeQuarkOperations.length; ++j) {
                     List.addQuarkOperation(quarkOperations, bridgeQuarkOperations[j]);
@@ -368,8 +365,8 @@ contract QuarkBuilderBase {
         ) = constructOperationAndAction(
             chainAccountsList,
             payment,
+            amountsOnDst,
             bridgeFees,
-            unbridgeableBalances,
             getUniqueChainIdsForActions(List.toActionArray(actions)),
             actionIntent.actionType,
             actionIntent.intent
@@ -458,8 +455,8 @@ contract QuarkBuilderBase {
     function constructOperationAndAction(
         Accounts.ChainAccounts[] memory chainAccountsList,
         PaymentInfo.Payment memory payment,
+        HashMap.Map memory amountsOnDst,
         HashMap.Map memory bridgeFees,
-        HashMap.Map memory unbridgeableBalances,
         List.DynamicArray memory chainIdsInvolved,
         string memory actionType,
         bytes memory actionIntent
@@ -467,11 +464,11 @@ contract QuarkBuilderBase {
         if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_TRANSFER)) {
             TransferIntent memory intent = abi.decode(actionIntent, (TransferIntent));
             if (intent.amount == type(uint256).max) {
-                intent.amount = Accounts.getTotalAvailableBalance(
+                intent.amount = Accounts.getTotalAvailableBalanceOnDst(
                     chainAccountsList,
                     payment,
+                    amountsOnDst,
                     bridgeFees,
-                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.assetSymbol
                 );
@@ -493,11 +490,11 @@ contract QuarkBuilderBase {
             CometBorrowIntent memory intent = abi.decode(actionIntent, (CometBorrowIntent));
             for (uint256 i = 0; i < intent.collateralAmounts.length; ++i) {
                 if (intent.collateralAmounts[i] == type(uint256).max) {
-                    intent.collateralAmounts[i] = Accounts.getTotalAvailableBalance(
+                    intent.collateralAmounts[i] = Accounts.getTotalAvailableBalanceOnDst(
                         chainAccountsList,
                         payment,
+                        amountsOnDst,
                         bridgeFees,
-                        unbridgeableBalances,
                         List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                         intent.collateralAssetSymbols[i]
                     );
@@ -522,11 +519,11 @@ contract QuarkBuilderBase {
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_SUPPLY)) {
             CometSupplyIntent memory intent = abi.decode(actionIntent, (CometSupplyIntent));
             if (intent.amount == type(uint256).max) {
-                intent.amount = Accounts.getTotalAvailableBalance(
+                intent.amount = Accounts.getTotalAvailableBalanceOnDst(
                     chainAccountsList,
                     payment,
+                    amountsOnDst,
                     bridgeFees,
-                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.assetSymbol
                 );
@@ -549,16 +546,16 @@ contract QuarkBuilderBase {
             if (intent.amount == type(uint256).max) {
                 uint256 repayAmount =
                     cometRepayMaxAmount(chainAccountsList, intent.chainId, intent.comet, intent.repayer);
-                uint256 totalAvailable = Accounts.getTotalAvailableBalance(
+                uint256 totalAvailableOnDst = Accounts.getTotalAvailableBalanceOnDst(
                     chainAccountsList,
                     payment,
+                    amountsOnDst,
                     bridgeFees,
-                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.assetSymbol
                 );
 
-                intent.amount = repayAmount < totalAvailable ? type(uint256).max : totalAvailable;
+                intent.amount = repayAmount <= totalAvailableOnDst ? type(uint256).max : totalAvailableOnDst;
             }
             (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.cometRepay(
                 Actions.CometRepayInput({
@@ -594,11 +591,11 @@ contract QuarkBuilderBase {
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_BORROW)) {
             MorphoBorrowIntent memory intent = abi.decode(actionIntent, (MorphoBorrowIntent));
             if (intent.collateralAmount == type(uint256).max) {
-                intent.collateralAmount = Accounts.getTotalAvailableBalance(
+                intent.collateralAmount = Accounts.getTotalAvailableBalanceOnDst(
                     chainAccountsList,
                     payment,
+                    amountsOnDst,
                     bridgeFees,
-                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.collateralAssetSymbol
                 );
@@ -629,16 +626,16 @@ contract QuarkBuilderBase {
                     Accounts.findAssetPositions(intent.collateralAssetSymbol, intent.chainId, chainAccountsList).asset,
                     intent.repayer
                 );
-                uint256 totalAvailable = Accounts.getTotalAvailableBalance(
+                uint256 totalAvailableOnDst = Accounts.getTotalAvailableBalanceOnDst(
                     chainAccountsList,
                     payment,
+                    amountsOnDst,
                     bridgeFees,
-                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.assetSymbol
                 );
 
-                intent.amount = repayAmount < totalAvailable ? type(uint256).max : totalAvailable;
+                intent.amount = repayAmount <= totalAvailableOnDst ? type(uint256).max : totalAvailableOnDst;
             }
 
             (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.morphoRepay(
@@ -677,11 +674,11 @@ contract QuarkBuilderBase {
             MorphoVaultSupplyIntent memory intent = abi.decode(actionIntent, (MorphoVaultSupplyIntent));
 
             if (intent.amount == type(uint256).max) {
-                intent.amount = Accounts.getTotalAvailableBalance(
+                intent.amount = Accounts.getTotalAvailableBalanceOnDst(
                     chainAccountsList,
                     payment,
+                    amountsOnDst,
                     bridgeFees,
-                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     intent.assetSymbol
                 );
@@ -720,11 +717,11 @@ contract QuarkBuilderBase {
                 Accounts.findAssetPositions(intent.sellToken, intent.chainId, chainAccountsList).symbol;
 
             if (intent.sellAmount == type(uint256).max) {
-                intent.sellAmount = Accounts.getTotalAvailableBalance(
+                intent.sellAmount = Accounts.getTotalAvailableBalanceOnDst(
                     chainAccountsList,
                     payment,
+                    amountsOnDst,
                     bridgeFees,
-                    unbridgeableBalances,
                     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
                     sellAssetSymbol
                 );
