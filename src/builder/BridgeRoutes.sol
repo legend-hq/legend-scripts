@@ -120,7 +120,7 @@ library Across {
     /// @notice The amount of time that the bridge action has to be filled before timing out
     uint256 public constant FILL_DEADLINE_BUFFER = 10 minutes;
 
-    // @dev Source: SpokePool contracts from https://docs.across.to/reference/contract-addresses 
+    // @dev Source: SpokePool contracts from https://docs.across.to/reference/contract-addresses
     function knownChains() internal pure returns (AcrossChain[] memory) {
         AcrossChain[] memory chains = new AcrossChain[](7);
         // Mainnet
