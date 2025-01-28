@@ -356,18 +356,18 @@ library Accounts {
             ? PaymentInfo.totalCost(payment, List.toUint256Array(chainIdsInvolved))
             : 0;
 
-        uint256 balanceOnChainAfterBridge = HashMap.getOrDefaultUint256(amountsOnDst, abi.encode(assetSymbol), 0);
+        uint256 balanceOnDstAfterBridge = HashMap.getOrDefaultUint256(amountsOnDst, abi.encode(assetSymbol), 0);
         uint256 totalBridgeFees = HashMap.getOrDefaultUint256(bridgeFees, abi.encode(assetSymbol), 0);
 
         uint256 aggregateBalance = Accounts.totalBalance(assetSymbol, chainAccountsList);
-        uint256 unbridgedBalance = aggregateBalance - balanceOnChainAfterBridge - totalBridgeFees;
+        uint256 unbridgedBalance = aggregateBalance - balanceOnDstAfterBridge - totalBridgeFees;
 
         // If payment fees are higher than the unbridged balance, it means that we cannot use the unbridged
         // funds to pay for the fees, so fees need to be paid on the destination chain
         if (paymentFees > unbridgedBalance) {
-            return Math.subtractFlooredAtZero(balanceOnChainAfterBridge, paymentFees);
+            return Math.subtractFlooredAtZero(balanceOnDstAfterBridge, paymentFees);
         } else {
-            return balanceOnChainAfterBridge;
+            return balanceOnDstAfterBridge;
         }
     }
 
