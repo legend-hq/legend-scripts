@@ -6,6 +6,7 @@ import {IAcrossFFI} from "src/interfaces/IAcrossFFI.sol";
 library MockAcrossFFIConstants {
     uint256 public constant GAS_FEE = 1e6;
     uint256 public constant VARIABLE_FEE_PCT = 0.01e18;
+    uint256 public constant MIN_DEPOSIT = 0;
 }
 
 contract MockAcrossFFI is IAcrossFFI {
@@ -15,7 +16,9 @@ contract MockAcrossFFI is IAcrossFFI {
         uint256, /* srcChain */
         uint256, /* dstChain */
         uint256 /* amount */
-    ) external pure override returns (uint256 gasFee, uint256 variableFeePct) {
-        return (MockAcrossFFIConstants.GAS_FEE, MockAcrossFFIConstants.VARIABLE_FEE_PCT);
+    ) external pure override returns (uint256 gasFee, uint256 variableFeePct, uint256 minDeposit) {
+        return (
+            MockAcrossFFIConstants.GAS_FEE, MockAcrossFFIConstants.VARIABLE_FEE_PCT, MockAcrossFFIConstants.MIN_DEPOSIT
+        );
     }
 }

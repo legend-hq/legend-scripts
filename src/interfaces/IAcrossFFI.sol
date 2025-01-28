@@ -9,5 +9,5 @@ interface IAcrossFFI {
         uint256 srcChain,
         uint256 dstChain,
         uint256 amount
-    ) external pure returns (uint256 gasFee, uint256 variableFeePct);
+    ) external pure returns (uint256 gasFee, uint256 variableFeePct, uint256 minDeposit);
 }

@@ -93,7 +93,7 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
     ),
 
     .init(
-        name: "Alice supplies to MorhpoVault, but the operation cost is too high (testMorphoSupplyMaxCostTooHigh)",
+        name: "Alice supplies to MorphoVault, but the operation cost is too high (testMorphoSupplyMaxCostTooHigh)",
         given: [
             .tokenBalance(.alice, .amt(1, .usdc), .ethereum),
             .tokenBalance(.alice, .amt(1, .usdc), .base),
@@ -317,7 +317,7 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
     ),
 
     /*
-    +3 on Base 
+    +3 on Base
     +3 on Ethereum
     -1 for Across gas fee
     -(3 * 0.01) for Across pct fee

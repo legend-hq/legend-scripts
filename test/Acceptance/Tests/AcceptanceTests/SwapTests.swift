@@ -370,7 +370,72 @@ let swapTests: [AcceptanceTest] = [
                 )
             ])
         )
+    ),
+    .init(
+        name: "Alice swaps max on Base via Bridge, but some funds are unbridgeable",
+        given: [
+            .quote(.basic),
+            .acrossQuoteWithMin(.amt(1, .usdc), 0.01, .amt(3000, .usdc)),
+            .tokenBalance(.alice, .amt(2000, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(2000, .usdc), .base),
+            .zeroExQuote(.amt(1.5, .weth), .updatedZeroEx, .base)
+        ],
+        when: .swap(
+            from: .alice,
+            sellAmount: .max(.usdc),
+            buyAmount: .amt(1, .weth),
+            exchange: .zeroEx,
+            on: .base
+        ),
+        expect: .success(
+            .multi([
+                // Only 2000 USDC is swapped because the other 50 USDC is unbridgeable.
+                .swap(
+                    sellAmount: .amt(2000, .usdc),
+                    buyAmount: .amt(1.5, .weth),
+                    exchange: .updatedZeroEx,
+                    network: .base
+                ),
+                // Payment is made on Ethereum, where there are unbridgeable funds
+                .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic)
+            ])
+        )
+    ),
+    .init(
+        name: "Alice swaps on Base via Bridge, with bridge amount adjusted to be the min bridge amount",
+        given: [
+            .quote(.basic),
+            .acrossQuoteWithMin(.amt(1, .usdc), 0.01, .amt(1000, .usdc)),
+            .tokenBalance(.alice, .amt(2000, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(2000, .usdc), .base),
+        ],
+        when: .swap(
+            from: .alice,
+            sellAmount: .amt(2000.1, .usdc),
+            buyAmount: .amt(1, .weth),
+            exchange: .zeroEx,
+            on: .base
+        ),
+        expect: .success(
+            .multi([
+                    .multicall([
+                    .bridge(
+                        bridge: "Across",
+                        srcNetwork: .ethereum,
+                        destinationNetwork: .base,
+                        // Normally would bridge 0.1, but bridge min is 1000
+                        inputTokenAmount: .amt(1000, .usdc),
+                        outputTokenAmount: .amt(989, .usdc)
+                    ),
+                    .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
+                ]),
+                .swap(
+                    sellAmount: .amt(2000.1, .usdc),
+                    buyAmount: .amt(1, .weth),
+                    exchange: .zeroEx,
+                    network: .base
+                )
+            ])
+        )
     )
-
-    // TODO: swap max with bridge
 ]

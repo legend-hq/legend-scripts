@@ -20,7 +20,7 @@ library FFI {
         uint256 srcChain,
         uint256 dstChain,
         uint256 amount
-    ) internal pure returns (uint256 gasFee, uint256 variableFeePct) {
+    ) internal pure returns (uint256 gasFee, uint256 variableFeePct, uint256 minDeposit) {
         // Make FFI call to fetch a quote from Across API
         return IAcrossFFI(ACROSS_FFI_ADDRESS).requestAcrossQuote(inputToken, outputToken, srcChain, dstChain, amount);
     }
