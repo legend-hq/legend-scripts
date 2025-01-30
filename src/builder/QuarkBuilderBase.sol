@@ -23,7 +23,7 @@ import {List} from "src/builder/List.sol";
 import {HashMap} from "src/builder/HashMap.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.5.9";
+string constant QUARK_BUILDER_VERSION = "0.5.11";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -724,7 +724,8 @@ contract QuarkBuilderBase {
                     .requestZeroExExactInSwapQuote(intent.buyToken, intent.sellToken, intent.sellAmount, intent.chainId);
 
                 intent.swapData = swapData;
-                intent.buyAmount = buyAmount;
+                // We attach a slippage tolerance of 1%
+                intent.buyAmount = buyAmount * 0.99e18 / 1e18;
                 intent.feeToken = feeToken;
                 intent.feeAmount = feeAmount;
             }

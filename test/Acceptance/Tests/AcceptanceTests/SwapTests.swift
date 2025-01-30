@@ -25,7 +25,8 @@ let swapTests: [AcceptanceTest] = [
                         // 4005+(4005*0.99-1)-0.12=7968.83
                         sellAmount: .amt(7_968.83, .usdc),
                         // buyAmount and exchange are updated to reflect the new quote
-                        buyAmount: .amt(1.5, .weth),
+                        // We multiply by 0.99 to account for a 1% slippage buffer
+                        buyAmount: .amt(1.5 * 0.99, .weth),
                         exchange: .updatedZeroEx,
                         network: .base
                     ),
@@ -272,7 +273,8 @@ let swapTests: [AcceptanceTest] = [
                     .swap(
                         sellAmount: .amt(9000, .usdc),
                         // buyAmount and exchange are updated to reflect the new quote
-                        buyAmount: .amt(2.5, .weth),
+                        // We multiply by 0.99 to account for a 1% slippage buffer
+                        buyAmount: .amt(2.5 * 0.99, .weth),
                         exchange: .updatedZeroEx,
                         network: .ethereum
                     ),
@@ -392,7 +394,8 @@ let swapTests: [AcceptanceTest] = [
                 // Only 2000 USDC is swapped because the other 50 USDC is unbridgeable.
                 .swap(
                     sellAmount: .amt(2000, .usdc),
-                    buyAmount: .amt(1.5, .weth),
+                    // We multiply by 0.99 to account for a 1% slippage buffer
+                    buyAmount: .amt(1.5 * 0.99, .weth),
                     exchange: .updatedZeroEx,
                     network: .base
                 ),
