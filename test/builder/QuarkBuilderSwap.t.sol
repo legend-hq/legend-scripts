@@ -514,7 +514,8 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
             USDC_1,
             9000e6,
             WETH_1,
-            MockZeroExFFIConstants.BUY_AMOUNT,
+            // We multiply by 0.99 to account for a 1% slippage buffer
+            MockZeroExFFIConstants.BUY_AMOUNT * 99 / 100,
             MockZeroExFFIConstants.SWAP_DATA
         );
         callDatas[1] = abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 5e6, QUOTE_ID);
@@ -553,7 +554,8 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
                     outputToken: WETH_1,
                     outputTokenPrice: WETH_PRICE,
                     outputAssetSymbol: "WETH",
-                    outputAmount: MockZeroExFFIConstants.BUY_AMOUNT,
+                    // We multiply by 0.99 to account for a 1% slippage buffer
+                    outputAmount: MockZeroExFFIConstants.BUY_AMOUNT * 99 / 100,
                     isExactOut: false
                 })
             ),
