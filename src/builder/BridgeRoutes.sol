@@ -31,7 +31,7 @@ library CCTP {
 
     // @dev Source: TokenMessenger contract from https://developers.circle.com/stablecoins/evm-smart-contracts
     function knownChains() internal pure returns (CCTPChain[] memory) {
-        CCTPChain[] memory chains = new CCTPChain[](6);
+        CCTPChain[] memory chains = new CCTPChain[](7);
         // Mainnet
         chains[0] = CCTPChain({chainId: 1, domainId: 0, bridge: 0xBd3fa81B58Ba92a82136038B25aDec7066af3155});
         // Base
@@ -44,6 +44,8 @@ library CCTP {
         chains[4] = CCTPChain({chainId: 84532, domainId: 6, bridge: 0x9f3B8679c73C2Fef8b59B4f3444d4e156fb70AA5});
         // Arbitrum Sepolia
         chains[5] = CCTPChain({chainId: 421614, domainId: 3, bridge: 0x9f3B8679c73C2Fef8b59B4f3444d4e156fb70AA5});
+        // Optimism
+        chains[6] = CCTPChain({chainId: 10, domainId: 10, bridge: 0x2B4069517957735bE00ceE0fadAE88a26365528f});
         return chains;
     }
 
@@ -118,8 +120,9 @@ library Across {
     /// @notice The amount of time that the bridge action has to be filled before timing out
     uint256 public constant FILL_DEADLINE_BUFFER = 10 minutes;
 
+    // @dev Source: SpokePool contracts from https://docs.across.to/reference/contract-addresses
     function knownChains() internal pure returns (AcrossChain[] memory) {
-        AcrossChain[] memory chains = new AcrossChain[](6);
+        AcrossChain[] memory chains = new AcrossChain[](7);
         // Mainnet
         chains[0] = AcrossChain({chainId: 1, bridge: 0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5});
         // Base
@@ -132,6 +135,8 @@ library Across {
         chains[4] = AcrossChain({chainId: 84532, bridge: 0x82B564983aE7274c86695917BBf8C99ECb6F0F8F});
         // Arbitrum Sepolia
         chains[5] = AcrossChain({chainId: 84532, bridge: 0xe35e9842fceaCA96570B734083f4a58e8F7C5f2A});
+        // Optimism
+        chains[6] = AcrossChain({chainId: 10, bridge: 0x6f26Bf09B1C792e3228e5467807a900A503c0281});
         return chains;
     }
 

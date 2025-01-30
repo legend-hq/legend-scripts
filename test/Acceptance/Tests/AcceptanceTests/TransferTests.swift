@@ -31,6 +31,20 @@ let transferTests: [AcceptanceTest] = [
                 ])))
     ),
     .init(
+        name: "Alice transfers 10 USDC to Bob on Optimism",
+        given: [
+            .tokenBalance(.alice, .amt(100, .usdc), .optimism),
+            .quote(.basic),
+        ],
+        when: .transfer(from: .alice, to: .bob, amount: .amt(10, .usdc), on: .optimism),
+        expect: .success(
+            .single(
+                .multicall([
+                    .transferErc20(tokenAmount: .amt(10, .usdc), recipient: .bob, network: .optimism),
+                    .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
+                ])))
+    ),
+    .init(
         name: "Alice attempts transfers MAX USDC to Bob on Arbitrum",
         given: [
             .tokenBalance(.alice, .amt(100, .usdc), .arbitrum),
