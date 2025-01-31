@@ -475,6 +475,10 @@ enum Comet: Hashable, Equatable {
             return EthAddress("0x46e6b214b524310239732D51387075E0e70970bf")
         case (.arbitrum, .cusdcv3):
             return EthAddress("0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf")
+        case (.optimism, .cusdcv3):
+            return EthAddress("0x2e44e174f7D53F0212823acC11C01A11d58c5bCB")
+        case (.optimism, .cwethv3):
+            return EthAddress("0xE36A30D249f7761327fd973001A32010b521b6Fd")
         case (_, .cusdcv3):
             fatalError("no market .cusdcv3 for network \(network.description)")
         case (_, .cwethv3):
@@ -515,6 +519,10 @@ enum Comet: Hashable, Equatable {
             return .cwethv3
         case (.arbitrum, "0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf"):
             return .cusdcv3
+        case (.optimism, "0x2e44e174f7D53F0212823acC11C01A11d58c5bCB"):
+            return .cusdcv3
+        case (.optimism, "0xE36A30D249f7761327fd973001A32010b521b6Fd"):
+            return .cwethv3
         case _:
             return .unknownComet(address)
         }
@@ -713,6 +721,7 @@ enum Quote: Hashable, Equatable {
                     .ethereum: 0.10,
                     .base: 0.02,
                     .arbitrum: 0.04,
+                    .optimism: 0.06
                 ]
             )
         }
@@ -779,6 +788,13 @@ enum Token: Hashable, Equatable {
             .link: EthAddress("0xf97f4df75117a78c1A5a0DBb814Af92458539FB4"),
             .usdt: EthAddress("0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9"),
             .wbtc: EthAddress("0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f"),
+        ],
+        .optimism: [
+            .eth: EthAddress("0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"),
+            .weth: EthAddress("0x4200000000000000000000000000000000000006"),
+            .usdc: EthAddress("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85"),
+            .usdt: EthAddress("0x94b008aA00579c1307B0EF2c499aD98a8ce58e58"),
+            .wbtc: EthAddress("0x68f180fcCe6836688e9084f035309E29Bf0A2095"),
         ],
         .unknown(7777): [
             .usdc: EthAddress("0x7777000000000000000000000000000000000001"),
@@ -1028,7 +1044,7 @@ class Context {
     var morphoVaultPositions: [Network: [MorphoVault: [Account: BigUInt]]]
     var ffis: EVM.FFIMap = [:]
 
-    let allNetworks: [Network] = [.ethereum, .base, .arbitrum]
+    let allNetworks: [Network] = [.ethereum, .base, .arbitrum, .optimism]
 
     var chainAccounts: [QuarkBuilder.Accounts.ChainAccounts] {
         allNetworks.map { network in

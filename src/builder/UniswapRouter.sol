@@ -12,7 +12,7 @@ library UniswapRouter {
     /// @dev Addresses fetched from: https://docs.uniswap.org/contracts/v3/reference/deployments/
     /// Note: Make sure that these are the addresses for SwapRouter02, not SwapRouter.
     function knownChains() internal pure returns (RouterChain[] memory) {
-        RouterChain[] memory chains = new RouterChain[](6);
+        RouterChain[] memory chains = new RouterChain[](7);
         // Mainnet
         chains[0] = RouterChain({chainId: 1, router: 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45});
         // Base
@@ -25,6 +25,8 @@ library UniswapRouter {
         chains[4] = RouterChain({chainId: 84532, router: 0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4});
         // Arbitrum Sepolia
         chains[5] = RouterChain({chainId: 421614, router: 0x101F443B4d1b059569D643917553c771E1b9663E});
+        // Optimism
+        chains[6] = RouterChain({chainId: 10, router: 0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45});
         return chains;
     }
 

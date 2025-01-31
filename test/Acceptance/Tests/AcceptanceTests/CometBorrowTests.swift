@@ -118,6 +118,32 @@ let cometBorrowTests: [AcceptanceTest] = [
         )
     ),
     .init(
+        name: "Alice borrows from Comet on Optimism",
+        given: [
+            .tokenBalance(.alice, .amt(3, .usdc), .ethereum),
+            .tokenBalance(.alice, .amt(5, .wbtc), .optimism),
+            .quote(.basic),
+        ],
+        when: .cometBorrow(
+            from: .alice,
+            market: .cusdcv3,
+            borrowAmount: .amt(1, .usdt),
+            collateralAmounts: [.amt(1, .wbtc)],
+            on: .optimism
+        ),
+        expect: .success(
+            .multi([
+                .supplyMultipleAssetsAndBorrowFromComet(
+                    borrowAmount: .amt(1, .usdt),
+                    collateralAmounts: [.amt(1, .wbtc)],
+                    market: .cusdcv3,
+                    network: .optimism
+                ),
+                .quotePay(payment: .amt(0.16, .usdc), payee: .stax, quote: .basic),
+            ])
+        )
+    ),
+    .init(
         name: "Alice pays for a QuotePay with USDC she has borrowed (testBorrowPayFromBorrow)",
         given: [
             .tokenBalance(.alice, .amt(10, .link), .ethereum),
