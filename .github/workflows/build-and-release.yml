@@ -58,7 +58,7 @@ jobs:
             ${{ runner.os }}-foundry-out-
 
       - name: Build Artifacts
-        run: forge build --skip test
+        run: forge build --skip test --skip script
 
       - name: Extract Version Tag
         id: get_version
