@@ -7,7 +7,6 @@ import {Accounts} from "src/builder/Accounts.sol";
 import {BridgeRoutes} from "src/builder/BridgeRoutes.sol";
 import {EIP712Helper} from "src/builder/EIP712Helper.sol";
 import {Math} from "src/lib/Math.sol";
-import {MorphoInfo} from "src/builder/MorphoInfo.sol";
 import {Strings} from "src/builder/Strings.sol";
 import {PaycallWrapper} from "src/builder/PaycallWrapper.sol";
 import {QuotecallWrapper} from "src/builder/QuotecallWrapper.sol";
@@ -167,6 +166,43 @@ contract CometActionsBuilder is QuarkBuilderBase {
                 intent: abi.encode(intent),
                 blockTimestamp: intent.blockTimestamp,
                 chainId: intent.chainId,
+                preferAcross: intent.preferAcross
+            }),
+            chainAccountsList: chainAccountsList,
+            payment: payment
+        });
+
+        return BuilderResult({
+            version: VERSION,
+            actions: actionsArray,
+            quarkOperations: quarkOperationsArray,
+            paymentCurrency: payment.currency,
+            eip712Data: EIP712Helper.eip712DataForQuarkOperations(quarkOperationsArray, actionsArray)
+        });
+    }
+
+    function cometClaimRewards(
+        CometClaimRewardsIntent memory intent,
+        Accounts.ChainAccounts[] memory chainAccountsList,
+        Quotes.Quote memory quote
+    ) external pure returns (BuilderResult memory) {
+        PaymentInfo.Payment memory payment =
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
+
+        uint256[] memory amountOuts = new uint256[](0);
+        string[] memory assetSymbolOuts = new string[](0);
+
+        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
+        constructOperationsAndActions({
+            actionIntent: ActionIntent({
+                actor: intent.claimer,
+                amountOuts: amountOuts,
+                assetSymbolOuts: assetSymbolOuts,
+                actionType: Actions.ACTION_TYPE_COMET_CLAIM_REWARDS,
+                intent: abi.encode(intent),
+                blockTimestamp: intent.blockTimestamp,
+                // TODO: There is no specific chain id, so use a placeholder value. We could refactor this into a list of `chainIds` in the future.
+                chainId: 0,
                 preferAcross: intent.preferAcross
             }),
             chainAccountsList: chainAccountsList,

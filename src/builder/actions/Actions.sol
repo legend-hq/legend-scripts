@@ -14,6 +14,7 @@ import {UniswapRouter} from "src/builder/UniswapRouter.sol";
 import {
     ApproveAndSwap,
     CometRepayAndWithdrawMultipleAssets,
+    CometClaimRewards as CometClaimRewardsActions,
     CometSupplyActions,
     CometSupplyMultipleAssetsAndBorrow,
     CometWithdrawActions,
@@ -38,8 +39,7 @@ library Actions {
     string constant ACTION_TYPE_BORROW = "BORROW";
     string constant ACTION_TYPE_MORPHO_BORROW = "MORPHO_BORROW";
     string constant ACTION_TYPE_BRIDGE = "BRIDGE";
-    // TODO: (LHT-86) Rename ACTION_TYPE_CLAIM_REWARDS to ACTION_TYPE_COMET_CLAIM_REWARDS
-    string constant ACTION_TYPE_CLAIM_REWARDS = "CLAIM_REWARDS";
+    string constant ACTION_TYPE_COMET_CLAIM_REWARDS = "COMET_CLAIM_REWARDS";
     string constant ACTION_TYPE_MORPHO_CLAIM_REWARDS = "MORPHO_CLAIM_REWARDS";
     string constant ACTION_TYPE_DRIP_TOKENS = "DRIP_TOKENS";
     string constant ACTION_TYPE_RECURRING_SWAP = "RECURRING_SWAP";
@@ -94,6 +94,12 @@ library Actions {
         uint256 destinationChainId;
         address recipient;
         uint256 blockTimestamp;
+    }
+
+    struct CometClaimRewards {
+        Accounts.ChainAccounts[] chainAccountsList;
+        uint256 blockTimestamp;
+        address claimer;
     }
 
     struct CometSupply {
@@ -319,12 +325,12 @@ library Actions {
         address token;
     }
 
-    struct ClaimRewardsActionContext {
-        uint256 amount;
-        string assetSymbol;
+    struct CometClaimRewardsActionContext {
+        uint256[] amounts;
+        string[] assetSymbols;
         uint256 chainId;
-        uint256 price;
-        address token;
+        uint256[] prices;
+        address[] tokens;
     }
 
     struct DripTokensActionContext {
@@ -859,6 +865,120 @@ library Actions {
         });
 
         return (quarkOperation, action);
+    }
+
+    function cometClaimRewards(CometClaimRewards memory claimRewards, PaymentInfo.Payment memory payment)
+        internal
+        pure
+        returns (IQuarkWallet.QuarkOperation[] memory, Action[] memory)
+    {
+        List.DynamicArray memory quarkOperations = List.newList();
+        List.DynamicArray memory actions = List.newList();
+        // Iterate through each chain and construct a QuarkOperation to claim all rewards for each chain
+        for (uint256 i = 0; i < claimRewards.chainAccountsList.length; ++i) {
+            uint256 chainId = claimRewards.chainAccountsList[i].chainId;
+            Accounts.QuarkSecret memory accountSecret =
+                Accounts.findQuarkSecret(claimRewards.claimer, claimRewards.chainAccountsList[i].quarkSecrets);
+
+            // Iterate over each CometPosition for the chain, which each have a list of CometReward
+            for (uint256 j = 0; j < claimRewards.chainAccountsList[i].cometPositions.length; ++j) {
+                // Collect parameters for claiming rewards for the current CometPosition
+                CometClaimRewardsParams memory claimRewardsParams = collectClaimRewardsParams(
+                    claimRewards.chainAccountsList[i].cometPositions[j].cometRewards,
+                    claimRewards.chainAccountsList[i].cometPositions[j].comet
+                );
+
+                // Skip if no rewards to claim
+                if (claimRewardsParams.rewardAssets.length == 0) continue;
+
+                (string[] memory rewardsAssetSymbols, uint256[] memory rewardsPrices) = Accounts.getAssetInfo(
+                    claimRewardsParams.rewardAssets, claimRewards.chainAccountsList[i].assetPositionsList
+                );
+
+                bytes memory scriptCalldata = abi.encodeWithSelector(
+                    CometClaimRewardsActions.claim.selector,
+                    claimRewardsParams.rewardContracts,
+                    claimRewardsParams.comets,
+                    claimRewardsParams.accounts
+                );
+
+                // Construct QuarkOperation
+                IQuarkWallet.QuarkOperation memory quarkOperation = IQuarkWallet.QuarkOperation({
+                    nonce: accountSecret.nonceSecret,
+                    isReplayable: false,
+                    scriptAddress: CodeJarHelper.getCodeAddress(type(CometClaimRewardsActions).creationCode),
+                    scriptCalldata: scriptCalldata,
+                    scriptSources: new bytes[](0),
+                    expiry: claimRewards.blockTimestamp + STANDARD_EXPIRY_BUFFER
+                });
+
+                CometClaimRewardsActionContext memory claimRewardsActionContext = CometClaimRewardsActionContext({
+                    amounts: claimRewardsParams.rewardsOwed,
+                    assetSymbols: rewardsAssetSymbols,
+                    chainId: chainId,
+                    prices: rewardsPrices,
+                    tokens: claimRewardsParams.rewardAssets
+                });
+
+                Action memory action = Actions.Action({
+                    chainId: chainId,
+                    quarkAccount: claimRewards.claimer,
+                    actionType: ACTION_TYPE_COMET_CLAIM_REWARDS,
+                    actionContext: abi.encode(claimRewardsActionContext),
+                    quotePayActionContext: "",
+                    paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
+                    nonceSecret: accountSecret.nonceSecret,
+                    totalPlays: 1
+                });
+
+                List.addQuarkOperation(quarkOperations, quarkOperation);
+                List.addAction(actions, action);
+            }
+        }
+
+        return (List.toQuarkOperationArray(quarkOperations), List.toActionArray(actions));
+    }
+
+    struct CometClaimRewardsParams {
+        address[] accounts;
+        address[] comets;
+        address[] rewardAssets;
+        address[] rewardContracts;
+        uint256[] rewardsOwed;
+    }
+
+    function collectClaimRewardsParams(Accounts.CometReward[] memory cometRewards, address comet)
+        internal
+        pure
+        returns (CometClaimRewardsParams memory)
+    {
+        List.DynamicArray memory cometRewardsList = List.newList();
+        List.DynamicArray memory cometsList = List.newList();
+        List.DynamicArray memory accountsList = List.newList();
+        List.DynamicArray memory rewardsOwedList = List.newList();
+        List.DynamicArray memory rewardAssetsList = List.newList();
+
+        for (uint256 i = 0; i < cometRewards.length; ++i) {
+            Accounts.CometReward memory cometReward = cometRewards[i];
+            for (uint256 j = 0; j < cometReward.accounts.length; ++j) {
+                // Only collect params if there are rewards owed for the account
+                if (cometReward.rewardsOwed[j] == 0) continue;
+
+                List.addAddress(cometRewardsList, cometReward.rewardContract);
+                List.addAddress(cometsList, comet);
+                List.addAddress(accountsList, cometReward.accounts[j]);
+                List.addUint256(rewardsOwedList, cometReward.rewardsOwed[j]);
+                List.addAddress(rewardAssetsList, cometReward.asset);
+            }
+        }
+
+        return CometClaimRewardsParams({
+            rewardContracts: List.toAddressArray(cometRewardsList),
+            comets: List.toAddressArray(cometsList),
+            accounts: List.toAddressArray(accountsList),
+            rewardsOwed: List.toUint256Array(rewardsOwedList),
+            rewardAssets: List.toAddressArray(rewardAssetsList)
+        });
     }
 
     function cometRepay(CometRepayInput memory repayInput, PaymentInfo.Payment memory payment)
@@ -1757,8 +1877,8 @@ library Actions {
         return bs[0];
     }
 
-    function emptyClaimRewardsActionContext() external pure returns (ClaimRewardsActionContext memory) {
-        ClaimRewardsActionContext[] memory cs = new ClaimRewardsActionContext[](1);
+    function emptyCometClaimRewardsActionContext() external pure returns (CometClaimRewardsActionContext memory) {
+        CometClaimRewardsActionContext[] memory cs = new CometClaimRewardsActionContext[](1);
         return cs[0];
     }
 

@@ -48,6 +48,7 @@ library Accounts {
         address comet;
         CometBasePosition basePosition;
         CometCollateralPosition[] collateralPositions;
+        CometReward[] cometRewards;
     }
 
     struct CometBasePosition {
@@ -61,6 +62,13 @@ library Accounts {
         address asset;
         address[] accounts;
         uint256[] balances;
+    }
+
+    struct CometReward {
+        address asset;
+        address rewardContract;
+        address[] accounts;
+        uint256[] rewardsOwed;
     }
 
     struct MorphoPositions {
@@ -201,6 +209,22 @@ library Accounts {
         }
 
         revert AssetPositionNotFound(assetSymbol);
+    }
+
+    function getAssetInfo(address[] memory assetAddresses, Accounts.AssetPositions[] memory assetPositionsList)
+        internal
+        pure
+        returns (string[] memory symbols, uint256[] memory prices)
+    {
+        symbols = new string[](assetAddresses.length);
+        prices = new uint256[](assetAddresses.length);
+
+        for (uint256 i = 0; i < assetAddresses.length; ++i) {
+            Accounts.AssetPositions memory assetPositions =
+                Accounts.findAssetPositions(assetAddresses[i], assetPositionsList);
+            symbols[i] = assetPositions.symbol;
+            prices[i] = assetPositions.usdPrice;
+        }
     }
 
     function findQuarkSecret(address account, Accounts.QuarkSecret[] memory quarkSecrets)
