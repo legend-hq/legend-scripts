@@ -67,27 +67,20 @@ $ git add .gas-snapshot && git commit -m "commit new baseline gas snapshot"
 
 ## Deploy
 
-To run the deploy, first, find the Code Jar address, or deploy Quark scripts via:
+To deploy all un-deployed contracts in this repo (not-including `QuarkBuilder`), run the following command:
 
 ```sh
-./script/deploy-quark-scripts.sh
+set -a && source .env && ./script/deploy_contracts/deploy-contracts.sh --broadcast
 ```
 
-To actually deploy contracts on-chain, the following env variables need to be set:
+Make sure the following env variables are defined:
 
 ```sh
 # Required
 RPC_URL=
+ETHERSCAN_API_KEY=
+DEPLOYMENT_CHAIN_ID=
 DEPLOYER_PK=
-# Optional for verifying deployed contracts
-ETHERSCAN_KEY=
-CODE_JAR=
-```
-
-Once the env variables are defined, run the following command:
-
-```sh
-set -a && source .env && ./script/deploy-quark-scripts.sh --broadcast
 ```
 
 ## Verify

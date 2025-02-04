@@ -20,12 +20,11 @@ import {
 } from "src/DeFiScripts.sol";
 
 // Deploy with:
-// $ set -a && source .env && ./script/deploy.sh --broadcast
+// $ set -a && source .env && ./script/deploy-quark-scripts.sh --broadcast
 
 // Required ENV vars:
 // RPC_URL
 // DEPLOYER_PK
-// QUARK_WALLET_FACTORY_ADDRESS
 
 // Optional ENV vars:
 // ETHERSCAN_KEY
