@@ -24,6 +24,9 @@ contract QuarkBuilderTest {
     address constant COMET_8453_USDC = address(0xc384530a);
     address constant COMET_8453_WETH = address(0xc384530b);
 
+    address constant COMET_REWARDS_1 = address(0xFEEDBEEF1);
+    address constant COMET_REWARDS_8453 = address(0xFEEDBEEF8453);
+
     address constant LINK_1 = address(0xfeed01);
     address constant LINK_7777 = address(0xfeed7777);
     address constant LINK_8453 = address(0xfeed8453);
@@ -463,6 +466,9 @@ contract QuarkBuilderTest {
         uint256 baseBorrowed;
         string[] collateralAssetSymbols;
         uint256[] collateralAssetBalances;
+        string[] rewardAssetSymbols;
+        address[] rewardContracts;
+        uint256[] rewardsOwed;
     }
 
     struct MorphoPortfolio {
@@ -537,6 +543,8 @@ contract QuarkBuilderTest {
             CometPortfolio memory cometPortfolio = cometPortfolios[i];
             Accounts.CometCollateralPosition[] memory collateralPositions =
                 new Accounts.CometCollateralPosition[](cometPortfolio.collateralAssetSymbols.length);
+            Accounts.CometReward[] memory cometRewards =
+                new Accounts.CometReward[](cometPortfolio.rewardAssetSymbols.length);
 
             for (uint256 j = 0; j < cometPortfolio.collateralAssetSymbols.length; ++j) {
                 (address asset,,) = assetInfo(cometPortfolio.collateralAssetSymbols[j], chainId);
@@ -544,6 +552,16 @@ contract QuarkBuilderTest {
                     asset: asset,
                     accounts: Arrays.addressArray(account),
                     balances: Arrays.uintArray(cometPortfolio.collateralAssetBalances[j])
+                });
+            }
+
+            for (uint256 j = 0; j < cometPortfolio.rewardAssetSymbols.length; ++j) {
+                (address asset,,) = assetInfo(cometPortfolio.rewardAssetSymbols[j], chainId);
+                cometRewards[j] = Accounts.CometReward({
+                    asset: asset,
+                    rewardContract: cometPortfolio.rewardContracts[j],
+                    accounts: Arrays.addressArray(account),
+                    rewardsOwed: Arrays.uintArray(cometPortfolio.rewardsOwed[j])
                 });
             }
 
@@ -555,7 +573,8 @@ contract QuarkBuilderTest {
                     borrowed: Arrays.uintArray(cometPortfolio.baseBorrowed),
                     supplied: Arrays.uintArray(cometPortfolio.baseSupplied)
                 }),
-                collateralPositions: collateralPositions
+                collateralPositions: collateralPositions,
+                cometRewards: cometRewards
             });
         }
 

@@ -63,10 +63,13 @@ contract CometClaimRewardsTest is Test {
         address[] memory cometRewards = new address[](1);
         cometRewards[0] = cometReward;
 
+        address[] memory accounts = new address[](1);
+        accounts[0] = address(wallet);
+
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
             cometClaimRewardsScript,
-            abi.encodeCall(CometClaimRewards.claim, (cometRewards, comets, address(wallet))),
+            abi.encodeCall(CometClaimRewards.claim, (cometRewards, comets, accounts)),
             ScriptType.ScriptSource
         );
         bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
