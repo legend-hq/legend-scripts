@@ -699,7 +699,10 @@ contract QuarkBuilderCometRepayTest is Test, QuarkBuilderTest {
             baseSupplied: 0,
             baseBorrowed: 10e6, // currently borrowing 10 USDC
             collateralAssetSymbols: Arrays.stringArray("LINK"),
-            collateralAssetBalances: Arrays.uintArray(0)
+            collateralAssetBalances: Arrays.uintArray(0),
+            rewardAssetSymbols: new string[](0),
+            rewardContracts: new address[](0),
+            rewardsOwed: new uint256[](0)
         });
 
         ChainPortfolio[] memory chainPortfolios = new ChainPortfolio[](1);
@@ -837,7 +840,10 @@ contract QuarkBuilderCometRepayTest is Test, QuarkBuilderTest {
             baseSupplied: 0,
             baseBorrowed: 10e6, // currently borrowing 10 USDC on Base Comet
             collateralAssetSymbols: Arrays.stringArray("LINK"),
-            collateralAssetBalances: Arrays.uintArray(0)
+            collateralAssetBalances: Arrays.uintArray(0),
+            rewardAssetSymbols: new string[](0),
+            rewardContracts: new address[](0),
+            rewardsOwed: new uint256[](0)
         });
 
         ChainPortfolio[] memory chainPortfolios = new ChainPortfolio[](2);

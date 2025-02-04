@@ -220,15 +220,15 @@ contract CometClaimRewards {
      * @notice Claim rewards
      * @param cometRewards The CometRewards addresses
      * @param comets The Comet addresses
-     * @param recipient The recipient address, that will receive the COMP rewards
+     * @param accounts The accounts that the Comet rewards are being claimed for
      */
-    function claim(address[] calldata cometRewards, address[] calldata comets, address recipient) external {
-        if (cometRewards.length != comets.length) {
+    function claim(address[] calldata cometRewards, address[] calldata comets, address[] calldata accounts) external {
+        if (cometRewards.length != comets.length || cometRewards.length != accounts.length) {
             revert DeFiScriptErrors.InvalidInput();
         }
 
         for (uint256 i = 0; i < cometRewards.length;) {
-            ICometRewards(cometRewards[i]).claim(comets[i], recipient, true);
+            ICometRewards(cometRewards[i]).claim(comets[i], accounts[i], true);
             unchecked {
                 ++i;
             }
