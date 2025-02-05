@@ -45,31 +45,66 @@ contract VerifyQuarkBuilderDependencies is Test {
 
         dependencies[0] = Dependency({name: "CodeJar", contractAddress: CodeJarHelper.CODE_JAR_ADDRESS});
 
-        dependencies[1] = Dependency({name: "AcrossActions", contractAddress: codeJarAddress(type(AcrossActions).creationCode)});
-        dependencies[2] = Dependency({name: "CCTPBridgeActions", contractAddress: codeJarAddress(type(CCTPBridgeActions).creationCode)});
+        dependencies[1] =
+            Dependency({name: "AcrossActions", contractAddress: codeJarAddress(type(AcrossActions).creationCode)});
+        dependencies[2] = Dependency({
+            name: "CCTPBridgeActions",
+            contractAddress: codeJarAddress(type(CCTPBridgeActions).creationCode)
+        });
         dependencies[3] = Dependency({name: "Cancel", contractAddress: codeJarAddress(type(Cancel).creationCode)});
-        dependencies[4] = Dependency({name: "ConditionalMulticall", contractAddress: codeJarAddress(type(ConditionalMulticall).creationCode)});
+        dependencies[4] = Dependency({
+            name: "ConditionalMulticall",
+            contractAddress: codeJarAddress(type(ConditionalMulticall).creationCode)
+        });
         // <DeFiScripts>
-        dependencies[5] = Dependency({name: "ApproveAndSwap", contractAddress: codeJarAddress(type(ApproveAndSwap).creationCode)});
-        dependencies[6] = Dependency({name: "CometRepayAndWithdrawMultipleAssets", contractAddress: codeJarAddress(type(CometRepayAndWithdrawMultipleAssets).creationCode)});
-        dependencies[7] = Dependency({name: "CometSupplyActions", contractAddress: codeJarAddress(type(CometSupplyActions).creationCode)});
-        dependencies[8] = Dependency({name: "CometSupplyMultipleAssetsAndBorrow", contractAddress: codeJarAddress(type(CometSupplyMultipleAssetsAndBorrow).creationCode)});
-        dependencies[9] = Dependency({name: "CometWithdrawActions", contractAddress: codeJarAddress(type(CometWithdrawActions).creationCode)});
-        dependencies[10] = Dependency({name: "TransferActions", contractAddress: codeJarAddress(type(TransferActions).creationCode)});
+        dependencies[5] =
+            Dependency({name: "ApproveAndSwap", contractAddress: codeJarAddress(type(ApproveAndSwap).creationCode)});
+        dependencies[6] = Dependency({
+            name: "CometRepayAndWithdrawMultipleAssets",
+            contractAddress: codeJarAddress(type(CometRepayAndWithdrawMultipleAssets).creationCode)
+        });
+        dependencies[7] = Dependency({
+            name: "CometSupplyActions",
+            contractAddress: codeJarAddress(type(CometSupplyActions).creationCode)
+        });
+        dependencies[8] = Dependency({
+            name: "CometSupplyMultipleAssetsAndBorrow",
+            contractAddress: codeJarAddress(type(CometSupplyMultipleAssetsAndBorrow).creationCode)
+        });
+        dependencies[9] = Dependency({
+            name: "CometWithdrawActions",
+            contractAddress: codeJarAddress(type(CometWithdrawActions).creationCode)
+        });
+        dependencies[10] =
+            Dependency({name: "TransferActions", contractAddress: codeJarAddress(type(TransferActions).creationCode)});
         // </DeFiScripts>
         dependencies[11] = Dependency({name: "Ethcall", contractAddress: codeJarAddress(type(Ethcall).creationCode)});
         // <MorphoScripts>
-        dependencies[12] = Dependency({name: "MorphoActions", contractAddress: codeJarAddress(type(MorphoActions).creationCode)});
-        dependencies[13] = Dependency({name: "MorphoRewardsActions", contractAddress: codeJarAddress(type(MorphoRewardsActions).creationCode)});
-        dependencies[14] = Dependency({name: "MorphoVaultActions", contractAddress: codeJarAddress(type(MorphoVaultActions).creationCode)});
+        dependencies[12] =
+            Dependency({name: "MorphoActions", contractAddress: codeJarAddress(type(MorphoActions).creationCode)});
+        dependencies[13] = Dependency({
+            name: "MorphoRewardsActions",
+            contractAddress: codeJarAddress(type(MorphoRewardsActions).creationCode)
+        });
+        dependencies[14] = Dependency({
+            name: "MorphoVaultActions",
+            contractAddress: codeJarAddress(type(MorphoVaultActions).creationCode)
+        });
         // </MorphoScripts>
-        dependencies[15] = Dependency({name: "Multicall", contractAddress: codeJarAddress(type(Multicall).creationCode)});
+        dependencies[15] =
+            Dependency({name: "Multicall", contractAddress: codeJarAddress(type(Multicall).creationCode)});
         dependencies[16] = Dependency({name: "Paycall", contractAddress: codeJarAddress(type(Paycall).creationCode)});
         dependencies[17] = Dependency({name: "QuotePay", contractAddress: codeJarAddress(type(QuotePay).creationCode)});
-        dependencies[18] = Dependency({name: "RecurringSwap", contractAddress: codeJarAddress(type(RecurringSwap).creationCode)});
-        dependencies[19] = Dependency({name: "UniswapFlashLoan", contractAddress: codeJarAddress(type(UniswapFlashLoan).creationCode)});
-        dependencies[20] = Dependency({name: "UniswapFlashSwapExactOut", contractAddress: codeJarAddress(type(UniswapFlashSwapExactOut).creationCode)});
-        dependencies[21] = Dependency({name: "WrapperActions", contractAddress: codeJarAddress(type(WrapperActions).creationCode)});
+        dependencies[18] =
+            Dependency({name: "RecurringSwap", contractAddress: codeJarAddress(type(RecurringSwap).creationCode)});
+        dependencies[19] =
+            Dependency({name: "UniswapFlashLoan", contractAddress: codeJarAddress(type(UniswapFlashLoan).creationCode)});
+        dependencies[20] = Dependency({
+            name: "UniswapFlashSwapExactOut",
+            contractAddress: codeJarAddress(type(UniswapFlashSwapExactOut).creationCode)
+        });
+        dependencies[21] =
+            Dependency({name: "WrapperActions", contractAddress: codeJarAddress(type(WrapperActions).creationCode)});
 
         for (uint256 i = 0; i < dependencies.length; i++) {
             console.log(dependencies[i].name, dependencies[i].contractAddress);
