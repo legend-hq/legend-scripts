@@ -281,7 +281,10 @@ contract QuarkBuilderCometWithdrawTest is Test, QuarkBuilderTest {
             baseSupplied: 1e6,
             baseBorrowed: 0,
             collateralAssetSymbols: Arrays.stringArray("LINK"),
-            collateralAssetBalances: Arrays.uintArray(0)
+            collateralAssetBalances: Arrays.uintArray(0),
+            rewardAssetSymbols: new string[](0),
+            rewardContracts: new address[](0),
+            rewardsOwed: new uint256[](0)
         });
 
         ChainPortfolio[] memory chainPortfolios = new ChainPortfolio[](1);
@@ -375,7 +378,10 @@ contract QuarkBuilderCometWithdrawTest is Test, QuarkBuilderTest {
             baseSupplied: 1e6,
             baseBorrowed: 0,
             collateralAssetSymbols: Arrays.stringArray("LINK"),
-            collateralAssetBalances: Arrays.uintArray(0)
+            collateralAssetBalances: Arrays.uintArray(0),
+            rewardAssetSymbols: new string[](0),
+            rewardContracts: new address[](0),
+            rewardsOwed: new uint256[](0)
         });
 
         ChainPortfolio[] memory chainPortfolios = new ChainPortfolio[](1);

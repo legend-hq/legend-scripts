@@ -23,7 +23,7 @@ import {List} from "src/builder/List.sol";
 import {HashMap} from "src/builder/HashMap.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.6.1";
+string constant QUARK_BUILDER_VERSION = "0.6.2";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -101,6 +101,13 @@ contract QuarkBuilderBase {
         uint256[] collateralAmounts;
         string[] collateralAssetSymbols;
         address comet;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    struct CometClaimRewardsIntent {
+        uint256 blockTimestamp;
+        address claimer;
         bool preferAcross;
         string paymentAssetSymbol;
     }
@@ -353,9 +360,9 @@ contract QuarkBuilderBase {
 
         (
             string memory constructResult,
-            IQuarkWallet.QuarkOperation memory actionQuarkOperation,
-            Actions.Action memory action
-        ) = constructOperationAndAction(
+            IQuarkWallet.QuarkOperation[] memory constructedQuarkOperations,
+            Actions.Action[] memory constructedActions
+        ) = constructOperationsAndActionsFromIntent(
             chainAccountsList,
             payment,
             amountsOnDst,
@@ -369,8 +376,10 @@ contract QuarkBuilderBase {
             revert InvalidActionType();
         }
 
-        List.addAction(actions, action);
-        List.addQuarkOperation(quarkOperations, actionQuarkOperation);
+        for (uint256 i = 0; i < constructedQuarkOperations.length; ++i) {
+            List.addAction(actions, constructedActions[i]);
+            List.addQuarkOperation(quarkOperations, constructedQuarkOperations[i]);
+        }
 
         string memory quotePayResult = Strings.OK;
         uint256 totalQuoteAmount;
@@ -445,7 +454,7 @@ contract QuarkBuilderBase {
             QuarkOperationHelper.mergeSameChainOperations(quarkOperationsArray, actionsArray);
     }
 
-    function constructOperationAndAction(
+    function constructOperationsAndActionsFromIntent(
         Accounts.ChainAccounts[] memory chainAccountsList,
         PaymentInfo.Payment memory payment,
         HashMap.Map memory amountsOnDst,
@@ -453,7 +462,7 @@ contract QuarkBuilderBase {
         List.DynamicArray memory chainIdsInvolved,
         string memory actionType,
         bytes memory actionIntent
-    ) internal pure returns (string memory, IQuarkWallet.QuarkOperation memory, Actions.Action memory) {
+    ) internal pure returns (string memory, IQuarkWallet.QuarkOperation[] memory, Actions.Action[] memory) {
         if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_TRANSFER)) {
             TransferIntent memory intent = abi.decode(actionIntent, (TransferIntent));
             if (intent.amount == type(uint256).max) {
@@ -478,7 +487,7 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_BORROW)) {
             CometBorrowIntent memory intent = abi.decode(actionIntent, (CometBorrowIntent));
             for (uint256 i = 0; i < intent.collateralAmounts.length; ++i) {
@@ -508,7 +517,20 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_COMET_CLAIM_REWARDS)) {
+            CometClaimRewardsIntent memory intent = abi.decode(actionIntent, (CometClaimRewardsIntent));
+
+            (IQuarkWallet.QuarkOperation[] memory operations, Actions.Action[] memory actions) = Actions
+                .cometClaimRewards(
+                Actions.CometClaimRewards({
+                    chainAccountsList: chainAccountsList,
+                    blockTimestamp: intent.blockTimestamp,
+                    claimer: intent.claimer
+                }),
+                payment
+            );
+            return (Strings.OK, operations, actions);
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_SUPPLY)) {
             CometSupplyIntent memory intent = abi.decode(actionIntent, (CometSupplyIntent));
             if (intent.amount == type(uint256).max) {
@@ -533,7 +555,7 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_REPAY)) {
             CometRepayIntent memory intent = abi.decode(actionIntent, (CometRepayIntent));
             if (intent.amount == type(uint256).max) {
@@ -564,7 +586,7 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_WITHDRAW)) {
             CometWithdrawIntent memory intent = abi.decode(actionIntent, (CometWithdrawIntent));
 
@@ -580,7 +602,7 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_BORROW)) {
             MorphoBorrowIntent memory intent = abi.decode(actionIntent, (MorphoBorrowIntent));
             if (intent.collateralAmount == type(uint256).max) {
@@ -607,7 +629,7 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_REPAY)) {
             MorphoRepayIntent memory intent = abi.decode(actionIntent, (MorphoRepayIntent));
 
@@ -644,7 +666,7 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_CLAIM_REWARDS)) {
             MorphoRewardsClaimIntent memory intent = abi.decode(actionIntent, (MorphoRewardsClaimIntent));
 
@@ -662,7 +684,7 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_VAULT_SUPPLY)) {
             MorphoVaultSupplyIntent memory intent = abi.decode(actionIntent, (MorphoVaultSupplyIntent));
 
@@ -688,7 +710,7 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_VAULT_WITHDRAW)) {
             MorphoVaultWithdrawIntent memory intent = abi.decode(actionIntent, (MorphoVaultWithdrawIntent));
 
@@ -703,7 +725,7 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_SWAP)) {
             ZeroExSwapIntent memory intent = abi.decode(actionIntent, (ZeroExSwapIntent));
             string memory sellAssetSymbol =
@@ -751,7 +773,7 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_RECURRING_SWAP)) {
             RecurringSwapIntent memory intent = abi.decode(actionIntent, (RecurringSwapIntent));
 
@@ -773,13 +795,9 @@ contract QuarkBuilderBase {
                 }),
                 payment
             );
-            return (Strings.OK, operation, action);
+            return (Strings.OK, toList(operation), toList(action));
         } else {
-            return (
-                Strings.ERROR,
-                IQuarkWallet.QuarkOperation(bytes32(0), false, address(0), new bytes[](0), "", 0),
-                Actions.Action(0, address(0), "", "", "", "", bytes32(0), 0)
-            );
+            return (Strings.ERROR, new IQuarkWallet.QuarkOperation[](1), new Actions.Action[](1));
         }
     }
 
@@ -1230,23 +1248,27 @@ contract QuarkBuilderBase {
                     assetsOutPerChain, abi.encode(borrowActionContext.chainId), borrowActionContext.collateralAmount
                 );
             }
-        } else if (Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_CLAIM_REWARDS)) {
-            Actions.ClaimRewardsActionContext memory claimRewardActionContext =
-                abi.decode(action.actionContext, (Actions.ClaimRewardsActionContext));
-            if (Strings.stringEqIgnoreCase(claimRewardActionContext.assetSymbol, paymentTokenSymbol)) {
-                HashMap.addOrPutUint256(
-                    assetsInPerChain, abi.encode(claimRewardActionContext.chainId), claimRewardActionContext.amount
-                );
+        } else if (Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_COMET_CLAIM_REWARDS)) {
+            Actions.CometClaimRewardsActionContext memory claimRewardActionContext =
+                abi.decode(action.actionContext, (Actions.CometClaimRewardsActionContext));
+            for (uint256 i = 0; i < claimRewardActionContext.assetSymbols.length; ++i) {
+                if (Strings.stringEqIgnoreCase(claimRewardActionContext.assetSymbols[i], paymentTokenSymbol)) {
+                    HashMap.addOrPutUint256(
+                        assetsInPerChain,
+                        abi.encode(claimRewardActionContext.chainId),
+                        claimRewardActionContext.amounts[i]
+                    );
+                }
             }
         } else if (Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_MORPHO_CLAIM_REWARDS)) {
             Actions.MorphoClaimRewardsActionContext memory claimRewardActionContext =
                 abi.decode(action.actionContext, (Actions.MorphoClaimRewardsActionContext));
-            for (uint256 j = 0; j < claimRewardActionContext.assetSymbols.length; ++j) {
-                if (Strings.stringEqIgnoreCase(claimRewardActionContext.assetSymbols[j], paymentTokenSymbol)) {
+            for (uint256 i = 0; i < claimRewardActionContext.assetSymbols.length; ++i) {
+                if (Strings.stringEqIgnoreCase(claimRewardActionContext.assetSymbols[i], paymentTokenSymbol)) {
                     HashMap.addOrPutUint256(
                         assetsInPerChain,
                         abi.encode(claimRewardActionContext.chainId),
-                        claimRewardActionContext.amounts[j]
+                        claimRewardActionContext.amounts[i]
                     );
                 }
             }
@@ -1454,5 +1476,21 @@ contract QuarkBuilderBase {
         } else {
             revert Errors.BridgeAmountTooLow();
         }
+    }
+
+    function toList(IQuarkWallet.QuarkOperation memory quarkOperation)
+        internal
+        pure
+        returns (IQuarkWallet.QuarkOperation[] memory)
+    {
+        IQuarkWallet.QuarkOperation[] memory list = new IQuarkWallet.QuarkOperation[](1);
+        list[0] = quarkOperation;
+        return list;
+    }
+
+    function toList(Actions.Action memory action) internal pure returns (Actions.Action[] memory) {
+        Actions.Action[] memory list = new Actions.Action[](1);
+        list[0] = action;
+        return list;
     }
 }

@@ -200,6 +200,36 @@ library List {
         return contains(list, abi.encode(item));
     }
 
+    // === address ===
+
+    function addAddress(DynamicArray memory list, address item) internal pure returns (DynamicArray memory) {
+        return addItem(list, abi.encode(item));
+    }
+
+    function addUniqueAddress(DynamicArray memory list, address item) internal pure returns (DynamicArray memory) {
+        return addUniqueItem(list, abi.encode(item));
+    }
+
+    function getAddress(DynamicArray memory list, uint256 index) internal pure returns (address) {
+        return abi.decode(get(list, index), (address));
+    }
+
+    function toAddressArray(DynamicArray memory list) internal pure returns (address[] memory) {
+        address[] memory result = new address[](list.length);
+        for (uint256 i = 0; i < list.length; ++i) {
+            result[i] = abi.decode(list.bytesArray[i], (address));
+        }
+        return result;
+    }
+
+    function indexOf(DynamicArray memory list, address item) internal pure returns (int256) {
+        return indexOf(list, abi.encode(item));
+    }
+
+    function contains(DynamicArray memory list, address item) internal pure returns (bool) {
+        return contains(list, abi.encode(item));
+    }
+
     // === String ===
 
     function addString(DynamicArray memory list, string memory item) internal pure returns (DynamicArray memory) {
