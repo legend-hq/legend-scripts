@@ -214,7 +214,7 @@ contract QuarkBuilderCometClaimRewardsTest is Test, QuarkBuilderTest {
         assertEq(result.quarkOperations[1].isReplayable, false, "isReplayable is false");
 
         // check the actions
-        assertEq(result.actions.length, 2, "one action");
+        assertEq(result.actions.length, 2, "two actions");
         assertEq(result.actions[0].chainId, 1, "operation is on chainId 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
         assertEq(result.actions[0].actionType, "COMET_CLAIM_REWARDS", "action type is 'COMET_CLAIM_REWARDS'");
