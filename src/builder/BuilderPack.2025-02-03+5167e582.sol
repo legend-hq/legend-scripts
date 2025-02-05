@@ -593,6 +593,80 @@ library Chain {
         }
     }
 
+    /// @dev tokenbot
+    function CLANKER(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.CLANKER();
+        } else {
+            revert NotFound("Asset for tokenbot not found on chain", chainId);
+        }
+    }
+
+    /// @dev Super Anon
+    function ANON(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.ANON();
+        } else {
+            revert NotFound("Asset for Super Anon not found on chain", chainId);
+        }
+    }
+
+    /// @dev Mog Coin
+    function Mog(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.Mog();
+        } else {
+            revert NotFound("Asset for Mog Coin not found on chain", chainId);
+        }
+    }
+
+    /// @dev Prime
+    function PRIME(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.PRIME();
+        } else {
+            revert NotFound("Asset for Prime not found on chain", chainId);
+        }
+    }
+
+    /// @dev Toshi
+    function TOSHI(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.TOSHI();
+        } else {
+            revert NotFound("Asset for Toshi not found on chain", chainId);
+        }
+    }
+
+    /// @dev Virtual Protocol
+    function VIRTUAL(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.VIRTUAL();
+        } else {
+            revert NotFound("Asset for Virtual Protocol not found on chain", chainId);
+        }
+    }
+
+    /// @dev Venice Token
+    function VVV(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.VVV();
+        } else {
+            revert NotFound("Asset for Venice Token not found on chain", chainId);
+        }
+    }
+
+    /// @dev LayerZero
+    function ZRO(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.ZRO();
+        } else if (chainId == 42161) {
+            return ArbitrumMainnet.ZRO();
+        } else {
+            revert NotFound("Asset for LayerZero not found on chain", chainId);
+        }
+    }
+
     /// @dev rsETHWrapper
     function wrsETH(uint256 chainId) internal pure returns (KnownAsset memory) {
         if (chainId == 8453) {
@@ -601,6 +675,15 @@ library Chain {
             return OptimismMainnet.wrsETH();
         } else {
             revert NotFound("Asset for rsETHWrapper not found on chain", chainId);
+        }
+    }
+
+    /// @dev Aave Token
+    function AAVE(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 42161) {
+            return ArbitrumMainnet.AAVE();
+        } else {
+            revert NotFound("Asset for Aave Token not found on chain", chainId);
         }
     }
 
@@ -2792,6 +2875,86 @@ library BaseMainnet {
         });
     }
 
+    /// @dev BaseMainnet tokenbot
+    function CLANKER() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"tokenbot",
+            symbol: "CLANKER",
+            decimals: 18,
+            assetAddress: 0x1bc0c42215582d5A085795f4baDbaC3ff36d1Bcb
+        });
+    }
+
+    /// @dev BaseMainnet Super Anon
+    function ANON() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Super Anon",
+            symbol: "ANON",
+            decimals: 18,
+            assetAddress: 0x0Db510e79909666d6dEc7f5e49370838c16D950f
+        });
+    }
+
+    /// @dev BaseMainnet Mog Coin
+    function Mog() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Mog Coin",
+            symbol: "Mog",
+            decimals: 18,
+            assetAddress: 0x2Da56AcB9Ea78330f947bD57C54119Debda7AF71
+        });
+    }
+
+    /// @dev BaseMainnet Prime
+    function PRIME() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Prime",
+            symbol: "PRIME",
+            decimals: 18,
+            assetAddress: 0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b
+        });
+    }
+
+    /// @dev BaseMainnet Toshi
+    function TOSHI() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Toshi",
+            symbol: "TOSHI",
+            decimals: 18,
+            assetAddress: 0xAC1Bd2486aAf3B5C0fc3Fd868558b082a531B2B4
+        });
+    }
+
+    /// @dev BaseMainnet Virtual Protocol
+    function VIRTUAL() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Virtual Protocol",
+            symbol: "VIRTUAL",
+            decimals: 18,
+            assetAddress: 0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b
+        });
+    }
+
+    /// @dev BaseMainnet Venice Token
+    function VVV() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Venice Token",
+            symbol: "VVV",
+            decimals: 18,
+            assetAddress: 0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf
+        });
+    }
+
+    /// @dev BaseMainnet LayerZero
+    function ZRO() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"LayerZero",
+            symbol: "ZRO",
+            decimals: 18,
+            assetAddress: 0x6985884C4392D348587B19cb9eAAf157F13271cd
+        });
+    }
+
     /// @dev BaseMainnet Compound
     function COMP() internal pure returns (KnownAsset memory) {
         return KnownAsset({
@@ -3220,7 +3383,7 @@ library BaseMainnet {
 
     /// @dev All BaseMainnet known assets
     function knownAssets() internal pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](21);
+        KnownAsset[] memory assets = new KnownAsset[](29);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = AERO();
@@ -3234,14 +3397,22 @@ library BaseMainnet {
         assets[10] = ENA();
         assets[11] = USDe();
         assets[12] = CRV();
-        assets[13] = COMP();
-        assets[14] = cbETH();
-        assets[15] = WETH();
-        assets[16] = wstETH();
-        assets[17] = cbBTC();
-        assets[18] = ezETH();
-        assets[19] = weETH();
-        assets[20] = wrsETH();
+        assets[13] = CLANKER();
+        assets[14] = ANON();
+        assets[15] = Mog();
+        assets[16] = PRIME();
+        assets[17] = TOSHI();
+        assets[18] = VIRTUAL();
+        assets[19] = VVV();
+        assets[20] = ZRO();
+        assets[21] = COMP();
+        assets[22] = cbETH();
+        assets[23] = WETH();
+        assets[24] = wstETH();
+        assets[25] = cbBTC();
+        assets[26] = ezETH();
+        assets[27] = weETH();
+        assets[28] = wrsETH();
         return assets;
     }
 
@@ -3395,6 +3566,26 @@ library ArbitrumMainnet {
             symbol: "CRV",
             decimals: 18,
             assetAddress: 0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978
+        });
+    }
+
+    /// @dev ArbitrumMainnet Aave Token
+    function AAVE() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Aave Token",
+            symbol: "AAVE",
+            decimals: 18,
+            assetAddress: 0xba5DdD1f9d7F570dc94a51479a000E3BCE967196
+        });
+    }
+
+    /// @dev ArbitrumMainnet LayerZero
+    function ZRO() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"LayerZero",
+            symbol: "ZRO",
+            decimals: 18,
+            assetAddress: 0x6985884C4392D348587B19cb9eAAf157F13271cd
         });
     }
 
@@ -3639,8 +3830,6 @@ library ArbitrumMainnet {
             priceFeed: 0x13cDFB7db5e2F58e122B2e789b59dE13645349C4
         });
     }
-
-    /// @dev Omitted duplicate USDT_USD price feed at 0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7
 
     /// @dev ArbitrumMainnet ARB_USDT price feed
     function ARB_USDT() internal pure returns (KnownPriceFeed memory) {
@@ -4005,7 +4194,7 @@ library ArbitrumMainnet {
 
     /// @dev All ArbitrumMainnet known assets
     function knownAssets() internal pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](18);
+        KnownAsset[] memory assets = new KnownAsset[](20);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = USDT();
@@ -4015,21 +4204,23 @@ library ArbitrumMainnet {
         assets[6] = ENA();
         assets[7] = USDe();
         assets[8] = CRV();
-        assets[9] = COMP();
-        assets[10] = GMX();
-        assets[11] = WETH();
-        assets[12] = wstETH();
-        assets[13] = ezETH();
-        assets[14] = wUSDM();
-        assets[15] = weETH();
-        assets[16] = rETH();
-        assets[17] = rsETH();
+        assets[9] = AAVE();
+        assets[10] = ZRO();
+        assets[11] = COMP();
+        assets[12] = GMX();
+        assets[13] = WETH();
+        assets[14] = wstETH();
+        assets[15] = ezETH();
+        assets[16] = wUSDM();
+        assets[17] = weETH();
+        assets[18] = rETH();
+        assets[19] = rsETH();
         return assets;
     }
 
     /// @dev All ArbitrumMainnet known price feeds
     function knownPriceFeeds() internal pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](29);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](28);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = USDT_USD();
@@ -4058,7 +4249,6 @@ library ArbitrumMainnet {
         priceFeeds[25] = USDT_WETH();
         priceFeeds[26] = USDC_WETH();
         priceFeeds[27] = ezETH_WETH();
-        /// @dev Omitted duplicate USDT_USD price feed at 0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7
         return priceFeeds;
     }
 
@@ -5938,6 +6128,80 @@ contract ChainContract {
         }
     }
 
+    /// @dev tokenbot
+    function CLANKER(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.CLANKER();
+        } else {
+            revert NotFound("Asset for tokenbot not found on chain", chainId);
+        }
+    }
+
+    /// @dev Super Anon
+    function ANON(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.ANON();
+        } else {
+            revert NotFound("Asset for Super Anon not found on chain", chainId);
+        }
+    }
+
+    /// @dev Mog Coin
+    function Mog(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.Mog();
+        } else {
+            revert NotFound("Asset for Mog Coin not found on chain", chainId);
+        }
+    }
+
+    /// @dev Prime
+    function PRIME(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.PRIME();
+        } else {
+            revert NotFound("Asset for Prime not found on chain", chainId);
+        }
+    }
+
+    /// @dev Toshi
+    function TOSHI(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.TOSHI();
+        } else {
+            revert NotFound("Asset for Toshi not found on chain", chainId);
+        }
+    }
+
+    /// @dev Virtual Protocol
+    function VIRTUAL(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.VIRTUAL();
+        } else {
+            revert NotFound("Asset for Virtual Protocol not found on chain", chainId);
+        }
+    }
+
+    /// @dev Venice Token
+    function VVV(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.VVV();
+        } else {
+            revert NotFound("Asset for Venice Token not found on chain", chainId);
+        }
+    }
+
+    /// @dev LayerZero
+    function ZRO(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.ZRO();
+        } else if (chainId == 42161) {
+            return ArbitrumMainnet.ZRO();
+        } else {
+            revert NotFound("Asset for LayerZero not found on chain", chainId);
+        }
+    }
+
     /// @dev rsETHWrapper
     function wrsETH(uint256 chainId) public pure returns (KnownAsset memory) {
         if (chainId == 8453) {
@@ -5946,6 +6210,15 @@ contract ChainContract {
             return OptimismMainnet.wrsETH();
         } else {
             revert NotFound("Asset for rsETHWrapper not found on chain", chainId);
+        }
+    }
+
+    /// @dev Aave Token
+    function AAVE(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 42161) {
+            return ArbitrumMainnet.AAVE();
+        } else {
+            revert NotFound("Asset for Aave Token not found on chain", chainId);
         }
     }
 
@@ -8137,6 +8410,86 @@ contract BaseMainnetContract {
         });
     }
 
+    /// @dev BaseMainnet tokenbot
+    function CLANKER() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"tokenbot",
+            symbol: "CLANKER",
+            decimals: 18,
+            assetAddress: 0x1bc0c42215582d5A085795f4baDbaC3ff36d1Bcb
+        });
+    }
+
+    /// @dev BaseMainnet Super Anon
+    function ANON() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Super Anon",
+            symbol: "ANON",
+            decimals: 18,
+            assetAddress: 0x0Db510e79909666d6dEc7f5e49370838c16D950f
+        });
+    }
+
+    /// @dev BaseMainnet Mog Coin
+    function Mog() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Mog Coin",
+            symbol: "Mog",
+            decimals: 18,
+            assetAddress: 0x2Da56AcB9Ea78330f947bD57C54119Debda7AF71
+        });
+    }
+
+    /// @dev BaseMainnet Prime
+    function PRIME() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Prime",
+            symbol: "PRIME",
+            decimals: 18,
+            assetAddress: 0xfA980cEd6895AC314E7dE34Ef1bFAE90a5AdD21b
+        });
+    }
+
+    /// @dev BaseMainnet Toshi
+    function TOSHI() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Toshi",
+            symbol: "TOSHI",
+            decimals: 18,
+            assetAddress: 0xAC1Bd2486aAf3B5C0fc3Fd868558b082a531B2B4
+        });
+    }
+
+    /// @dev BaseMainnet Virtual Protocol
+    function VIRTUAL() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Virtual Protocol",
+            symbol: "VIRTUAL",
+            decimals: 18,
+            assetAddress: 0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b
+        });
+    }
+
+    /// @dev BaseMainnet Venice Token
+    function VVV() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Venice Token",
+            symbol: "VVV",
+            decimals: 18,
+            assetAddress: 0xacfE6019Ed1A7Dc6f7B508C02d1b04ec88cC21bf
+        });
+    }
+
+    /// @dev BaseMainnet LayerZero
+    function ZRO() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"LayerZero",
+            symbol: "ZRO",
+            decimals: 18,
+            assetAddress: 0x6985884C4392D348587B19cb9eAAf157F13271cd
+        });
+    }
+
     /// @dev BaseMainnet Compound
     function COMP() public pure returns (KnownAsset memory) {
         return KnownAsset({
@@ -8565,7 +8918,7 @@ contract BaseMainnetContract {
 
     /// @dev All BaseMainnet known assets
     function knownAssets() public pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](21);
+        KnownAsset[] memory assets = new KnownAsset[](29);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = AERO();
@@ -8579,14 +8932,22 @@ contract BaseMainnetContract {
         assets[10] = ENA();
         assets[11] = USDe();
         assets[12] = CRV();
-        assets[13] = COMP();
-        assets[14] = cbETH();
-        assets[15] = WETH();
-        assets[16] = wstETH();
-        assets[17] = cbBTC();
-        assets[18] = ezETH();
-        assets[19] = weETH();
-        assets[20] = wrsETH();
+        assets[13] = CLANKER();
+        assets[14] = ANON();
+        assets[15] = Mog();
+        assets[16] = PRIME();
+        assets[17] = TOSHI();
+        assets[18] = VIRTUAL();
+        assets[19] = VVV();
+        assets[20] = ZRO();
+        assets[21] = COMP();
+        assets[22] = cbETH();
+        assets[23] = WETH();
+        assets[24] = wstETH();
+        assets[25] = cbBTC();
+        assets[26] = ezETH();
+        assets[27] = weETH();
+        assets[28] = wrsETH();
         return assets;
     }
 
@@ -8740,6 +9101,26 @@ contract ArbitrumMainnetContract {
             symbol: "CRV",
             decimals: 18,
             assetAddress: 0x11cDb42B0EB46D95f990BeDD4695A6e3fA034978
+        });
+    }
+
+    /// @dev ArbitrumMainnet Aave Token
+    function AAVE() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Aave Token",
+            symbol: "AAVE",
+            decimals: 18,
+            assetAddress: 0xba5DdD1f9d7F570dc94a51479a000E3BCE967196
+        });
+    }
+
+    /// @dev ArbitrumMainnet LayerZero
+    function ZRO() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"LayerZero",
+            symbol: "ZRO",
+            decimals: 18,
+            assetAddress: 0x6985884C4392D348587B19cb9eAAf157F13271cd
         });
     }
 
@@ -8984,8 +9365,6 @@ contract ArbitrumMainnetContract {
             priceFeed: 0x13cDFB7db5e2F58e122B2e789b59dE13645349C4
         });
     }
-
-    /// @dev Omitted duplicate USDT_USD price feed at 0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7
 
     /// @dev ArbitrumMainnet ARB_USDT price feed
     function ARB_USDT() public pure returns (KnownPriceFeed memory) {
@@ -9350,7 +9729,7 @@ contract ArbitrumMainnetContract {
 
     /// @dev All ArbitrumMainnet known assets
     function knownAssets() public pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](18);
+        KnownAsset[] memory assets = new KnownAsset[](20);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = USDT();
@@ -9360,21 +9739,23 @@ contract ArbitrumMainnetContract {
         assets[6] = ENA();
         assets[7] = USDe();
         assets[8] = CRV();
-        assets[9] = COMP();
-        assets[10] = GMX();
-        assets[11] = WETH();
-        assets[12] = wstETH();
-        assets[13] = ezETH();
-        assets[14] = wUSDM();
-        assets[15] = weETH();
-        assets[16] = rETH();
-        assets[17] = rsETH();
+        assets[9] = AAVE();
+        assets[10] = ZRO();
+        assets[11] = COMP();
+        assets[12] = GMX();
+        assets[13] = WETH();
+        assets[14] = wstETH();
+        assets[15] = ezETH();
+        assets[16] = wUSDM();
+        assets[17] = weETH();
+        assets[18] = rETH();
+        assets[19] = rsETH();
         return assets;
     }
 
     /// @dev All ArbitrumMainnet known price feeds
     function knownPriceFeeds() public pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](29);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](28);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = USDT_USD();
@@ -9403,7 +9784,6 @@ contract ArbitrumMainnetContract {
         priceFeeds[25] = USDT_WETH();
         priceFeeds[26] = USDC_WETH();
         priceFeeds[27] = ezETH_WETH();
-        /// @dev Omitted duplicate USDT_USD price feed at 0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7
         return priceFeeds;
     }
 
