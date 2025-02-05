@@ -167,7 +167,8 @@ contract QuarkBuilderTest {
             assetPositionsList: assetPositionLists_(1, accounts, amounts_chain_1),
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
         chainAccountsList[1] = Accounts.ChainAccounts({
             chainId: 8453,
@@ -175,7 +176,8 @@ contract QuarkBuilderTest {
             assetPositionsList: assetPositionLists_(8453, accounts, amounts_chain_8453),
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
         chainAccountsList[2] = Accounts.ChainAccounts({
             chainId: 7777,
@@ -183,7 +185,8 @@ contract QuarkBuilderTest {
             assetPositionsList: assetPositionLists_(7777, accounts, amounts_chain_7777),
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
         return chainAccountsList;
     }
@@ -201,6 +204,12 @@ contract QuarkBuilderTest {
     function emptyMorphoVaultPositions_() internal pure returns (Accounts.MorphoVaultPositions[] memory) {
         Accounts.MorphoVaultPositions[] memory emptyMorphoVaultPositions = new Accounts.MorphoVaultPositions[](0);
         return emptyMorphoVaultPositions;
+    }
+
+    function emptyMorphoRewardDistributions_() internal pure returns (Accounts.MorphoRewardDistributions[] memory) {
+        Accounts.MorphoRewardDistributions[] memory emptyMorphoRewardDistributions =
+            new Accounts.MorphoRewardDistributions[](0);
+        return emptyMorphoRewardDistributions;
     }
 
     function quarkSecrets_() internal pure returns (Accounts.QuarkSecret[] memory) {
@@ -525,7 +534,8 @@ contract QuarkBuilderTest {
                 ),
                 morphoVaultPositions: morphoVaultPositionsForMorphoVaultPortfolios(
                     chainPortfolios[i].chainId, chainPortfolios[i].account, chainPortfolios[i].morphoVaultPortfolios
-                )
+                ),
+                morphoRewardDistributions: emptyMorphoRewardDistributions_()
             });
         }
 
