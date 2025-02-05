@@ -8,6 +8,7 @@ import Testing
 
 let allTests: [AcceptanceTest] = transferTests +
     cometBorrowTests +
+    cometClaimRewardsTests +
     cometRepayTests +
     cometSupplyTests +
     cometWithdrawTests +
@@ -28,6 +29,7 @@ enum Call: CustomStringConvertible, Equatable {
         inputTokenAmount: TokenAmount,
         outputTokenAmount: TokenAmount
     )
+    case claimCometRewards(cometRewards: [CometReward], comets: [Comet], accounts: [Account], network: Network)
     case transferErc20(tokenAmount: TokenAmount, recipient: Account, network: Network)
     case supplyToComet(tokenAmount: TokenAmount, market: Comet, network: Network)
     case supplyMultipleAssetsAndBorrowFromComet(
@@ -149,6 +151,35 @@ enum Call: CustomStringConvertible, Equatable {
                     Call.tryDecodeCall(scriptAddress: $0, calldata: $1, network: network)
                 }
                 return .multicall(calls)
+            }
+        }
+
+        if scriptAddress == getScriptAddress(CometClaimRewards.creationCode) {
+            if let (cometRewards, comets, accounts) = try? CometClaimRewards.claimDecode(input: calldata) {
+                return .claimCometRewards(
+                    cometRewards: cometRewards.map {cometRewardAddress in
+                        CometReward.from(network: network, address: cometRewardAddress)
+                    },
+                    comets: comets.map {cometAddress in
+                        Comet.from(network: network, address: cometAddress)
+                    },
+                    accounts: accounts.map {account in
+                        Account.from(address: account)
+                    },
+                    network: network
+                )
+            } else if let (comet, to, asset, amount) = try? CometSupplyActions.supplyToDecode(
+                input: calldata)
+            {
+                print("supplyTo(\(comet) to: \(to) \(asset) \(amount))")
+            } else if let (comet, from, to, asset, amount) =
+                try? CometSupplyActions.supplyFromDecode(input: calldata)
+            {
+                print("supplyFrom(\(comet) from: \(from) to: \(to) \(asset) \(amount))")
+            } else if let (comet, assets, amounts) =
+                try? CometSupplyActions.supplyMultipleAssetsDecode(input: calldata)
+            {
+                print("supplyMultipleAssets(\(comet) \(assets) \(amounts))")
             }
         }
 
@@ -315,6 +346,9 @@ enum Call: CustomStringConvertible, Equatable {
         case let .bridge(bridge, chainId, destinationChainId, inputTokenAmount, outputTokenAmount):
             return
                 "bridge(\(bridge), \(inputTokenAmount.amount) \(inputTokenAmount.token.symbol) to receive \(outputTokenAmount.amount) \(outputTokenAmount.token.symbol) from \(chainId.description) to \(destinationChainId.description))"
+        case let .claimCometRewards(cometRewards, comets, accounts, network):
+            return
+                "claimCometRewards(claiming from \(cometRewards.map { $0.description }.joined(separator: ", ")) for \(comets.map { $0.description }.joined(separator: ", ")) for \(accounts.map { $0.description }.joined(separator: ", ")) on \(network.description))"
         case let .transferErc20(tokenAmount, recipient, network):
             return
                 "transferErc20(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(recipient.description) on \(network.description))"
@@ -525,6 +559,83 @@ enum Comet: Hashable, Equatable {
             return .cwethv3
         case _:
             return .unknownComet(address)
+        }
+    }
+}
+
+enum CometReward: Hashable, Equatable {
+    case wethReward
+    case usdcReward
+    case unknownCometReward(EthAddress)
+
+    var rewardToken: Token {
+        switch self {
+        case .usdcReward:
+            return .usdc
+        case .wethReward:
+            return .weth
+        case .unknownCometReward(let address):
+            return .unknownToken(address)
+        }
+    }
+
+    // TODO: These are just Comet addresses for now, but should be fine
+    func address(network: Network) -> EthAddress {
+        switch (network, self) {
+        case (.ethereum, .usdcReward):
+            return EthAddress("0xc3d688B66703497DAA19211EEdff47f25384cdc3")
+        case (.ethereum, .wethReward):
+            return EthAddress("0xA17581A9E3356d9A858b789D68B4d866e593aE94")
+        case (.base, .usdcReward):
+            return EthAddress("0xb125E6687d4313864e53df431d5425969c15Eb2F")
+        case (.base, .wethReward):
+            return EthAddress("0x46e6b214b524310239732D51387075E0e70970bf")
+        case (.arbitrum, .usdcReward):
+            return EthAddress("0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf")
+        case (.arbitrum, .wethReward):
+            return EthAddress("0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf")
+        case (.optimism, .usdcReward):
+            return EthAddress("0x2e44e174f7D53F0212823acC11C01A11d58c5bCB")
+        case (.optimism, .wethReward):
+            return EthAddress("0xE36A30D249f7761327fd973001A32010b521b6Fd")
+        case (_, .usdcReward):
+            fatalError("no CometReward for .usdc for network \(network.description)")
+        case (_, .wethReward):
+            fatalError("no CometReward for .weth for network \(network.description)")
+        case let (_, .unknownCometReward(address)):
+            return address
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .usdcReward:
+            return "USDCCometReward"
+        case .wethReward:
+            return "WETHCometReward"
+        case let .unknownCometReward(address):
+            return "CometReward at \(address.description)"
+        }
+    }
+
+    static func from(network: Network, address: EthAddress) -> CometReward {
+        switch (network, address) {
+        case (.ethereum, "0xc3d688B66703497DAA19211EEdff47f25384cdc3"):
+            return .usdcReward
+        case (.ethereum, "0xA17581A9E3356d9A858b789D68B4d866e593aE94"):
+            return .wethReward
+        case (.base, "0xb125E6687d4313864e53df431d5425969c15Eb2F"):
+            return .usdcReward
+        case (.base, "0x46e6b214b524310239732D51387075E0e70970bf"):
+            return .wethReward
+        case (.arbitrum, "0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf"):
+            return .usdcReward
+        case (.optimism, "0x2e44e174f7D53F0212823acC11C01A11d58c5bCB"):
+            return .usdcReward
+        case (.optimism, "0xE36A30D249f7761327fd973001A32010b521b6Fd"):
+            return .wethReward
+        case _:
+            return .unknownCometReward(address)
         }
     }
 }
@@ -931,6 +1042,7 @@ enum Given {
     case quote(Quote)
     case cometSupply(Account, TokenAmount, Comet, Network)
     case cometBorrow(Account, TokenAmount, Comet, Network)
+    case cometReward(Account, TokenAmount, Comet, CometReward, Network)
     case morphoVaultSupply(Account, TokenAmount, MorphoVault, Network)
     case morphoBorrow(Account, TokenAmount, TokenAmount, Network);
     case acrossQuote(TokenAmount, Double)
@@ -942,6 +1054,7 @@ enum Given {
 indirect enum When {
     case transfer(from: Account, to: Account, amount: TokenAmount, on: Network)
     case cometBorrow(from: Account, market: Comet, borrowAmount: TokenAmount, collateralAmounts: [TokenAmount], on: Network)
+    case cometClaimRewards(from: Account)
     case cometRepay(from: Account, market: Comet, repayAmount: TokenAmount, collateralAmounts: [TokenAmount], on: Network)
     case cometSupply(from: Account, market: Comet, amount: TokenAmount, on: Network)
     case cometWithdraw(from: Account, market: Comet, amount: TokenAmount, on: Network)
@@ -959,6 +1072,8 @@ indirect enum When {
         case let .cometSupply(from, _, _, _):
             return from
         case let .cometBorrow(from, _, _, _, _):
+            return from
+        case let .cometClaimRewards(from):
             return from
         case let .cometRepay(from, _, _, _, _):
             return from
@@ -1039,7 +1154,7 @@ class Context {
     var fees: [Network: Double]
     var paymentToken: Token?
     var tokenPositions: [Network: [Token: [Account: BigUInt]]]
-    var cometPositions: [Network: [Comet: [Account: (BigUInt, BigUInt, [Token: BigUInt])]]]
+    var cometPositions: [Network: [Comet: [Account: (BigUInt, BigUInt, [Token: BigUInt], [CometReward: BigUInt])]]]
     var morphoPositions: [Network: [Morpho: [Account: (BigUInt, BigUInt)]]]
     var morphoVaultPositions: [Network: [MorphoVault: [Account: BigUInt]]]
     var ffis: EVM.FFIMap = [:]
@@ -1084,34 +1199,47 @@ class Context {
                 tokenPositions[network, default: [:]][amount.token, default: [:]][account] ?? 0
             tokenPositions[network, default: [:]][amount.token, default: [:]][account] =
                 currentPosition + amount.amount
+        case let .cometReward(account, rewardOwed, comet, cometReward, network):
+            if (cometReward.rewardToken != rewardOwed.token) {
+                fatalError("RewardOwed token does not match CometReward token")
+            }
+            let (currSupply, currBorrow, collaterals, cometRewardsOwed) =
+                cometPositions[network, default: [:]][comet, default: [:]][account] ?? (
+                    0, 0, [:], [:]
+                )
+            var updatedCometRewardsOwed = cometRewardsOwed
+            updatedCometRewardsOwed[cometReward, default: 0] += rewardOwed.amount
+            cometPositions[network, default: [:]][comet, default: [:]][account] = (
+                currSupply, currBorrow, collaterals, updatedCometRewardsOwed
+            )
         case let .cometSupply(account, amount, comet, network):
             if amount.token == comet.baseAsset {
-                let (currSupply, currBorrow, collaterals) =
+                let (currSupply, currBorrow, collaterals, cometRewardsOwed) =
                     cometPositions[network, default: [:]][comet, default: [:]][account] ?? (
-                        0, 0, [:]
+                        0, 0, [:], [:]
                     )
                 cometPositions[network, default: [:]][comet, default: [:]][account] = (
-                    currSupply + amount.amount, currBorrow, collaterals
+                    currSupply + amount.amount, currBorrow, collaterals, cometRewardsOwed
                 )
             } else {
-                let (currSupply, currBorrow, collaterals) =
+                let (currSupply, currBorrow, collaterals, cometRewardsOwed) =
                     cometPositions[network, default: [:]][comet, default: [:]][account] ?? (
-                        0, 0, [:]
+                        0, 0, [:], [:]
                     )
                 var updatedCollaterals = collaterals
                 updatedCollaterals[amount.token, default: 0] += amount.amount
                 cometPositions[network, default: [:]][comet, default: [:]][account] = (
-                    currSupply, currBorrow, updatedCollaterals
+                    currSupply, currBorrow, updatedCollaterals, cometRewardsOwed
                 )
             }
         case let .cometBorrow(account, amount, comet, network):
             if amount.token == comet.baseAsset {
-                let (currSupply, currBorrow, collaterals) =
+                let (currSupply, currBorrow, collaterals, cometRewardsOwed) =
                     cometPositions[network, default: [:]][comet, default: [:]][account] ?? (
-                        0, 0, [:]
+                        0, 0, [:], [:]
                     )
                 cometPositions[network, default: [:]][comet, default: [:]][account] = (
-                    currSupply, currBorrow + amount.amount, collaterals
+                    currSupply, currBorrow + amount.amount, collaterals, cometRewardsOwed
                 )
             } else {
                 fatalError("Cannot borrow non-base asset")
@@ -1192,6 +1320,25 @@ class Context {
                         $0.token.symbol
                     },
                     comet: market.address(network: network),
+                    preferAcross: true,
+                    paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                ),
+                chainAccountsList: chainAccounts,
+                quote: .init(
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    issuedAt: 0,
+                    expiresAt: BigUInt(Date(timeIntervalSinceNow: 1_000_000).timeIntervalSince1970),
+                    assetQuotes: assetQuotes,
+                    networkOperationFees: networkOperationFees
+                ),
+                withFunctions: ffis
+            )
+        case let .cometClaimRewards(from):
+            return try await QuarkBuilder.cometClaimRewards(
+                intent: .init(
+                    blockTimestamp: BigUInt(1_000_000),
+                    claimer: from.address,
                     preferAcross: true,
                     paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
                 ),
@@ -1461,9 +1608,13 @@ class Context {
     func reifyCometPositions(network: Network) -> [QuarkBuilder.Accounts.CometPositions] {
         (cometPositions[network] ?? [:]).compactMap { comet, accountPositions in
             var collateralPositions: [Token: [Account: BigUInt]] = [:]
+            var cometRewardsOwed: [CometReward: [Account: BigUInt]] = [:]
             for (account, position) in accountPositions {
                 for (token, amount) in position.2 {
                     collateralPositions[token, default: [:]][account] = amount
+                }
+                for (cometReward, rewardOwed) in position.3 {
+                    cometRewardsOwed[cometReward, default: [:]][account] = rewardOwed
                 }
             }
 
@@ -1488,6 +1639,18 @@ class Context {
                         asset: asset,
                         accounts: accountAmounts.map { account, _ in account.address },
                         balances: accountAmounts.map { _, amount in amount }
+                    )
+                },
+                cometRewards: cometRewardsOwed.compactMap { cometReward, accountAmounts in
+                    guard let asset = cometReward.rewardToken.address(network: network) else {
+                        return nil
+                    }
+
+                    return QuarkBuilder.Accounts.CometReward(
+                        asset: asset,
+                        rewardContract: cometReward.address(network: network),
+                        accounts: accountAmounts.map { account, _ in account.address },
+                        rewardsOwed: accountAmounts.map { _, rewardOwed in rewardOwed }
                     )
                 }
             )
