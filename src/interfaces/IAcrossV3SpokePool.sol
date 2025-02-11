@@ -104,46 +104,46 @@ interface IAcrossV3SpokePool {
      *              EVENTS                *
      *
      */
-    event V3FundsDeposited(
-        address inputToken,
-        address outputToken,
+    event FundsDeposited(
+        bytes32 inputToken,
+        bytes32 outputToken,
         uint256 inputAmount,
         uint256 outputAmount,
         uint256 indexed destinationChainId,
-        uint32 indexed depositId,
+        uint256 indexed depositId,
         uint32 quoteTimestamp,
         uint32 fillDeadline,
         uint32 exclusivityDeadline,
-        address indexed depositor,
-        address recipient,
-        address exclusiveRelayer,
+        bytes32 indexed depositor,
+        bytes32 recipient,
+        bytes32 exclusiveRelayer,
         bytes message
     );
 
-    event RequestedSpeedUpV3Deposit(
+    event RequestedSpeedUpDeposit(
         uint256 updatedOutputAmount,
-        uint32 indexed depositId,
-        address indexed depositor,
-        address updatedRecipient,
+        uint256 indexed depositId,
+        bytes32 indexed depositor,
+        bytes32 updatedRecipient,
         bytes updatedMessage,
         bytes depositorSignature
     );
 
-    event FilledV3Relay(
-        address inputToken,
-        address outputToken,
+    event FilledRelay(
+        bytes32 inputToken,
+        bytes32 outputToken,
         uint256 inputAmount,
         uint256 outputAmount,
         uint256 repaymentChainId,
         uint256 indexed originChainId,
-        uint32 indexed depositId,
+        uint256 indexed depositId,
         uint32 fillDeadline,
         uint32 exclusivityDeadline,
-        address exclusiveRelayer,
-        address indexed relayer,
-        address depositor,
-        address recipient,
-        bytes message,
+        bytes32 exclusiveRelayer,
+        bytes32 indexed relayer,
+        bytes32 depositor,
+        bytes32 recipient,
+        bytes32 messageHash,
         V3RelayExecutionEventInfo relayExecutionInfo
     );
 
