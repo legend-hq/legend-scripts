@@ -21,15 +21,14 @@ import {QuotePay} from "src/QuotePay.sol";
 import {Quotes} from "src/builder/Quotes.sol";
 
 contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
-    // Fixtures of morpho reward data to pass in
-    address[] fixtureDistributors =
+    address constant CLAIMER = address(0xa11ce);
+    address[] FIXTURE_DISTRIBUTORS =
         [0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb, 0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb];
-    address[] fixtureAccounts = [address(0xa11ce), address(0xa11ce)];
-    address[] fixtureRewards = [usdc_(1), weth_(1)];
-    address[] fixtureInvalidRewards = [usdc_(1)];
-    uint256[] fixtureClaimables = [100e6, 2e18];
-    uint256[] fixtureClaimablesLessUSDC = [1e6, 2e18];
-    bytes32[][] fixtureProofs = [
+    address[] FIXTURE_ACCOUNTS = [address(0xa11ce), address(0xa11ce)];
+    string[] FIXTURE_REWARD_ASSET_SYMBOLS = ["USDC", "WETH"];
+    address[] FIXTURE_REWARDS = [usdc_(1), weth_(1)];
+    uint256[] FIXTURE_CLAIMABLES = [100e6, 2e18];
+    bytes32[][] FIXTURE_PROOFS = [
         [
             bytes32(0xce63a4c1fabb68437d0e5edc21b732c5a215f1c5a9ed6a52902f0415e148cc0a),
             bytes32(0x23b2ad869c44ff4946d49f0e048edd1303f0cef3679d3e21143c4cfdcde97f20),
@@ -58,36 +57,51 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
         ]
     ];
 
-    function morphoClaimRewardsIntent_(
-        uint256 chainId,
-        address[] memory accounts,
-        uint256[] memory claimables,
-        address[] memory distributors,
-        address[] memory rewards,
-        bytes32[][] memory proofs,
-        string memory paymentAssetSymbol
-    ) internal pure returns (QuarkBuilderBase.MorphoRewardsClaimIntent memory) {
+    function morphoClaimRewardsIntent_(string memory paymentAssetSymbol)
+        internal
+        pure
+        returns (QuarkBuilderBase.MorphoRewardsClaimIntent memory)
+    {
         return QuarkBuilderBase.MorphoRewardsClaimIntent({
             blockTimestamp: BLOCK_TIMESTAMP,
-            claimer: address(0xa11ce),
-            chainId: chainId,
-            accounts: accounts,
-            claimables: claimables,
-            distributors: distributors,
-            rewards: rewards,
-            proofs: proofs,
+            claimer: CLAIMER,
             preferAcross: false,
             paymentAssetSymbol: paymentAssetSymbol
         });
     }
 
     function testMorphoClaimRewards() public {
+        MorphoRewardPortfolio[] memory morphoRewardPortfolios = new MorphoRewardPortfolio[](2);
+        morphoRewardPortfolios[0] = MorphoRewardPortfolio({
+            assetSymbol: FIXTURE_REWARD_ASSET_SYMBOLS[0],
+            claimable: FIXTURE_CLAIMABLES[0],
+            distributor: FIXTURE_DISTRIBUTORS[0],
+            proof: FIXTURE_PROOFS[0]
+        });
+        morphoRewardPortfolios[1] = MorphoRewardPortfolio({
+            assetSymbol: FIXTURE_REWARD_ASSET_SYMBOLS[1],
+            claimable: FIXTURE_CLAIMABLES[1],
+            distributor: FIXTURE_DISTRIBUTORS[1],
+            proof: FIXTURE_PROOFS[1]
+        });
+
+        ChainPortfolio[] memory chainPortfolios = new ChainPortfolio[](1);
+        chainPortfolios[0] = ChainPortfolio({
+            chainId: 1,
+            account: address(0xa11ce),
+            nonceSecret: ALICE_DEFAULT_SECRET,
+            assetSymbols: Arrays.stringArray("USDC", "USDT", "LINK", "WETH"),
+            assetBalances: Arrays.uintArray(0, 0, 0, 0),
+            cometPortfolios: emptyCometPortfolios_(),
+            morphoPortfolios: emptyMorphoPortfolios_(),
+            morphoVaultPortfolios: emptyMorphoVaultPortfolios_(),
+            morphoRewardPortfolios: morphoRewardPortfolios
+        });
+
         QuarkBuilder builder = new QuarkBuilder();
         QuarkBuilder.BuilderResult memory result = builder.morphoClaimRewards(
-            morphoClaimRewardsIntent_(
-                1, fixtureAccounts, fixtureClaimables, fixtureDistributors, fixtureRewards, fixtureProofs, "USD"
-            ),
-            chainAccountsList_(2e6), // holding 2 USDC in total across 1, 8453
+            morphoClaimRewardsIntent_("USD"),
+            chainAccountsFromChainPortfolios(chainPortfolios), // user has no assets
             quote_()
         );
 
@@ -104,7 +118,7 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
             result.quarkOperations[0].scriptCalldata,
             abi.encodeCall(
                 MorphoRewardsActions.claimAll,
-                (fixtureDistributors, fixtureAccounts, fixtureRewards, fixtureClaimables, fixtureProofs)
+                (FIXTURE_DISTRIBUTORS, FIXTURE_ACCOUNTS, FIXTURE_REWARDS, FIXTURE_CLAIMABLES, FIXTURE_PROOFS)
             ),
             "calldata is MorphoRewardsActions.claimAll(fixtureDistributors, fixtureAccounts, fixtureRewards, fixtureClaimables, fixtureProofs);"
         );
@@ -123,27 +137,18 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
 
-        string[] memory assetSymbols = new string[](2);
-        assetSymbols[0] = "USDC";
-        assetSymbols[1] = "WETH";
-        uint256[] memory prices = new uint256[](2);
-        prices[0] = USDC_PRICE;
-        prices[1] = WETH_PRICE;
-        address[] memory tokens = new address[](2);
-        tokens[0] = USDC_1;
-        tokens[1] = WETH_1;
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
                 Actions.MorphoClaimRewardsActionContext({
-                    amounts: fixtureClaimables,
-                    assetSymbols: assetSymbols,
+                    amounts: FIXTURE_CLAIMABLES,
+                    assetSymbols: FIXTURE_REWARD_ASSET_SYMBOLS,
                     chainId: 1,
-                    prices: prices,
-                    tokens: tokens
+                    prices: Arrays.uintArray(USDC_PRICE, WETH_PRICE),
+                    tokens: FIXTURE_REWARDS
                 })
             ),
-            "action context encoded from WithdrawActionContext"
+            "action context encoded from MorphoClaimRewardsActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -153,7 +158,33 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
     }
 
     function testMorphoClaimRewardsPayWithReward() public {
-        QuarkBuilder builder = new QuarkBuilder();
+        MorphoRewardPortfolio[] memory morphoRewardPortfolios = new MorphoRewardPortfolio[](2);
+        morphoRewardPortfolios[0] = MorphoRewardPortfolio({
+            assetSymbol: FIXTURE_REWARD_ASSET_SYMBOLS[0],
+            claimable: FIXTURE_CLAIMABLES[0],
+            distributor: FIXTURE_DISTRIBUTORS[0],
+            proof: FIXTURE_PROOFS[0]
+        });
+        morphoRewardPortfolios[1] = MorphoRewardPortfolio({
+            assetSymbol: FIXTURE_REWARD_ASSET_SYMBOLS[1],
+            claimable: FIXTURE_CLAIMABLES[1],
+            distributor: FIXTURE_DISTRIBUTORS[1],
+            proof: FIXTURE_PROOFS[1]
+        });
+
+        ChainPortfolio[] memory chainPortfolios = new ChainPortfolio[](1);
+        chainPortfolios[0] = ChainPortfolio({
+            chainId: 1,
+            account: address(0xa11ce),
+            nonceSecret: ALICE_DEFAULT_SECRET,
+            assetSymbols: Arrays.stringArray("USDC", "USDT", "LINK", "WETH"),
+            assetBalances: Arrays.uintArray(0, 0, 0, 0),
+            cometPortfolios: emptyCometPortfolios_(),
+            morphoPortfolios: emptyMorphoPortfolios_(),
+            morphoVaultPortfolios: emptyMorphoVaultPortfolios_(),
+            morphoRewardPortfolios: morphoRewardPortfolios
+        });
+
         Quotes.NetworkOperationFee[] memory networkOperationFees = new Quotes.NetworkOperationFee[](3);
         networkOperationFees[0] = Quotes.NetworkOperationFee({opType: Quotes.OP_TYPE_BASELINE, chainId: 1, price: 1e8});
         networkOperationFees[1] =
@@ -161,11 +192,10 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
         networkOperationFees[2] =
             Quotes.NetworkOperationFee({opType: Quotes.OP_TYPE_BASELINE, chainId: 7777, price: 1e8});
 
+        QuarkBuilder builder = new QuarkBuilder();
         QuarkBuilder.BuilderResult memory result = builder.morphoClaimRewards(
-            morphoClaimRewardsIntent_(
-                1, fixtureAccounts, fixtureClaimables, fixtureDistributors, fixtureRewards, fixtureProofs, "USDC"
-            ),
-            chainAccountsList_(0),
+            morphoClaimRewardsIntent_("USDC"),
+            chainAccountsFromChainPortfolios(chainPortfolios), // user has no assets
             quote_(networkOperationFees)
         );
 
@@ -188,7 +218,7 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
         bytes[] memory callDatas = new bytes[](2);
         callDatas[0] = abi.encodeCall(
             MorphoRewardsActions.claimAll,
-            (fixtureDistributors, fixtureAccounts, fixtureRewards, fixtureClaimables, fixtureProofs)
+            (FIXTURE_DISTRIBUTORS, FIXTURE_ACCOUNTS, FIXTURE_REWARDS, FIXTURE_CLAIMABLES, FIXTURE_PROOFS)
         );
         callDatas[1] = abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 1e6, QUOTE_ID);
         assertEq(
@@ -212,27 +242,18 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
 
-        string[] memory assetSymbols = new string[](2);
-        assetSymbols[0] = "USDC";
-        assetSymbols[1] = "WETH";
-        uint256[] memory prices = new uint256[](2);
-        prices[0] = USDC_PRICE;
-        prices[1] = WETH_PRICE;
-        address[] memory tokens = new address[](2);
-        tokens[0] = USDC_1;
-        tokens[1] = WETH_1;
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
                 Actions.MorphoClaimRewardsActionContext({
-                    amounts: fixtureClaimables,
-                    assetSymbols: assetSymbols,
+                    amounts: FIXTURE_CLAIMABLES,
+                    assetSymbols: FIXTURE_REWARD_ASSET_SYMBOLS,
                     chainId: 1,
-                    prices: prices,
-                    tokens: tokens
+                    prices: Arrays.uintArray(USDC_PRICE, WETH_PRICE),
+                    tokens: FIXTURE_REWARDS
                 })
             ),
-            "action context encoded from WithdrawActionContext"
+            "action context encoded from MorphoClaimRewardsActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -259,33 +280,11 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
                 0,
                 "IMPOSSIBLE_TO_CONSTRUCT",
                 "USDC",
-                200e6
+                100e6
             )
         );
         builder.morphoClaimRewards(
-            morphoClaimRewardsIntent_(
-                1,
-                fixtureAccounts,
-                fixtureClaimablesLessUSDC,
-                fixtureDistributors,
-                fixtureRewards,
-                fixtureProofs,
-                "USDC"
-            ),
-            chainAccountsList_(2e6),
-            quote_(networkOperationFees)
-        );
-    }
-
-    function testMorphoClaimRewardsInvalid() public {
-        QuarkBuilder builder = new QuarkBuilder();
-        vm.expectRevert(QuarkBuilderBase.InvalidInput.selector);
-        builder.morphoClaimRewards(
-            morphoClaimRewardsIntent_(
-                1, fixtureAccounts, fixtureClaimables, fixtureDistributors, fixtureInvalidRewards, fixtureProofs, "USD"
-            ),
-            chainAccountsList_(2e6),
-            quote_()
+            morphoClaimRewardsIntent_("USDC"), chainAccountsList_(2e6), quote_(networkOperationFees)
         );
     }
 }

@@ -296,7 +296,8 @@ contract QuarkBuilderCometWithdrawTest is Test, QuarkBuilderTest {
             assetBalances: Arrays.uintArray(0, 0, 0, 0),
             cometPortfolios: cometPortfolios,
             morphoPortfolios: emptyMorphoPortfolios_(),
-            morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
+            morphoVaultPortfolios: emptyMorphoVaultPortfolios_(),
+            morphoRewardPortfolios: emptyMorphoRewardPortfolios_()
         });
 
         QuarkBuilder builder = new QuarkBuilder();
@@ -393,7 +394,8 @@ contract QuarkBuilderCometWithdrawTest is Test, QuarkBuilderTest {
             assetBalances: Arrays.uintArray(0, 0, 0, 0),
             cometPortfolios: cometPortfolios,
             morphoPortfolios: emptyMorphoPortfolios_(),
-            morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
+            morphoVaultPortfolios: emptyMorphoVaultPortfolios_(),
+            morphoRewardPortfolios: emptyMorphoRewardPortfolios_()
         });
 
         QuarkBuilder builder = new QuarkBuilder();
