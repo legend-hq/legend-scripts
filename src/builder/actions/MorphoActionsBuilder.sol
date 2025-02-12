@@ -115,13 +115,6 @@ contract MorphoActionsBuilder is QuarkBuilderBase {
         Accounts.ChainAccounts[] memory chainAccountsList,
         Quotes.Quote memory quote
     ) external pure returns (BuilderResult memory) {
-        if (
-            intent.accounts.length != intent.claimables.length || intent.accounts.length != intent.distributors.length
-                || intent.accounts.length != intent.rewards.length || intent.accounts.length != intent.proofs.length
-        ) {
-            revert InvalidInput();
-        }
-
         PaymentInfo.Payment memory payment =
             Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
@@ -136,7 +129,8 @@ contract MorphoActionsBuilder is QuarkBuilderBase {
                 actionType: Actions.ACTION_TYPE_MORPHO_CLAIM_REWARDS,
                 intent: abi.encode(intent),
                 blockTimestamp: intent.blockTimestamp,
-                chainId: intent.chainId,
+                // TODO: There is no specific chain id, so use a placeholder value. We could refactor this into a list of `chainIds` in the future.
+                chainId: 0,
                 preferAcross: intent.preferAcross
             }),
             chainAccountsList: chainAccountsList,
