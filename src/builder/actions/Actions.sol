@@ -1594,7 +1594,12 @@ library Actions {
         // Construct Action
         WrapOrUnwrapActionContext memory wrapOrUnwrapActionContext = WrapOrUnwrapActionContext({
             chainId: wrapOrUnwrap.chainId,
-            amount: wrapOrUnwrap.amountNeeded - wrapOrUnwrap.balanceOnChain,
+            amount: TokenWrapper.calculateAmountToWrapOrUnwrap({
+                chainId: wrapOrUnwrap.chainId,
+                fromTokenSymbol: assetPositions.symbol,
+                amountNeeded: wrapOrUnwrap.amountNeeded,
+                chainAccountsList: wrapOrUnwrap.chainAccountsList
+            }),
             token: assetPositions.asset,
             fromAssetSymbol: assetPositions.symbol,
             toAssetSymbol: TokenWrapper.getWrapperCounterpartSymbol(wrapOrUnwrap.chainId, assetPositions.symbol)

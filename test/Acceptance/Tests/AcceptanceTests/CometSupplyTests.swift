@@ -24,7 +24,6 @@ let cometSupplyTests: [AcceptanceTest] = [
             )
         )
     ),
-    // @skip: Alice cannot supply ETH to comet because Actions.cometSupply doesn't wrap ETH
     .init(
         name: "Alice supplies 0.5 ETH to cUSDCv3 on Ethereum",
         given: [
@@ -32,20 +31,20 @@ let cometSupplyTests: [AcceptanceTest] = [
             .quote(.basic),
         ],
         when: .payWith(
-            currency: .eth,
-            .cometSupply(from: .alice, market: .cusdcv3, amount: .amt(0.5, .eth), on: .ethereum)
+            currency: .weth,
+            .cometSupply(from: .alice, market: .cusdcv3, amount: .amt(0.5, .weth), on: .ethereum)
         ),
         expect: .success(
             .single(
                 .multicall([
+                    .wrapAsset(.eth),
                     .supplyToComet(
-                        tokenAmount: .amt(0.5, .eth), market: .cusdcv3, network: .ethereum
+                        tokenAmount: .amt(0.5, .weth), market: .cusdcv3, network: .ethereum
                     ),
-                    .quotePay(payment: .amt(0.000025, .eth), payee: .stax, quote: .basic),
+                    .quotePay(payment: .amt(0.000025, .weth), payee: .stax, quote: .basic),
                 ])
             )
-        ),
-        skip: true
+        )
     ),
     .init(
         name:

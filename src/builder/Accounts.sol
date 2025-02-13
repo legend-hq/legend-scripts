@@ -322,10 +322,10 @@ library Accounts {
     }
 
     /*
-    * @notice Get the total asset balance for a given token symbol across chains
+    * @notice Get the total asset balance for a given token symbol and its counterpart token across chains
     * @param tokenSymbol The token symbol to check
     * @param chainAccountsList The list of chain accounts to check
-    * @return The total available asset balance
+    * @return The total asset balance
     */
     function totalBalance(string memory tokenSymbol, Accounts.ChainAccounts[] memory chainAccountsList)
         internal
@@ -354,6 +354,41 @@ library Accounts {
 
             total += balance + counterpartBalance;
         }
+        return total;
+    }
+
+    /*
+    * @notice Get the total asset balance for a given token symbol and its counterpart token on a given chain
+    * @param tokenSymbol The token symbol to check
+    * @param chainAccountsList The list of chain accounts to check
+    * @param chainId The chain id to get the balance on
+    * @return The total asset balance
+    */
+    function totalBalanceOnChain(
+        string memory tokenSymbol,
+        Accounts.ChainAccounts[] memory chainAccountsList,
+        uint256 chainId
+    ) internal pure returns (uint256) {
+        Accounts.ChainAccounts memory chainAccounts = Accounts.findChainAccounts(chainId, chainAccountsList);
+
+        uint256 total = 0;
+        uint256 balance =
+            Accounts.sumBalances(Accounts.findAssetPositions(tokenSymbol, chainAccounts.chainId, chainAccountsList));
+
+        // If the wrapper contract exists in the chain, add the balance of the wrapped/unwrapped token here as well
+        uint256 counterpartBalance = 0;
+        if (TokenWrapper.hasWrapperContract(chainAccounts.chainId, tokenSymbol)) {
+            // Add the balance of the wrapped token
+            counterpartBalance += Accounts.sumBalances(
+                Accounts.findAssetPositions(
+                    TokenWrapper.getWrapperCounterpartSymbol(chainAccounts.chainId, tokenSymbol),
+                    chainAccounts.chainId,
+                    chainAccountsList
+                )
+            );
+        }
+
+        total += balance + counterpartBalance;
         return total;
     }
 
