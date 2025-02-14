@@ -262,7 +262,7 @@ contract QuarkBuilderTest {
         pure
         returns (Accounts.AssetPositions[] memory)
     {
-        Accounts.AssetPositions[] memory assetPositionsList = new Accounts.AssetPositions[](4);
+        Accounts.AssetPositions[] memory assetPositionsList = new Accounts.AssetPositions[](5);
         assetPositionsList[0] = Accounts.AssetPositions({
             asset: usdc_(chainId),
             symbol: "USDC",
@@ -289,6 +289,13 @@ contract QuarkBuilderTest {
             symbol: "LINK",
             decimals: 18,
             usdPrice: LINK_PRICE,
+            accountBalances: accountBalances_(account, 0) // empty balance
+        });
+        assetPositionsList[4] = Accounts.AssetPositions({
+            asset: eth_(),
+            symbol: "ETH",
+            decimals: 18,
+            usdPrice: WETH_PRICE,
             accountBalances: accountBalances_(account, 0) // empty balance
         });
         return assetPositionsList;

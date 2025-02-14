@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.27;
 
+import {console} from "src/builder/console.sol";
+
+import {Accounts} from "src/builder/Accounts.sol";
+import {Math} from "src/lib/Math.sol";
+
 import "./Strings.sol";
 import {WrapperActions} from "../WrapperScripts.sol";
 
@@ -158,5 +163,35 @@ library TokenWrapper {
             );
         }
         revert NotUnwrappable();
+    }
+
+    function calculateAmountToWrapOrUnwrap(
+        uint256 chainId,
+        string memory fromTokenSymbol,
+        uint256 amountNeeded,
+        Accounts.ChainAccounts[] memory chainAccountsList
+    ) internal pure returns (uint256) {
+        if (isWrappedToken(chainId, fromTokenSymbol)) {
+            if (Strings.stringEqIgnoreCase(fromTokenSymbol, "WETH")) {
+                // unwrapWETHUpTo
+                return Math.subtractFlooredAtZero(
+                    amountNeeded, Accounts.getBalanceOnChain(fromTokenSymbol, chainId, chainAccountsList)
+                );
+            } else if (Strings.stringEqIgnoreCase(fromTokenSymbol, "wstETH")) {
+                // unwrapAllLidoWstETH
+                return Accounts.getBalanceOnChain(fromTokenSymbol, chainId, chainAccountsList);
+            }
+            revert NotUnwrappable();
+        } else {
+            if (Strings.stringEqIgnoreCase(fromTokenSymbol, "ETH")) {
+                // wrapAllETH
+                return Accounts.getBalanceOnChain(fromTokenSymbol, chainId, chainAccountsList);
+            } else if (Strings.stringEqIgnoreCase(fromTokenSymbol, "stETH")) {
+                // wrapAllLidoStETH
+                return Accounts.getBalanceOnChain(fromTokenSymbol, chainId, chainAccountsList);
+            }
+
+            revert NotWrappable();
+        }
     }
 }

@@ -47,6 +47,15 @@ library PaymentInfo {
         return PaymentToken({chainId: chainId, symbol: tokenSymbol, token: tokenAddress, priceFeed: priceFeed});
     }
 
+    function isCostDefinedForChain(Payment memory payment, uint256 chainId) internal pure returns (bool) {
+        for (uint256 i = 0; i < payment.chainCosts.length; ++i) {
+            if (payment.chainCosts[i].chainId == chainId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function findCostForChain(Payment memory payment, uint256 chainId) internal pure returns (uint256) {
         for (uint256 i = 0; i < payment.chainCosts.length; ++i) {
             if (payment.chainCosts[i].chainId == chainId) {

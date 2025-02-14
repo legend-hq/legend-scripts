@@ -23,7 +23,7 @@ import {List} from "src/builder/List.sol";
 import {HashMap} from "src/builder/HashMap.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.7.0";
+string constant QUARK_BUILDER_VERSION = "0.7.1";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -344,9 +344,8 @@ contract QuarkBuilderBase {
             string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
             uint256 amountOnDst = HashMap.getOrDefaultUint256(amountsOnDst, abi.encode(assetSymbolOut), 0);
 
-            checkAndInsertWrapOrUnwrapAction({
-                actions: actions,
-                quarkOperations: quarkOperations,
+            (IQuarkWallet.QuarkOperation[] memory wrapOrUnwrapOperations, Actions.Action[] memory wrapOrUnwrapActions) =
+            constructWrapOrUnwrapActions({
                 chainAccountsList: chainAccountsList,
                 payment: payment,
                 assetSymbol: assetSymbolOut,
@@ -356,6 +355,11 @@ contract QuarkBuilderBase {
                 blockTimestamp: actionIntent.blockTimestamp,
                 isRecurring: Actions.isRecurringAction(actionIntent.actionType)
             });
+
+            for (uint256 j = 0; j < wrapOrUnwrapOperations.length; ++j) {
+                List.addAction(actions, wrapOrUnwrapActions[j]);
+                List.addQuarkOperation(quarkOperations, wrapOrUnwrapOperations[j]);
+            }
         }
 
         (
@@ -387,11 +391,11 @@ contract QuarkBuilderBase {
         // Generate a QuotePay operation if the payment method is with tokens and the action is non-recurring
         if (!PaymentInfo.isOffchainPayment(payment) && !Actions.isRecurringAction(actionIntent.actionType)) {
             (
-                IQuarkWallet.QuarkOperation memory quotePayOperation,
-                Actions.Action memory quotePayAction,
+                IQuarkWallet.QuarkOperation[] memory quotePayOperations,
+                Actions.Action[] memory quotePayActions,
                 string memory result,
                 uint256 totalQuoteAmount_
-            ) = generateQuotePayOperation(
+            ) = generateQuotePayOperations(
                 PaymentBalanceAssertionArgs({
                     actions: List.toActionArray(actions),
                     chainAccountsList: chainAccountsList,
@@ -405,8 +409,10 @@ contract QuarkBuilderBase {
             quotePayResult = result;
             totalQuoteAmount = totalQuoteAmount_;
 
-            List.addAction(actions, quotePayAction);
-            List.addQuarkOperation(quarkOperations, quotePayOperation);
+            for (uint256 i = 0; i < quotePayOperations.length; ++i) {
+                List.addAction(actions, quotePayActions[i]);
+                List.addQuarkOperation(quarkOperations, quotePayOperations[i]);
+            }
         }
 
         bool hasBridgeError = !Strings.stringEqIgnoreCase(bridgeErrorSymbol, "");
@@ -931,9 +937,7 @@ contract QuarkBuilderBase {
      * @dev If there is not enough of the asset to cover the amount and the asset has a counterpart asset,
      * insert a wrap/unwrap action to cover the gap in amount.
      */
-    function checkAndInsertWrapOrUnwrapAction(
-        List.DynamicArray memory actions,
-        List.DynamicArray memory quarkOperations,
+    function constructWrapOrUnwrapActions(
         Accounts.ChainAccounts[] memory chainAccountsList,
         PaymentInfo.Payment memory payment,
         string memory assetSymbol,
@@ -942,7 +946,10 @@ contract QuarkBuilderBase {
         address account,
         uint256 blockTimestamp,
         bool isRecurring
-    ) internal pure {
+    ) internal pure returns (IQuarkWallet.QuarkOperation[] memory, Actions.Action[] memory) {
+        List.DynamicArray memory quarkOperations = List.newList();
+        List.DynamicArray memory actions = List.newList();
+
         // Check if inserting wrapOrUnwrap action is necessary
         uint256 assetBalanceOnChain = Accounts.getBalanceOnChain(assetSymbol, chainId, chainAccountsList);
         if (assetBalanceOnChain < amountNeeded && TokenWrapper.hasWrapperContract(chainId, assetSymbol)) {
@@ -968,6 +975,7 @@ contract QuarkBuilderBase {
             List.addQuarkOperation(quarkOperations, wrapOrUnwrapOperation);
             List.addAction(actions, wrapOrUnwrapAction);
         }
+        return (List.toQuarkOperationArray(quarkOperations), List.toActionArray(actions));
     }
 
     struct PaymentBalanceAssertionArgs {
@@ -984,20 +992,22 @@ contract QuarkBuilderBase {
     string constant ERROR_NO_KNOWN_PAYMENT_TOKEN = "NO_KNOWN_PAYMENT_TOKEN";
 
     /**
-     * @dev Generate a QuotePay operation on a single chain to cover the quoted costs for all the operations, if possible.
+     * @dev Generate QuotePay operations on a single chain to cover the quoted costs for all the operations, if possible.
      *      Reverts with FundsUnavailable if no single chain has enough to cover the total quote cost
      */
-    function generateQuotePayOperation(PaymentBalanceAssertionArgs memory args)
+    function generateQuotePayOperations(PaymentBalanceAssertionArgs memory args)
         internal
         pure
-        returns (IQuarkWallet.QuarkOperation memory, Actions.Action memory, string memory, uint256)
+        returns (IQuarkWallet.QuarkOperation[] memory, Actions.Action[] memory, string memory, uint256)
     {
         // Checks the chain ids that have actions
         List.DynamicArray memory chainIdsInvolved = List.newList();
 
         // Tracks the payment assets that are leaving and entering each chain
-        HashMap.Map memory assetsInPerChain = HashMap.newMap();
-        HashMap.Map memory assetsOutPerChain = HashMap.newMap();
+        HashMap.Map memory paymentAssetsInPerChain = HashMap.newMap();
+        HashMap.Map memory paymentAssetsOutPerChain = HashMap.newMap();
+        HashMap.Map memory paymentCounterpartAssetsInPerChain = HashMap.newMap();
+        HashMap.Map memory paymentCounterpartAssetsOutPerChain = HashMap.newMap();
 
         string memory paymentTokenSymbol = args.payment.currency;
         for (uint256 i = 0; i < args.actions.length; ++i) {
@@ -1010,46 +1020,73 @@ contract QuarkBuilderBase {
             }
 
             trackAssetsInAndOut({
-                assetsInPerChain: assetsInPerChain,
-                assetsOutPerChain: assetsOutPerChain,
+                assetsInPerChain: paymentAssetsInPerChain,
+                assetsOutPerChain: paymentAssetsOutPerChain,
                 action: action,
                 chainAccountsList: args.chainAccountsList,
                 paymentTokenSymbol: paymentTokenSymbol,
                 account: args.account
             });
+
+            if (TokenWrapper.hasWrapperContract(action.chainId, paymentTokenSymbol)) {
+                trackAssetsInAndOut({
+                    assetsInPerChain: paymentCounterpartAssetsInPerChain,
+                    assetsOutPerChain: paymentCounterpartAssetsOutPerChain,
+                    action: action,
+                    chainAccountsList: args.chainAccountsList,
+                    paymentTokenSymbol: TokenWrapper.getWrapperCounterpartSymbol(action.chainId, paymentTokenSymbol),
+                    account: args.account
+                });
+            }
         }
 
         for (uint256 i = 0; i < args.chainAccountsList.length; ++i) {
             uint256 chainId = args.chainAccountsList[i].chainId;
-
-            // Calculate the net payment balance on this chain
-            // TODO: Need to be modified when supporting multiple accounts per chain, since this currently assumes all assets are in one account.
-            //       Will need a 2D map for assetsIn/Out to map from chainId -> account
-            Accounts.AssetPositions memory paymentAssetPositions =
-                Accounts.findAssetPositions(paymentTokenSymbol, args.chainAccountsList[i].assetPositionsList);
-            uint256 paymentAssetBalanceOnChain = Accounts.sumBalances(paymentAssetPositions);
-
-            uint256 netPaymentAssetBalanceOnChain = 0;
-            if (
-                paymentAssetBalanceOnChain + HashMap.getOrDefaultUint256(assetsInPerChain, abi.encode(chainId), 0)
-                    >= HashMap.getOrDefaultUint256(assetsOutPerChain, abi.encode(chainId), 0)
-            ) {
-                netPaymentAssetBalanceOnChain = paymentAssetBalanceOnChain
-                    + HashMap.getOrDefaultUint256(assetsInPerChain, abi.encode(chainId), 0)
-                    - HashMap.getOrDefaultUint256(assetsOutPerChain, abi.encode(chainId), 0);
-            }
-
-            // Skip if there is no net payment balance on this chain
-            if (netPaymentAssetBalanceOnChain == 0) {
-                continue;
-            }
 
             // Generate quote amount based on which chains have an operation on them
             uint256 quoteAmount = PaymentInfo.totalCost(args.payment, List.toUint256Array(chainIdsInvolved));
 
             // Add the quote for the current chain if it is not already included in the sum
             if (!List.contains(chainIdsInvolved, chainId)) {
+                // TODO: Should probably revert instead
+                if (!PaymentInfo.isCostDefinedForChain(args.payment, chainId)) {
+                    continue;
+                }
                 quoteAmount += PaymentInfo.findCostForChain(args.payment, chainId);
+            }
+
+            // Calculate the net payment balance on this chain
+            // TODO: Need to be modified when supporting multiple accounts per chain, since this currently assumes all assets are in one account.
+            //       Will need a 2D map for assetsIn/Out to map from chainId -> account
+            Accounts.AssetPositions memory paymentAssetPositions =
+                Accounts.findAssetPositions(paymentTokenSymbol, args.chainAccountsList[i].assetPositionsList);
+
+            uint256 paymentAssetBalanceOnChain = Accounts.sumBalances(paymentAssetPositions);
+            uint256 paymentAndCounterpartAssetBalanceOnChain =
+                Accounts.totalBalanceOnChain(paymentTokenSymbol, args.chainAccountsList, chainId);
+            uint256 netPaymentAssetBalanceOnChain = 0;
+            bool shouldWrapPaymentAsset = false;
+
+            uint256 paymentAssetsIn = HashMap.getOrDefaultUint256(paymentAssetsInPerChain, abi.encode(chainId), 0);
+            uint256 paymentAssetsOut = HashMap.getOrDefaultUint256(paymentAssetsOutPerChain, abi.encode(chainId), 0);
+            uint256 paymentCounterpartAssetsIn =
+                HashMap.getOrDefaultUint256(paymentCounterpartAssetsInPerChain, abi.encode(chainId), 0);
+            uint256 paymentCounterpartAssetsOut =
+                HashMap.getOrDefaultUint256(paymentCounterpartAssetsOutPerChain, abi.encode(chainId), 0);
+            if (
+                Math.subtractFlooredAtZero(paymentAssetBalanceOnChain + paymentAssetsIn, paymentAssetsOut)
+                    >= quoteAmount
+            ) {
+                netPaymentAssetBalanceOnChain = paymentAssetBalanceOnChain + paymentAssetsIn - paymentAssetsOut;
+            } else if (
+                Math.subtractFlooredAtZero(
+                    paymentAndCounterpartAssetBalanceOnChain + paymentAssetsIn + paymentCounterpartAssetsIn,
+                    paymentAssetsOut + paymentCounterpartAssetsOut
+                ) >= quoteAmount
+            ) {
+                netPaymentAssetBalanceOnChain = paymentAndCounterpartAssetBalanceOnChain + paymentAssetsIn
+                    + paymentCounterpartAssetsIn - paymentAssetsOut - paymentCounterpartAssetsOut;
+                shouldWrapPaymentAsset = true;
             }
 
             // Skip if there is not enough net payment balance on this chain
@@ -1062,8 +1099,8 @@ contract QuarkBuilderBase {
 
             if (Strings.isError(assetResult) || assetAddress != paymentAssetPositions.asset) {
                 return (
-                    IQuarkWallet.QuarkOperation(bytes32(0), false, address(0), new bytes[](0), "", 0),
-                    Actions.Action(0, address(0), "", "", "", "", bytes32(0), 0),
+                    new IQuarkWallet.QuarkOperation[](0),
+                    new Actions.Action[](0),
                     ERROR_NO_KNOWN_PAYMENT_TOKEN,
                     quoteAmount
                 );
@@ -1071,6 +1108,29 @@ contract QuarkBuilderBase {
 
             // TODO: Right now we don't support multiple accounts
             address payer = paymentAssetPositions.accountBalances[0].account;
+
+            List.DynamicArray memory quarkOperations = List.newList();
+            List.DynamicArray memory actions = List.newList();
+            if (shouldWrapPaymentAsset) {
+                (
+                    IQuarkWallet.QuarkOperation[] memory wrapOrUnwrapOperations,
+                    Actions.Action[] memory wrapOrUnwrapActions
+                ) = constructWrapOrUnwrapActions({
+                    chainAccountsList: args.chainAccountsList,
+                    payment: args.payment,
+                    assetSymbol: args.payment.currency,
+                    amountNeeded: quoteAmount,
+                    chainId: chainId,
+                    account: payer,
+                    blockTimestamp: args.blockTimestamp,
+                    isRecurring: false
+                });
+
+                for (uint256 j = 0; j < wrapOrUnwrapOperations.length; ++j) {
+                    List.addAction(actions, wrapOrUnwrapActions[j]);
+                    List.addQuarkOperation(quarkOperations, wrapOrUnwrapOperations[j]);
+                }
+            }
 
             (IQuarkWallet.QuarkOperation memory quotePayOperation, Actions.Action memory quotePayAction) = Actions
                 .quotePay(
@@ -1085,7 +1145,10 @@ contract QuarkBuilderBase {
                 args.payment
             );
 
-            return (quotePayOperation, quotePayAction, Strings.OK, quoteAmount);
+            List.addAction(actions, quotePayAction);
+            List.addQuarkOperation(quarkOperations, quotePayOperation);
+
+            return (List.toQuarkOperationArray(quarkOperations), List.toActionArray(actions), Strings.OK, quoteAmount);
         }
 
         // Unable to construct a proper quote pay, so we try to find a chain that has enough of the payment token and then construct the totalQuoteAmount based on that.
@@ -1121,8 +1184,8 @@ contract QuarkBuilderBase {
         }
 
         return (
-            IQuarkWallet.QuarkOperation(bytes32(0), false, address(0), new bytes[](0), "", 0),
-            Actions.Action(0, address(0), "", "", "", "", bytes32(0), 0),
+            new IQuarkWallet.QuarkOperation[](0),
+            new Actions.Action[](0),
             eligibleChainFound ? ERROR_UNABLE_TO_CONSTRUCT : ERROR_IMPOSSIBLE_TO_CONSTRUCT,
             totalQuoteAmount
         );
