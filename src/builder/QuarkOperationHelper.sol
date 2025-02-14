@@ -96,20 +96,22 @@ library QuarkOperationHelper {
         bytes memory multicallCalldata = abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas);
 
         // Construct Quark Operation and Action
-        // Note: We give precedence to the last operation and action for now because any earlier operations
-        // are auxiliary (e.g. wrapping an asset). However, if the last action is a quote pay, we'll take the
-        // second to last action instead when the list of actions has more than one action in it.
-        IQuarkWallet.QuarkOperation memory primaryQuarkOperation;
-        Actions.Action memory primaryAction;
-        if (
-            actions.length > 1
-                && Strings.stringEq(actions[actions.length - 1].actionType, Actions.ACTION_TYPE_QUOTE_PAY)
-        ) {
-            primaryQuarkOperation = quarkOperations[quarkOperations.length - 2];
-            primaryAction = actions[actions.length - 2];
-        } else {
-            primaryQuarkOperation = quarkOperations[quarkOperations.length - 1];
-            primaryAction = actions[actions.length - 1];
+        // Note: We give precedence last action that is not a quote pay or unwrap/wrap because
+        // any earlier operations are usually auxiliary (e.g. wrapping an asset).
+        IQuarkWallet.QuarkOperation memory primaryQuarkOperation = quarkOperations[quarkOperations.length - 1];
+        Actions.Action memory primaryAction = actions[actions.length - 1];
+        if (actions.length > 1) {
+            for (uint256 i = 0; i < actions.length; ++i) {
+                if (
+                    Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_QUOTE_PAY)
+                        || Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_WRAP)
+                        || Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_UNWRAP)
+                ) {
+                    continue;
+                }
+                primaryQuarkOperation = quarkOperations[i];
+                primaryAction = actions[i];
+            }
         }
         // Find and attach a QuotePay action context if one is found
         for (uint256 i = 0; i < actions.length; ++i) {
