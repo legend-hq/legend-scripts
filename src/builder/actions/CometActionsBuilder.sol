@@ -192,6 +192,8 @@ contract CometActionsBuilder is QuarkBuilderBase {
         uint256[] memory amountOuts = new uint256[](0);
         string[] memory assetSymbolOuts = new string[](0);
 
+        // TODO: IF WE TAKE IN A LIST OF CHAIN_IDS, we can iterate over the, and then call constructOperationsAndActions on each chain.
+        //       Though to do that, we need to separate out the quote/paycall constructing logic from the action constructing logic
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({

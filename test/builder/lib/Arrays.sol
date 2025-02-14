@@ -9,10 +9,24 @@ library Arrays {
         return addresses;
     }
 
+    function addressArray(address address0, address address1) internal pure returns (address[] memory) {
+        address[] memory addresses = new address[](2);
+        addresses[0] = address0;
+        addresses[1] = address1;
+        return addresses;
+    }
+
     /* stringArray */
     function stringArray(string memory string0) internal pure returns (string[] memory) {
         string[] memory strings = new string[](1);
         strings[0] = string0;
+        return strings;
+    }
+
+    function stringArray(string memory string0, string memory string1) internal pure returns (string[] memory) {
+        string[] memory strings = new string[](2);
+        strings[0] = string0;
+        strings[1] = string1;
         return strings;
     }
 

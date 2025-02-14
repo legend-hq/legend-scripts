@@ -43,7 +43,8 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList_(1, address(0xa11ce), 1e18),
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
         chainAccountsList[1] = Accounts.ChainAccounts({
             chainId: 8453,
@@ -51,7 +52,8 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList_(8453, address(0xb0b), 0.5e18),
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
 
         QuarkBuilder.BuilderResult memory result = builder.transfer(

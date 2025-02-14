@@ -243,14 +243,8 @@ library Actions {
 
     struct MorphoClaimRewards {
         Accounts.ChainAccounts[] chainAccountsList;
-        address[] accounts;
         uint256 blockTimestamp;
-        uint256 chainId;
-        uint256[] claimables;
         address claimer;
-        address[] distributors;
-        address[] rewards;
-        bytes32[][] proofs;
     }
 
     struct QuotePayInfo {
@@ -1459,62 +1453,77 @@ library Actions {
     function morphoClaimRewards(MorphoClaimRewards memory claimRewards, PaymentInfo.Payment memory payment)
         internal
         pure
-        returns (IQuarkWallet.QuarkOperation memory, Action memory)
+        returns (IQuarkWallet.QuarkOperation[] memory, Action[] memory)
     {
-        Accounts.ChainAccounts memory accounts =
-            Accounts.findChainAccounts(claimRewards.chainId, claimRewards.chainAccountsList);
+        List.DynamicArray memory quarkOperations = List.newList();
+        List.DynamicArray memory actions = List.newList();
+        // Iterate through each chain and construct a QuarkOperation to claim all rewards for each chain
+        for (uint256 i = 0; i < claimRewards.chainAccountsList.length; ++i) {
+            uint256 chainId = claimRewards.chainAccountsList[i].chainId;
+            Accounts.QuarkSecret memory accountSecret =
+                Accounts.findQuarkSecret(claimRewards.claimer, claimRewards.chainAccountsList[i].quarkSecrets);
 
-        Accounts.QuarkSecret memory accountSecret =
-            Accounts.findQuarkSecret(claimRewards.claimer, accounts.quarkSecrets);
+            // Iterate over each MorphoRewardDistribution for the chain
+            Accounts.MorphoRewardDistribution[] memory rewardDistributions =
+                claimRewards.chainAccountsList[i].morphoRewardDistributions;
+            // Collect parameters for claiming rewards for the current MorphoRewardDistribution
+            address[] memory accounts = new address[](rewardDistributions.length);
+            uint256[] memory claimables = new uint256[](rewardDistributions.length);
+            address[] memory distributors = new address[](rewardDistributions.length);
+            address[] memory rewardAssets = new address[](rewardDistributions.length);
+            bytes32[][] memory proofs = new bytes32[][](rewardDistributions.length);
+            for (uint256 j = 0; j < rewardDistributions.length; ++j) {
+                accounts[j] = rewardDistributions[j].account;
+                claimables[j] = rewardDistributions[j].claimable;
+                distributors[j] = rewardDistributions[j].distributor;
+                proofs[j] = rewardDistributions[j].proof;
+                rewardAssets[j] = rewardDistributions[j].asset;
+            }
 
-        string[] memory rewardsAssetSymbols = new string[](claimRewards.rewards.length);
-        uint256[] memory rewardsPrices = new uint256[](claimRewards.rewards.length);
-        for (uint256 i = 0; i < claimRewards.rewards.length; ++i) {
-            Accounts.AssetPositions memory rewardsAssetPosition =
-                Accounts.findAssetPositions(claimRewards.rewards[i], accounts.assetPositionsList);
-            rewardsAssetSymbols[i] = rewardsAssetPosition.symbol;
-            rewardsPrices[i] = rewardsAssetPosition.usdPrice;
+            // Skip if no rewards to claim
+            if (accounts.length == 0) continue;
+
+            (string[] memory rewardsAssetSymbols, uint256[] memory rewardsPrices) =
+                Accounts.getAssetInfo(rewardAssets, claimRewards.chainAccountsList[i].assetPositionsList);
+
+            bytes memory scriptCalldata = abi.encodeWithSelector(
+                MorphoRewardsActions.claimAll.selector, distributors, accounts, rewardAssets, claimables, proofs
+            );
+
+            // Construct QuarkOperation
+            IQuarkWallet.QuarkOperation memory quarkOperation = IQuarkWallet.QuarkOperation({
+                nonce: accountSecret.nonceSecret,
+                isReplayable: false,
+                scriptAddress: CodeJarHelper.getCodeAddress(type(MorphoRewardsActions).creationCode),
+                scriptCalldata: scriptCalldata,
+                scriptSources: new bytes[](0),
+                expiry: claimRewards.blockTimestamp + STANDARD_EXPIRY_BUFFER
+            });
+
+            MorphoClaimRewardsActionContext memory claimRewardsActionContext = MorphoClaimRewardsActionContext({
+                amounts: claimables,
+                assetSymbols: rewardsAssetSymbols,
+                chainId: chainId,
+                prices: rewardsPrices,
+                tokens: rewardAssets
+            });
+
+            Action memory action = Actions.Action({
+                chainId: chainId,
+                quarkAccount: claimRewards.claimer,
+                actionType: ACTION_TYPE_MORPHO_CLAIM_REWARDS,
+                actionContext: abi.encode(claimRewardsActionContext),
+                quotePayActionContext: "",
+                paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
+                nonceSecret: accountSecret.nonceSecret,
+                totalPlays: 1
+            });
+
+            List.addQuarkOperation(quarkOperations, quarkOperation);
+            List.addAction(actions, action);
         }
 
-        bytes memory scriptCalldata = abi.encodeWithSelector(
-            MorphoRewardsActions.claimAll.selector,
-            claimRewards.distributors,
-            claimRewards.accounts,
-            claimRewards.rewards,
-            claimRewards.claimables,
-            claimRewards.proofs
-        );
-
-        // Construct QuarkOperation
-        IQuarkWallet.QuarkOperation memory quarkOperation = IQuarkWallet.QuarkOperation({
-            nonce: accountSecret.nonceSecret,
-            isReplayable: false,
-            scriptAddress: CodeJarHelper.getCodeAddress(type(MorphoRewardsActions).creationCode),
-            scriptCalldata: scriptCalldata,
-            scriptSources: new bytes[](0),
-            expiry: claimRewards.blockTimestamp + STANDARD_EXPIRY_BUFFER
-        });
-
-        MorphoClaimRewardsActionContext memory claimRewardsActionContext = MorphoClaimRewardsActionContext({
-            amounts: claimRewards.claimables,
-            assetSymbols: rewardsAssetSymbols,
-            chainId: claimRewards.chainId,
-            prices: rewardsPrices,
-            tokens: claimRewards.rewards
-        });
-
-        Action memory action = Actions.Action({
-            chainId: claimRewards.chainId,
-            quarkAccount: claimRewards.claimer,
-            actionType: ACTION_TYPE_MORPHO_CLAIM_REWARDS,
-            actionContext: abi.encode(claimRewardsActionContext),
-            quotePayActionContext: "",
-            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
-            nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
-        });
-
-        return (quarkOperation, action);
+        return (List.toQuarkOperationArray(quarkOperations), List.toActionArray(actions));
     }
 
     function quotePay(QuotePayInfo memory quotePayInfo, PaymentInfo.Payment memory payment)

@@ -111,7 +111,8 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList_(1, address(0xa11ce), 0e6),
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
         chainAccountsList[1] = Accounts.ChainAccounts({
             chainId: 8453,
@@ -119,7 +120,8 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList_(8453, address(0xb0b), 0e6),
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
         chainAccountsList[2] = Accounts.ChainAccounts({
             chainId: 7777,
@@ -127,7 +129,8 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList_(7777, address(0xc0b), 100e6),
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
 
         vm.expectRevert(abi.encodeWithSelector(QuarkBuilderBase.BadInputInsufficientFunds.selector, "USDC", 2e6, 0));
@@ -221,7 +224,8 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList_(1, address(0xa11ce), uint256(3e6)),
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
 
         QuarkBuilder.BuilderResult memory result = builder.morphoVaultSupply(
@@ -319,7 +323,8 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList,
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
 
         QuarkBuilder.BuilderResult memory result =

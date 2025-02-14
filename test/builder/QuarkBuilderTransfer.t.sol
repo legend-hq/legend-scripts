@@ -573,7 +573,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList_(1, address(0xa11ce), uint256(10e6)),
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
 
         QuarkBuilder.BuilderResult memory result = builder.transfer(
@@ -664,7 +665,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         //     assetPositionsList: assetPositionsList_(1, address(0xa11ce), 8e6),
         //     cometPositions: emptyCometPositions_(),
         //     morphoPositions: emptyMorphoPositions_(),
-        //     morphoVaultPositions: emptyMorphoVaultPositions_()
+        //     morphoVaultPositions: emptyMorphoVaultPositions_(),
+        //     morphoRewardDistributions: emptyMorphoRewardDistributions_()
         // });
         // chainAccountsList[1] = Accounts.ChainAccounts({
         //     chainId: 8453,
@@ -672,7 +674,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         //     assetPositionsList: assetPositionsList_(8453, address(0xb0b), 4e6),
         //     cometPositions: emptyCometPositions_(),
         //     morphoPositions: emptyMorphoPositions_(),
-        //     morphoVaultPositions: emptyMorphoVaultPositions_()
+        //     morphoVaultPositions: emptyMorphoVaultPositions_(),
+        //     morphoRewardDistributions: emptyMorphoRewardDistributions_()
         // });
 
         // // Will transfer all available balance (balance - costs = 8e6 + 4e6 - 0.5e6 - 0.1e6 = 11.4e6)
@@ -814,7 +817,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
     //         assetPositionsList: assetPositionsListUsdc_(1, address(0xa11ce), 8e6),
     //         cometPositions: emptyCometPositions_(),
     //         morphoPositions: emptyMorphoPositions_(),
-    //         morphoVaultPositions: emptyMorphoVaultPositions_()
+    //         morphoVaultPositions: emptyMorphoVaultPositions_(),
+    //         morphoRewardDistributions: emptyMorphoRewardDistributions_()
     //     });
     //     chainAccountsList[1] = Accounts.ChainAccounts({
     //         chainId: 8453,
@@ -822,7 +826,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
     //         assetPositionsList: assetPositionsListUsdc_(8453, address(0xb0b), 4e6),
     //         cometPositions: emptyCometPositions_(),
     //         morphoPositions: emptyMorphoPositions_(),
-    //         morphoVaultPositions: emptyMorphoVaultPositions_()
+    //         morphoVaultPositions: emptyMorphoVaultPositions_(),
+    //         morphoRewardDistributions: emptyMorphoRewardDistributions_()
     //     });
     //     chainAccountsList[2] = Accounts.ChainAccounts({
     //         chainId: 421614,
@@ -830,7 +835,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
     //         assetPositionsList: assetPositionsListUsdc_(421614, address(0xc0b), 5e6),
     //         cometPositions: emptyCometPositions_(),
     //         morphoPositions: emptyMorphoPositions_(),
-    //         morphoVaultPositions: emptyMorphoVaultPositions_()
+    //         morphoVaultPositions: emptyMorphoVaultPositions_(),
+    //         morphoRewardDistributions: emptyMorphoRewardDistributions_()
     //     });
 
     //     // User has total holding of 17 USDC, but only 12 USDC is available for transfer/bridge to 8453, and missing 5 USDC stuck in random L2 so will revert with FundsUnavailable error
@@ -882,7 +888,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList,
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
 
         QuarkBuilderBase.TransferIntent memory intent = transferEth_(1, 1.5e18, address(0xceecee), BLOCK_TIMESTAMP);
@@ -987,7 +994,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList,
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
 
         // Transfer 1.5 ETH to 0xceecee on chain 1
@@ -1110,7 +1118,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList,
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
 
         // Transfer max (2) ETH to 0xceecee on chain 1
@@ -1218,7 +1227,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             assetPositionsList: assetPositionsList,
             cometPositions: emptyCometPositions_(),
             morphoPositions: emptyMorphoPositions_(),
-            morphoVaultPositions: emptyMorphoVaultPositions_()
+            morphoVaultPositions: emptyMorphoVaultPositions_(),
+            morphoRewardDistributions: emptyMorphoRewardDistributions_()
         });
 
         QuarkBuilderBase.TransferIntent memory intent = transferWeth_(1, 1.75e18, address(0xceecee), BLOCK_TIMESTAMP);

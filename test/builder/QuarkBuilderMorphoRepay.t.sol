@@ -90,7 +90,8 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             assetBalances: Arrays.uintArray(0.4e6, 0, 0, 1e18), // user does not have enough USDC
             cometPortfolios: emptyCometPortfolios_(),
             morphoPortfolios: emptyMorphoPortfolios_(),
-            morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
+            morphoVaultPortfolios: emptyMorphoVaultPortfolios_(),
+            morphoRewardPortfolios: emptyMorphoRewardPortfolios_()
         });
 
         vm.expectRevert(
@@ -121,7 +122,8 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             assetBalances: Arrays.uintArray(1e6, 0, 0, 0), // has 1 USDC
             cometPortfolios: emptyCometPortfolios_(),
             morphoPortfolios: emptyMorphoPortfolios_(),
-            morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
+            morphoVaultPortfolios: emptyMorphoVaultPortfolios_(),
+            morphoRewardPortfolios: emptyMorphoRewardPortfolios_()
         });
         chainPortfolios[1] = ChainPortfolio({
             chainId: 8453,
@@ -131,7 +133,8 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             assetBalances: Arrays.uintArray(0, 0, 0, 0),
             cometPortfolios: emptyCometPortfolios_(),
             morphoPortfolios: emptyMorphoPortfolios_(),
-            morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
+            morphoVaultPortfolios: emptyMorphoVaultPortfolios_(),
+            morphoRewardPortfolios: emptyMorphoRewardPortfolios_()
         });
 
         QuarkBuilder builder = new QuarkBuilder();
@@ -215,7 +218,8 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             assetBalances: Arrays.uintArray(0, 0, 0, 0),
             cometPortfolios: emptyCometPortfolios_(),
             morphoPortfolios: emptyMorphoPortfolios_(),
-            morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
+            morphoVaultPortfolios: emptyMorphoVaultPortfolios_(),
+            morphoRewardPortfolios: emptyMorphoRewardPortfolios_()
         });
         chainPortfolios[1] = ChainPortfolio({
             chainId: 8453,
@@ -225,7 +229,8 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             assetBalances: Arrays.uintArray(0, 1e18, 0, 0),
             cometPortfolios: emptyCometPortfolios_(),
             morphoPortfolios: emptyMorphoPortfolios_(),
-            morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
+            morphoVaultPortfolios: emptyMorphoVaultPortfolios_(),
+            morphoRewardPortfolios: emptyMorphoRewardPortfolios_()
         });
 
         QuarkBuilder builder = new QuarkBuilder();
@@ -322,7 +327,8 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             assetBalances: Arrays.uintArray(2e6, 0, 0, 0),
             cometPortfolios: emptyCometPortfolios_(),
             morphoPortfolios: emptyMorphoPortfolios_(),
-            morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
+            morphoVaultPortfolios: emptyMorphoVaultPortfolios_(),
+            morphoRewardPortfolios: emptyMorphoRewardPortfolios_()
         });
         chainPortfolios[1] = ChainPortfolio({
             chainId: 8453,
@@ -332,7 +338,8 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             assetBalances: Arrays.uintArray(0, 0, 0, 0),
             cometPortfolios: emptyCometPortfolios_(),
             morphoPortfolios: emptyMorphoPortfolios_(),
-            morphoVaultPortfolios: emptyMorphoVaultPortfolios_()
+            morphoVaultPortfolios: emptyMorphoVaultPortfolios_(),
+            morphoRewardPortfolios: emptyMorphoRewardPortfolios_()
         });
 
         Quotes.NetworkOperationFee[] memory networkOperationFees = new Quotes.NetworkOperationFee[](1);

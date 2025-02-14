@@ -13,6 +13,7 @@ let allTests: [AcceptanceTest] = transferTests +
     cometSupplyTests +
     cometWithdrawTests +
     morphoBorrowTests +
+    morphoClaimRewardsTests +
     morphoRepayTests +
     morphoVaultSupplyTests +
     morphoVaultWithdrawTests +
@@ -31,6 +32,9 @@ enum Call: CustomStringConvertible, Equatable {
         outputTokenAmount: TokenAmount
     )
     case claimCometRewards(cometRewards: [CometReward], comets: [Comet], accounts: [Account], network: Network)
+    case claimMorphoRewards(
+        distributors: [MorphoDistributor], accounts: [Account], rewardsClaimable: [TokenAmount],
+        proofs: [MorphoClaimProof], network: Network)
     case transferErc20(tokenAmount: TokenAmount, recipient: Account, network: Network)
     case supplyToComet(tokenAmount: TokenAmount, market: Comet, network: Network)
     case supplyMultipleAssetsAndBorrowFromComet(
@@ -159,18 +163,6 @@ enum Call: CustomStringConvertible, Equatable {
                     },
                     network: network
                 )
-            } else if let (comet, to, asset, amount) = try? CometSupplyActions.supplyToDecode(
-                input: calldata)
-            {
-                print("supplyTo(\(comet) to: \(to) \(asset) \(amount))")
-            } else if let (comet, from, to, asset, amount) =
-                try? CometSupplyActions.supplyFromDecode(input: calldata)
-            {
-                print("supplyFrom(\(comet) from: \(from) to: \(to) \(asset) \(amount))")
-            } else if let (comet, assets, amounts) =
-                try? CometSupplyActions.supplyMultipleAssetsDecode(input: calldata)
-            {
-                print("supplyMultipleAssets(\(comet) \(assets) \(amounts))")
             }
         }
 
@@ -259,6 +251,29 @@ enum Call: CustomStringConvertible, Equatable {
             }
         }
 
+        if scriptAddress == getScriptAddress(MorphoRewardsActions.creationCode) {
+            if let (distributors, accounts, rewards, claimables, proofs) =
+                try? MorphoRewardsActions.claimAllDecode(input: calldata)
+            {
+                return .claimMorphoRewards(
+                    distributors: distributors.map { distributorAddress in
+                        MorphoDistributor.from(network: network, address: distributorAddress)
+                    },
+                    accounts: accounts.map { account in
+                        Account.from(address: account)
+                    },
+                    rewardsClaimable: zip(rewards, claimables).map { (rewardAddress, claimable) in
+                        Token.getTokenAmount(
+                            amount: claimable, network: network, address: rewardAddress)
+                    },
+                    proofs: proofs.map { proof in
+                        MorphoClaimProof.from(proof: proof)
+                    },
+                    network: network
+                )
+            }
+        }
+
         if scriptAddress == getScriptAddress(MorphoVaultActions.creationCode) {
             if let (vault, asset, amount) = try? MorphoVaultActions.depositDecode(input: calldata) {
                 return .supplyToMorphoVault(
@@ -340,6 +355,9 @@ enum Call: CustomStringConvertible, Equatable {
         case let .claimCometRewards(cometRewards, comets, accounts, network):
             return
                 "claimCometRewards(claiming from \(cometRewards.map { $0.description }.joined(separator: ", ")) for \(comets.map { $0.description }.joined(separator: ", ")) for \(accounts.map { $0.description }.joined(separator: ", ")) on \(network.description))"
+        case let .claimMorphoRewards(distributors, accounts, rewardsClaimable, proofs, network):
+            return
+                "claimMorphoRewards(claiming \(rewardsClaimable.map { $0.token.symbol }.joined(separator: ", ")) from \(distributors.map { $0.description }.joined(separator: ", ")) for \(accounts.map { $0.description }.joined(separator: ", ")) with proofs \(proofs.map { $0.description }.joined(separator: ", ")) on \(network.description))"
         case let .transferErc20(tokenAmount, recipient, network):
             return
                 "transferErc20(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(recipient.description) on \(network.description))"
@@ -747,6 +765,85 @@ enum MorphoVault: Hashable, Equatable {
     }
 }
 
+enum MorphoDistributor: Hashable, Equatable {
+    case distributor
+    case unknownDistributor(EthAddress)
+
+    static let DISTRIBUTOR_ADDRESS = EthAddress("0x330eefa8a787552dc5cad3c3ca644844b1e61ddb")
+
+    var description: String {
+        switch self {
+        case .distributor:
+            return "Morpho Distributor"
+        case let .unknownDistributor(address):
+            return "Morpho Distributor at \(address.description)"
+        }
+    }
+
+    static func address(network: Network) -> EthAddress {
+        switch (network) {
+        case .ethereum, .base, .baseSepolia, .sepolia:
+            return DISTRIBUTOR_ADDRESS
+        default:
+            fatalError("Morpho not available on network: \(network.description)")
+        }
+    }
+
+    static func from(network: Network, address: EthAddress) -> MorphoDistributor {
+        if address == self.address(network: network) {
+            return .distributor
+        } else {
+            return .unknownDistributor(address)
+        }
+    }
+}
+
+enum MorphoClaimProof: Hashable, Equatable {
+    case validProof1
+    case validProof2
+    case validProof3
+    case unknownProof([Hex])
+
+    var description: String {
+        switch self {
+        case .validProof1:
+            return "Proof 1"
+        case .validProof2:
+            return "Proof 2"
+        case .validProof3:
+            return "Proof 3"
+        case let .unknownProof(proof):
+            return "Unknown Proof \(proof)"
+        }
+    }
+
+    var data: [Hex] {
+        switch self {
+        case .validProof1:
+            return [Hex("0x0000000000000000000000000000000000000000000000000000000000000001")]
+        case .validProof2:
+            return [Hex("0x0000000000000000000000000000000000000000000000000000000000000002")]
+        case .validProof3:
+            return [Hex("0x0000000000000000000000000000000000000000000000000000000000000003")]
+        case let .unknownProof(proof):
+            return proof
+        }
+    }
+
+    static func from(proof: [Hex]) -> MorphoClaimProof {
+        switch proof {
+        case [Hex("0x0000000000000000000000000000000000000000000000000000000000000001")]:
+            return .validProof1
+        case [Hex("0x0000000000000000000000000000000000000000000000000000000000000002")]:
+            return .validProof2
+        case [Hex("0x0000000000000000000000000000000000000000000000000000000000000003")]:
+            return .validProof3
+        case _:
+            return .unknownProof(proof)
+        }
+    }
+}
+
 enum Exchange: Hashable, Equatable {
     case zeroEx
     case updatedZeroEx
@@ -1035,7 +1132,8 @@ enum Given {
     case cometBorrow(Account, TokenAmount, Comet, Network)
     case cometReward(Account, TokenAmount, Comet, CometReward, Network)
     case morphoVaultSupply(Account, TokenAmount, MorphoVault, Network)
-    case morphoBorrow(Account, TokenAmount, TokenAmount, Network);
+    case morphoBorrow(Account, TokenAmount, TokenAmount, Network)
+    case morphoReward(Account, TokenAmount, MorphoDistributor, MorphoClaimProof, Network)
     case acrossQuote(TokenAmount, Double)
     case acrossQuoteWithMin(TokenAmount, Double, TokenAmount)
     // Buy Amount, Fee Token, Fee Amount
@@ -1050,6 +1148,7 @@ indirect enum When {
     case cometSupply(from: Account, market: Comet, amount: TokenAmount, on: Network)
     case cometWithdraw(from: Account, market: Comet, amount: TokenAmount, on: Network)
     case morphoBorrow(from: Account, borrowAmount: TokenAmount, collateralAmount: TokenAmount, on: Network)
+    case morphoClaimRewards(from: Account)
     case morphoRepay(from: Account, repayAmount: TokenAmount, collateralAmount: TokenAmount, on: Network)
     case morphoVaultSupply(from: Account, vault: MorphoVault, amount: TokenAmount, on: Network)
     case morphoVaultWithdraw(from: Account, vault: MorphoVault, amount: TokenAmount, on: Network)
@@ -1071,6 +1170,8 @@ indirect enum When {
         case let .cometWithdraw(from, _, _, _):
             return from
         case let .morphoBorrow(from, _, _, _):
+            return from
+        case let .morphoClaimRewards(from):
             return from
         case let .morphoRepay(from, _, _, _):
             return from
@@ -1148,6 +1249,7 @@ class Context {
     var cometPositions: [Network: [Comet: [Account: (BigUInt, BigUInt, [Token: BigUInt], [CometReward: BigUInt])]]]
     var morphoPositions: [Network: [Morpho: [Account: (BigUInt, BigUInt)]]]
     var morphoVaultPositions: [Network: [MorphoVault: [Account: BigUInt]]]
+    var morphoRewardDistributions: [Network: [MorphoDistributor: [(Account, Token, BigUInt, MorphoClaimProof)]]]
     var ffis: EVM.FFIMap = [:]
 
     let allNetworks: [Network] = [.ethereum, .base, .arbitrum, .optimism]
@@ -1167,7 +1269,8 @@ class Context {
                 assetPositionsList: reifyTokenPositions(network: network),
                 cometPositions: reifyCometPositions(network: network),
                 morphoPositions: reifyMorphoPositions(network: network),
-                morphoVaultPositions: reifyMorphoVaultPositions(network: network)
+                morphoVaultPositions: reifyMorphoVaultPositions(network: network),
+                morphoRewardDistributions: reifyMorphoRewardDistributions(network: network)
             )
         }
     }
@@ -1181,6 +1284,7 @@ class Context {
         cometPositions = [:]
         morphoPositions = [:]
         morphoVaultPositions = [:]
+        morphoRewardDistributions = [:]
     }
 
     func given(_ given: Given) {
@@ -1239,6 +1343,10 @@ class Context {
             let morpho = Morpho.morpho(collateralAmount.token, borrowAmount.token)
             let (currentBorrow, currentCollateralSupply) = morphoPositions[network, default: [:]][morpho, default: [:]][account, default: (BigUInt(0), BigUInt(0))]
             morphoPositions[network, default: [:]][morpho, default: [:]][account] = (currentBorrow + borrowAmount.amount, currentCollateralSupply + collateralAmount.amount)
+        case let .morphoReward(account, claimable, distributor, proof, network):
+            let newDistribution = (account, claimable.token, claimable.amount, proof)
+            morphoRewardDistributions[network, default: [:]][distributor, default: []].append(
+                newDistribution)
         case let .morphoVaultSupply(account, amount, vault, network):
             let currentSupply = morphoVaultPositions[network, default: [:]][vault, default: [:]][account, default: BigUInt(0)]
 
@@ -1430,6 +1538,25 @@ class Context {
                     chainId: BigUInt(network.chainId),
                     collateralAmount: collateralAmount.amount,
                     collateralAssetSymbol: collateralAmount.token.symbol,
+                    preferAcross: true,
+                    paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                ),
+                chainAccountsList: chainAccounts,
+                quote: .init(
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    issuedAt: 0,
+                    expiresAt: BigUInt(Date(timeIntervalSinceNow: 1_000_000).timeIntervalSince1970),
+                    assetQuotes: assetQuotes,
+                    networkOperationFees: networkOperationFees
+                ),
+                withFunctions: ffis
+            )
+        case let .morphoClaimRewards(from):
+            return try await QuarkBuilder.morphoClaimRewards(
+                intent: .init(
+                    blockTimestamp: BigUInt(1_000_000),
+                    claimer: from.address,
                     preferAcross: true,
                     paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
                 ),
@@ -1687,6 +1814,30 @@ class Context {
                     balances: morphoPositions.map { $0.value.1 }
                  )
             )
+        }
+    }
+
+    func reifyMorphoRewardDistributions(network: Network) -> [QuarkBuilder.Accounts
+        .MorphoRewardDistribution]
+    {
+        (morphoRewardDistributions[network] ?? [:]).flatMap { distributor, distributions in
+            distributions.compactMap {
+                distribution -> QuarkBuilder.Accounts.MorphoRewardDistribution? in
+                // Destructure the tuple into named variables
+                let (account, asset, claimable, proof) = distribution
+
+                guard let rewardTokenAddress = asset.address(network: network) else {
+                    return nil
+                }
+
+                return QuarkBuilder.Accounts.MorphoRewardDistribution(
+                    account: account.address,
+                    asset: rewardTokenAddress,
+                    claimable: claimable,
+                    distributor: MorphoDistributor.address(network: network),
+                    proof: proof.data
+                )
+            }
         }
     }
 }

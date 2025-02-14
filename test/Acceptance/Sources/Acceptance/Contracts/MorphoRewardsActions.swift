@@ -64,11 +64,11 @@ public enum MorphoRewardsActions {
 
     public static let claimAllFn = ABI.Function(
         name: "claimAll",
-        inputs: [.array(.address), .array(.address), .array(.address), .array(.uint256), .array(.bytes32)],
+        inputs: [.array(.address), .array(.address), .array(.address), .array(.uint256), .array(.array(.bytes32))],
         outputs: []
     )
 
-    public static func claimAll(distributors: [EthAddress], accounts: [EthAddress], rewards: [EthAddress], claimables: [BigUInt], proofs: [Hex], withFunctions ffis: EVM.FFIMap = [:]) async throws -> Result<Void, RevertReason> {
+    public static func claimAll(distributors: [EthAddress], accounts: [EthAddress], rewards: [EthAddress], claimables: [BigUInt], proofs: [[Hex]], withFunctions ffis: EVM.FFIMap = [:]) async throws -> Result<Void, RevertReason> {
         do {
             let query = try claimAllFn.encoded(with: [.array(.address, distributors.map {
                 .address($0)
@@ -78,8 +78,10 @@ public enum MorphoRewardsActions {
                 .address($0)
             }), .array(.uint256, claimables.map {
                 .uint256($0)
-            }), .array(.bytes32, proofs.map {
-                .bytes32($0)
+            }), .array(.array(.bytes32), proofs.map {
+                .array(.bytes32, $0.map {
+                    .bytes32($0)
+                })
             })])
             let result = try await EVM.runQuery(bytecode: runtimeCode, query: query, withErrors: errors, withFunctions: ffis)
             let decoded = try claimAllFn.decode(output: result)
@@ -95,11 +97,11 @@ public enum MorphoRewardsActions {
         }
     }
 
-    public static func claimAllDecode(input: Hex) throws -> ([EthAddress], [EthAddress], [EthAddress], [BigUInt], [Hex]) {
+    public static func claimAllDecode(input: Hex) throws -> ([EthAddress], [EthAddress], [EthAddress], [BigUInt], [[Hex]]) {
         let decodedInput = try claimAllFn.decodeInput(input: input)
         switch decodedInput {
-        case let .tuple5(.array(.address, distributors), .array(.address, accounts), .array(.address, rewards), .array(.uint256, claimables), .array(.bytes32, proofs)):
-            return (distributors.map { $0.asEthAddress! }, accounts.map { $0.asEthAddress! }, rewards.map { $0.asEthAddress! }, claimables.map { $0.asBigUInt! }, proofs.map { $0.asHex! })
+        case let .tuple5(.array(.address, distributors), .array(.address, accounts), .array(.address, rewards), .array(.uint256, claimables), .array(.array(.bytes32), proofs)):
+            return (distributors.map { $0.asEthAddress! }, accounts.map { $0.asEthAddress! }, rewards.map { $0.asEthAddress! }, claimables.map { $0.asBigUInt! }, proofs.map { $0.asArray!.map { $0.asHex! } })
         default:
             throw ABI.DecodeError.mismatchedType(decodedInput.schema, claimAllFn.inputTuple)
         }
