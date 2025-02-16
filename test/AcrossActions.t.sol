@@ -37,6 +37,8 @@ contract AcrossActionsTest is Test {
     address constant WETH_MAINNET = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant WETH_BASE = 0x4200000000000000000000000000000000000006;
 
+    bytes constant UNIQUE_IDENTIFIER = hex"beef";
+
     bytes acrossActionsScript = new YulHelper().getCode("AcrossScripts.sol/AcrossActions.json");
 
     function setUp() public {
@@ -61,18 +63,21 @@ contract AcrossActionsTest is Test {
                 AcrossActions.depositV3,
                 (
                     ACROSS_SPOKE_POOL, // spokePool
-                    address(wallet), // depositor
-                    address(wallet), // recipient
-                    USDC_MAINNET, // inputToken
-                    USDC_BASE, // outputToken
-                    100e6, // inputAmount
-                    99.9e6, // outputAmount
-                    8453, // destinationChainId
-                    address(0), // exclusiveRelayer
-                    uint32(block.timestamp), // quoteTimestamp
-                    uint32(block.timestamp), // fillDeadline
-                    0, // exclusivityDeadline
-                    new bytes(0), // message
+                    AcrossActions.DepositV3Params({
+                        depositor: address(wallet), // depositor
+                        recipient: address(wallet), // recipient
+                        inputToken: USDC_MAINNET, // inputToken
+                        outputToken: USDC_BASE, // outputToken
+                        inputAmount: 100e6, // inputAmount
+                        outputAmount: 99.9e6, // outputAmount
+                        destinationChainId: 8453, // destinationChainId
+                        exclusiveRelayer: address(0), // exclusiveRelayer
+                        quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
+                        fillDeadline: uint32(block.timestamp), // fillDeadline
+                        exclusivityDeadline: 0, // exclusivityDeadline
+                        message: new bytes(0) // message
+                    }), // params
+                    UNIQUE_IDENTIFIER, // uniqueIdentifier
                     false // useNativeToken
                 )
             ),
@@ -100,19 +105,22 @@ contract AcrossActionsTest is Test {
             abi.encodeCall(
                 AcrossActions.depositV3,
                 (
-                    ACROSS_SPOKE_POOL, // spokePool
-                    address(wallet), // depositor
-                    address(wallet), // recipient
-                    WETH_MAINNET, // inputToken
-                    WETH_BASE, // outputToken
-                    10e18, // inputAmount
-                    9.99e18, // outputAmount
-                    8453, // destinationChainId
-                    address(0), // exclusiveRelayer
-                    uint32(block.timestamp), // quoteTimestamp
-                    uint32(block.timestamp), // fillDeadline
-                    0, // exclusivityDeadline
-                    new bytes(0), // message
+                    ACROSS_SPOKE_POOL, // spokePool,
+                    AcrossActions.DepositV3Params({
+                        depositor: address(wallet), // depositor
+                        recipient: address(wallet), // recipient
+                        inputToken: WETH_MAINNET, // inputToken
+                        outputToken: WETH_BASE, // outputToken
+                        inputAmount: 10e18, // inputAmount
+                        outputAmount: 9.99e18, // outputAmount
+                        destinationChainId: 8453, // destinationChainId
+                        exclusiveRelayer: address(0), // exclusiveRelayer
+                        quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
+                        fillDeadline: uint32(block.timestamp), // fillDeadline
+                        exclusivityDeadline: 0, // exclusivityDeadline
+                        message: new bytes(0) // message
+                    }), // params
+                    UNIQUE_IDENTIFIER, // uniqueIdentifier
                     true // useNativeToken
                 )
             ),
@@ -143,18 +151,21 @@ contract AcrossActionsTest is Test {
                 AcrossActions.depositV3,
                 (
                     ACROSS_SPOKE_POOL, // spokePool
-                    address(wallet), // depositor
-                    address(wallet), // recipient
-                    USDC_MAINNET, // inputToken
-                    USDC_BASE, // outputToken
-                    100e6, // inputAmount
-                    99.9e6, // outputAmount
-                    8453, // destinationChainId
-                    address(0), // exclusiveRelayer
-                    uint32(block.timestamp), // quoteTimestamp
-                    uint32(block.timestamp), // fillDeadline
-                    0, // exclusivityDeadline
-                    new bytes(0), // message
+                    AcrossActions.DepositV3Params({
+                        depositor: address(wallet), // depositor
+                        recipient: address(wallet), // recipient
+                        inputToken: USDC_MAINNET, // inputToken
+                        outputToken: USDC_BASE, // outputToken
+                        inputAmount: 100e6, // inputAmount
+                        outputAmount: 99.9e6, // outputAmount
+                        destinationChainId: 8453, // destinationChainId
+                        exclusiveRelayer: address(0), // exclusiveRelayer
+                        quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
+                        fillDeadline: uint32(block.timestamp), // fillDeadline
+                        exclusivityDeadline: 0, // exclusivityDeadline
+                        message: new bytes(0) // message
+                    }), // params
+                    UNIQUE_IDENTIFIER, // uniqueIdentifier
                     true // useNativeToken
                 )
             ),
@@ -180,18 +191,21 @@ contract AcrossActionsTest is Test {
                 AcrossActions.depositV3,
                 (
                     ACROSS_SPOKE_POOL, // spokePool
-                    address(wallet), // depositor
-                    address(wallet), // recipient
-                    USDC_MAINNET, // inputToken
-                    USDC_BASE, // outputToken
-                    100e6, // inputAmount
-                    99.9e6, // outputAmount
-                    8453, // destinationChainId
-                    address(0), // exclusiveRelayer
-                    uint32(block.timestamp), // quoteTimestamp
-                    uint32(block.timestamp), // fillDeadline
-                    0, // exclusivityDeadline
-                    new bytes(0), // message
+                    AcrossActions.DepositV3Params({
+                        depositor: address(wallet), // depositor
+                        recipient: address(wallet), // recipient
+                        inputToken: USDC_MAINNET, // inputToken
+                        outputToken: USDC_BASE, // outputToken
+                        inputAmount: 100e6, // inputAmount
+                        outputAmount: 99.9e6, // outputAmount
+                        destinationChainId: 8453, // destinationChainId
+                        exclusiveRelayer: address(0), // exclusiveRelayer
+                        quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
+                        fillDeadline: uint32(block.timestamp), // fillDeadline
+                        exclusivityDeadline: 0, // exclusivityDeadline
+                        message: new bytes(0) // message
+                    }), // params
+                    UNIQUE_IDENTIFIER, // uniqueIdentifier
                     false // useNativeToken
                 )
             ),
@@ -217,18 +231,21 @@ contract AcrossActionsTest is Test {
                 AcrossActions.depositV3,
                 (
                     ACROSS_SPOKE_POOL, // spokePool
-                    address(wallet), // depositor
-                    address(wallet), // recipient
-                    USDC_MAINNET, // inputToken
-                    USDC_BASE, // outputToken
-                    100e6, // inputAmount
-                    99.9e6, // outputAmount
-                    8453, // destinationChainId
-                    address(0), // exclusiveRelayer
-                    uint32(block.timestamp - 1_000_000), // quoteTimestamp
-                    uint32(block.timestamp), // fillDeadline
-                    0, // exclusivityDeadline
-                    new bytes(0), // message
+                    AcrossActions.DepositV3Params({
+                        depositor: address(wallet), // depositor
+                        recipient: address(wallet), // recipient
+                        inputToken: USDC_MAINNET, // inputToken
+                        outputToken: USDC_BASE, // outputToken
+                        inputAmount: 100e6, // inputAmount
+                        outputAmount: 99.9e6, // outputAmount
+                        destinationChainId: 8453, // destinationChainId
+                        exclusiveRelayer: address(0), // exclusiveRelayer
+                        quoteTimestamp: uint32(block.timestamp - 1_000_000), // quoteTimestamp
+                        fillDeadline: uint32(block.timestamp), // fillDeadline
+                        exclusivityDeadline: 0, // exclusivityDeadline
+                        message: new bytes(0) // message
+                    }), // params
+                    UNIQUE_IDENTIFIER, // uniqueIdentifier
                     false // useNativeToken
                 )
             ),
@@ -254,18 +271,21 @@ contract AcrossActionsTest is Test {
                 AcrossActions.depositV3,
                 (
                     ACROSS_SPOKE_POOL, // spokePool
-                    address(wallet), // depositor
-                    address(wallet), // recipient
-                    USDC_MAINNET, // inputToken
-                    USDC_BASE, // outputToken
-                    100e6, // inputAmount
-                    99.9e6, // outputAmount
-                    8453, // destinationChainId
-                    address(0), // exclusiveRelayer
-                    uint32(block.timestamp), // quoteTimestamp
-                    uint32(block.timestamp - 10), // fillDeadline
-                    0, // exclusivityDeadline
-                    new bytes(0), // message
+                    AcrossActions.DepositV3Params({
+                        depositor: address(wallet), // depositor
+                        recipient: address(wallet), // recipient
+                        inputToken: USDC_MAINNET, // inputToken
+                        outputToken: USDC_BASE, // outputToken
+                        inputAmount: 100e6, // inputAmount
+                        outputAmount: 99.9e6, // outputAmount
+                        destinationChainId: 8453, // destinationChainId
+                        exclusiveRelayer: address(0), // exclusiveRelayer
+                        quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
+                        fillDeadline: uint32(block.timestamp - 10), // fillDeadline
+                        exclusivityDeadline: 0, // exclusivityDeadline
+                        message: new bytes(0) // message
+                    }), // params
+                    UNIQUE_IDENTIFIER, // uniqueIdentifier
                     false // useNativeToken
                 )
             ),

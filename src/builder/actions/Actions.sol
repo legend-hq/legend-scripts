@@ -760,6 +760,7 @@ library Actions {
                 dstAssetPositions.asset,
                 inputAmount,
                 outputAmount,
+                bridge.sender,
                 bridge.recipient,
                 bridge.blockTimestamp,
                 // TODO: Determine when to set this to true. Probably requires reading QuarkState
