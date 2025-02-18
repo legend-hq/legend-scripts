@@ -86,33 +86,23 @@ enum Call: CustomStringConvertible, Equatable {
         if scriptAddress == getScriptAddress(AcrossActions.creationCode) {
             if let (
                 _,
-                _,
-                _,
-                inputToken,
-                outputToken,
-                inputAmount,
-                outputAmount,
-                destinationChainId,
-                _,
-                _,
-                _,
-                _,
+                depositV3Params,
                 _,
                 _
             ) = try? AcrossActions.depositV3Decode(input: calldata) {
                 return .bridge(
                     bridge: "Across",
                     srcNetwork: network,
-                    destinationNetwork: Network.fromChainId(BigInt(destinationChainId)),
+                    destinationNetwork: Network.fromChainId(BigInt(depositV3Params.destinationChainId)),
                     inputTokenAmount: Token.getTokenAmount(
-                        amount: inputAmount,
+                        amount: depositV3Params.inputAmount,
                         network: network,
-                        address: inputToken
+                        address: depositV3Params.inputToken
                     ),
                     outputTokenAmount: Token.getTokenAmount(
-                        amount: outputAmount,
-                        network: Network.fromChainId(BigInt(destinationChainId)),
-                        address: outputToken
+                        amount: depositV3Params.outputAmount,
+                        network: Network.fromChainId(BigInt(depositV3Params.destinationChainId)),
+                        address: depositV3Params.outputToken
                     )
                 )
             }
