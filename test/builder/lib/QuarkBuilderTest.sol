@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
 import {Accounts} from "src/builder/Accounts.sol";
+import {Across} from "src/builder/BridgeRoutes.sol";
 import {CodeJarHelper} from "src/builder/CodeJarHelper.sol";
 import {Paycall} from "src/Paycall.sol";
 import {Quotecall} from "src/Quotecall.sol";
@@ -65,6 +66,7 @@ contract QuarkBuilderTest {
     bytes32 constant COB_DEFAULT_SECRET = bytes32(uint256(5));
 
     bytes32 constant QUOTE_ID = bytes32("QUOTE_ID");
+    bytes constant ACROSS_UNIQUE_ID = Across.UNIQUE_IDENTIFIER;
 
     /**
      *

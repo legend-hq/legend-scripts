@@ -103,18 +103,22 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
                 AcrossActions.depositV3,
                 (
                     address(0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5), // spokePool
-                    address(0xb0b), // depositor
-                    address(0xb0b), // recipient
-                    weth_(1), // inputToken
-                    weth_(8453), // outputToken
-                    0.5e18 * (1e18 + MockAcrossFFIConstants.VARIABLE_FEE_PCT) / 1e18 + MockAcrossFFIConstants.GAS_FEE, // inputAmount
-                    0.5e18, // outputAmount
-                    8453, // destinationChainId
-                    address(0), // exclusiveRelayer
-                    uint32(BLOCK_TIMESTAMP) - Across.QUOTE_TIMESTAMP_BUFFER, // quoteTimestamp
-                    uint32(BLOCK_TIMESTAMP + Across.FILL_DEADLINE_BUFFER), // fillDeadline
-                    0, // exclusivityDeadline
-                    new bytes(0), // message
+                    AcrossActions.DepositV3Params({
+                        depositor: address(0xa11ce), // depositor
+                        recipient: address(0xb0b), // recipient
+                        inputToken: weth_(1), // inputToken
+                        outputToken: weth_(8453), // outputToken
+                        inputAmount: 0.5e18 * (1e18 + MockAcrossFFIConstants.VARIABLE_FEE_PCT) / 1e18
+                            + MockAcrossFFIConstants.GAS_FEE, // inputAmount
+                        outputAmount: 0.5e18, // outputAmount
+                        destinationChainId: 8453, // destinationChainId
+                        exclusiveRelayer: address(0), // exclusiveRelayer
+                        quoteTimestamp: uint32(BLOCK_TIMESTAMP) - Across.QUOTE_TIMESTAMP_BUFFER, // quoteTimestamp
+                        fillDeadline: uint32(BLOCK_TIMESTAMP + Across.FILL_DEADLINE_BUFFER), // fillDeadline
+                        exclusivityDeadline: 0, // exclusivityDeadline
+                        message: new bytes(0) // message
+                    }), // params
+                    ACROSS_UNIQUE_ID, // uniqueIdentifier
                     false // useNativeToken
                 )
             ),
@@ -251,18 +255,21 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
                 AcrossActions.depositV3,
                 (
                     0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5, // spokePool
-                    address(0xb0b), // depositor
-                    address(0xb0b), // recipient
-                    address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48), // inputToken
-                    address(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913), // outputToken
-                    2.01e6, // inputAmount
-                    1e6, // outputAmount
-                    8453, // destinationChainId
-                    address(0), // exclusiveRelayer
-                    uint32(BLOCK_TIMESTAMP) - 30 seconds, // quoteTimestamp
-                    uint32(BLOCK_TIMESTAMP + 10 minutes), // fillDeadline
-                    0, // exclusivityDeadline
-                    new bytes(0), // message
+                    AcrossActions.DepositV3Params({
+                        depositor: address(0xa11ce), // depositor
+                        recipient: address(0xb0b), // recipient
+                        inputToken: address(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48), // inputToken
+                        outputToken: address(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913), // outputToken
+                        inputAmount: 2.01e6, // inputAmount
+                        outputAmount: 1e6, // outputAmount
+                        destinationChainId: 8453, // destinationChainId
+                        exclusiveRelayer: address(0), // exclusiveRelayer
+                        quoteTimestamp: uint32(BLOCK_TIMESTAMP) - 30 seconds, // quoteTimestamp
+                        fillDeadline: uint32(BLOCK_TIMESTAMP + 10 minutes), // fillDeadline
+                        exclusivityDeadline: 0, // exclusivityDeadline
+                        message: new bytes(0) // message
+                    }), // params
+                    ACROSS_UNIQUE_ID, // uniqueIdentifier
                     false // useNativeToken
                 )
             ),

@@ -113,6 +113,9 @@ library Across {
         address bridge; // SpokePool contract
     }
 
+    /// @notice The unique ID given to Legend by the Across team to track the origination source of deposits
+    bytes constant UNIQUE_IDENTIFIER = hex"0067";
+
     /// @notice The buffer to subtrace from the quote timestamp to ensure it isn't some time in
     ///         the future, which would cause the Across SpokePool contract to revert
     uint32 public constant QUOTE_TIMESTAMP_BUFFER = 30 seconds;
@@ -181,6 +184,7 @@ library Across {
         address outputToken,
         uint256 inputAmount,
         uint256 outputAmount,
+        address sender,
         address recipient,
         uint256 blockTimestamp,
         bool useNativeToken
@@ -189,19 +193,21 @@ library Across {
             AcrossActions.depositV3,
             (
                 knownBridge(srcChainId), // spokePool
-                // TODO: Should this be account, instead of recipient?
-                recipient, // depositor
-                recipient, // recipient
-                inputToken, // inputToken
-                outputToken, // outputToken
-                inputAmount, // inputAmount
-                outputAmount, // outputAmount
-                dstChainId, // destinationChainId
-                address(0), // exclusiveRelayer
-                uint32(blockTimestamp) - QUOTE_TIMESTAMP_BUFFER, // quoteTimestamp
-                uint32(blockTimestamp + FILL_DEADLINE_BUFFER), // fillDeadline
-                0, // exclusivityDeadline
-                new bytes(0), // message
+                AcrossActions.DepositV3Params({
+                    depositor: sender,
+                    recipient: recipient,
+                    inputToken: inputToken,
+                    outputToken: outputToken,
+                    inputAmount: inputAmount,
+                    outputAmount: outputAmount,
+                    destinationChainId: dstChainId,
+                    exclusiveRelayer: address(0),
+                    quoteTimestamp: uint32(blockTimestamp) - QUOTE_TIMESTAMP_BUFFER,
+                    fillDeadline: uint32(blockTimestamp + FILL_DEADLINE_BUFFER),
+                    exclusivityDeadline: 0,
+                    message: new bytes(0)
+                }), // params
+                UNIQUE_IDENTIFIER, // uniqueIdentifier
                 useNativeToken // useNativeToken
             )
         );
