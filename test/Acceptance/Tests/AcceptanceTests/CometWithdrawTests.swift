@@ -3,7 +3,6 @@ import Testing
 
 @Suite("Comet Withdraw Tests")
 struct CometWithdrawTests {
-
     @Test("Alice withdraws 1 LINK from Comet, paying with QuotePay")
     func testCometWithdrawWithQuotePay() async throws {
         try await testAcceptanceTests(
