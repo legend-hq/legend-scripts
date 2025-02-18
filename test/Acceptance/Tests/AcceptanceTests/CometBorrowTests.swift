@@ -4,6 +4,31 @@ import Testing
 
 @Suite("Comet Borrow Tests")
 struct CometBorrowTests {
+    @Test("Alice tries to supply collateral that she doesn't have")
+    func testBorrowFundsUnavailable() async throws {
+        try await testAcceptanceTests(
+            test: .init(
+                given: [
+                    .quote(.basic)
+                ],
+                when: .cometBorrow(
+                    from: .alice,
+                    market: .cusdcv3,
+                    borrowAmount: .amt(1, .usdc),
+                    collateralAmounts: [.amt(1, .link)],
+                    on: .ethereum
+                ),
+                expect: .revert(
+                    .badInputInsufficientFunds(
+                        Token.link.symbol,
+                        TokenAmount.amt(1, .link).amount,
+                        TokenAmount.amt(0, .link).amount
+                    )
+                )
+            )
+        )
+    }
+
     @Test("Alice supplies 1 Link and borrows 1 USDC on mainnet cUSDCv3")
     func testBorrow() async throws {
         try await testAcceptanceTests(
@@ -33,31 +58,6 @@ struct CometBorrowTests {
                                     payment: .amt(0.1, .usdc), payee: .stax, quote: .basic
                                 ),
                             ], executionType: .immediate)
-                    )
-                )
-            )
-        )
-    }
-
-    @Test("Alice tries to supply collateral that she doesn't have")
-    func testBorrowFundsUnavailable() async throws {
-        try await testAcceptanceTests(
-            test: .init(
-                given: [
-                    .quote(.basic)
-                ],
-                when: .cometBorrow(
-                    from: .alice,
-                    market: .cusdcv3,
-                    borrowAmount: .amt(1, .usdc),
-                    collateralAmounts: [.amt(1, .link)],
-                    on: .ethereum
-                ),
-                expect: .revert(
-                    .badInputInsufficientFunds(
-                        Token.link.symbol,
-                        TokenAmount.amt(1, .link).amount,
-                        TokenAmount.amt(0, .link).amount
                     )
                 )
             )
@@ -141,6 +141,81 @@ struct CometBorrowTests {
                             payment: .amt(1.1, .usdc), payee: .stax, quote: .basic,
                             executionType: .immediate),
                     ])
+                )
+            )
+        )
+    }
+
+    @Test("Alice borrows from Comet on Optimism")
+    func testCometBorrowOnOptimism() async throws {
+        try await testAcceptanceTests(
+            test: .init(
+                given: [
+                    .tokenBalance(.alice, .amt(3, .usdc), .ethereum),
+                    .tokenBalance(.alice, .amt(5, .wbtc), .optimism),
+                    .quote(.basic),
+                ],
+                when: .cometBorrow(
+                    from: .alice,
+                    market: .cusdcv3,
+                    borrowAmount: .amt(1, .usdt),
+                    collateralAmounts: [.amt(1, .wbtc)],
+                    on: .optimism
+                ),
+                expect: .success(
+                    .multi([
+                        .supplyMultipleAssetsAndBorrowFromComet(
+                            borrowAmount: .amt(1, .usdt),
+                            collateralAmounts: [.amt(1, .wbtc)],
+                            market: .cusdcv3,
+                            network: .optimism
+                        ),
+                        .quotePay(payment: .amt(0.16, .usdc), payee: .stax, quote: .basic),
+                    ])
+                )
+            )
+        )
+    }
+
+    @Test("Alice pays for a QuotePay with USDC she has borrowed")
+    func testBorrowPayFromBorrow() async throws {
+        try await testAcceptanceTests(
+            test: .init(
+                given: [
+                    .tokenBalance(.alice, .amt(10, .link), .ethereum),
+                    .quote(
+                        .custom(
+                            quoteId: Hex(
+                                "0x00000000000000000000000000000000000000000000000000000000000000CC"
+                            ),
+                            prices: Dictionary(
+                                uniqueKeysWithValues: Token.knownCases.map { token in
+                                    (token, token.defaultUsdPrice)
+                                }
+                            ),
+                            fees: [.ethereum: 1.5]
+                        )
+                    ),
+                ],
+                when: .cometBorrow(
+                    from: .alice,
+                    market: .cusdcv3,
+                    borrowAmount: .amt(2, .usdc),
+                    collateralAmounts: [.amt(1, .link)],
+                    on: .ethereum
+                ),
+                expect: .success(
+                    .single(
+                        .multicall([
+                            .supplyMultipleAssetsAndBorrowFromComet(
+                                borrowAmount: .amt(2, .usdc),
+                                collateralAmounts: [.amt(1, .link)],
+                                market: .cusdcv3,
+                                network: .ethereum
+                            ),
+                            .quotePay(payment: .amt(1.5, .usdc), payee: .stax, quote: .basic),
+                        ])
+                    )
                 )
             )
         )
@@ -267,84 +342,6 @@ struct CometBorrowTests {
                         "IMPOSSIBLE_TO_CONSTRUCT",
                         Token.weth.symbol,
                         TokenAmount.amt(0, .weth).amount
-                    )
-                )
-            )
-        )
-    }
-
-    @Test("Alice borrows from Comet on Optimism")
-    func testCometBorrowOnOptimism() async throws {
-        try await testAcceptanceTests(
-            test: .init(
-                given: [
-                    .tokenBalance(.alice, .amt(3, .usdc), .ethereum),
-                    .tokenBalance(.alice, .amt(5, .wbtc), .optimism),
-                    .quote(.basic),
-                ],
-                when: .cometBorrow(
-                    from: .alice,
-                    market: .cusdcv3,
-                    borrowAmount: .amt(1, .usdt),
-                    collateralAmounts: [.amt(1, .wbtc)],
-                    on: .optimism
-                ),
-                expect: .success(
-                    .multi([
-                        .supplyMultipleAssetsAndBorrowFromComet(
-                            borrowAmount: .amt(1, .usdt),
-                            collateralAmounts: [.amt(1, .wbtc)],
-                            market: .cusdcv3,
-                            network: .optimism,
-                            executionType: .immediate
-                        ),
-                        .quotePay(
-                            payment: .amt(0.16, .usdc), payee: .stax, quote: .basic,
-                            executionType: .immediate),
-                    ])
-                )
-            )
-        )
-    }
-
-    @Test("Alice pays for a QuotePay with USDC she has borrowed")
-    func testBorrowPayFromBorrow() async throws {
-        try await testAcceptanceTests(
-            test: .init(
-                given: [
-                    .tokenBalance(.alice, .amt(10, .link), .ethereum),
-                    .quote(
-                        .custom(
-                            quoteId: Hex(
-                                "0x00000000000000000000000000000000000000000000000000000000000000CC"
-                            ),
-                            prices: Dictionary(
-                                uniqueKeysWithValues: Token.knownCases.map { token in
-                                    (token, token.defaultUsdPrice)
-                                }
-                            ),
-                            fees: [.ethereum: 1.5]
-                        )
-                    ),
-                ],
-                when: .cometBorrow(
-                    from: .alice,
-                    market: .cusdcv3,
-                    borrowAmount: .amt(2, .usdc),
-                    collateralAmounts: [.amt(1, .link)],
-                    on: .ethereum
-                ),
-                expect: .success(
-                    .single(
-                        .multicall([
-                            .supplyMultipleAssetsAndBorrowFromComet(
-                                borrowAmount: .amt(2, .usdc),
-                                collateralAmounts: [.amt(1, .link)],
-                                market: .cusdcv3,
-                                network: .ethereum
-                            ),
-                            .quotePay(payment: .amt(1.5, .usdc), payee: .stax, quote: .basic),
-                        ], executionType: .immediate)
                     )
                 )
             )

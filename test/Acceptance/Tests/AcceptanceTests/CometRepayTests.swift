@@ -140,7 +140,7 @@ struct CometRepayTests {
         )
     }
 
-    @Test("Alice repays from withdrawal of collateral")
+    @Test("Alice repays and pays from withdrawn collateral")
     func testCometRepayPayFromWithdraw() async throws {
         try await testAcceptanceTests(
             test: .init(
