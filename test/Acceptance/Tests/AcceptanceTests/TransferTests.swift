@@ -12,7 +12,8 @@ let transferTests: [AcceptanceTest] = [
         expect: .success(
             .single(
                 .multicall([
-                    .transferErc20(tokenAmount: .amt(10, .usdc), recipient: .bob, network: .ethereum),
+                    .transferErc20(
+                        tokenAmount: .amt(10, .usdc), recipient: .bob, network: .ethereum),
                     .quotePay(payment: .amt(0.10, .usdc), payee: .stax, quote: .basic),
                 ])))
     ),
@@ -26,7 +27,8 @@ let transferTests: [AcceptanceTest] = [
         expect: .success(
             .single(
                 .multicall([
-                    .transferErc20(tokenAmount: .amt(10, .usdc), recipient: .bob, network: .arbitrum),
+                    .transferErc20(
+                        tokenAmount: .amt(10, .usdc), recipient: .bob, network: .arbitrum),
                     .quotePay(payment: .amt(0.04, .usdc), payee: .stax, quote: .basic),
                 ])))
     ),
@@ -40,7 +42,8 @@ let transferTests: [AcceptanceTest] = [
         expect: .success(
             .single(
                 .multicall([
-                    .transferErc20(tokenAmount: .amt(10, .usdc), recipient: .bob, network: .optimism),
+                    .transferErc20(
+                        tokenAmount: .amt(10, .usdc), recipient: .bob, network: .optimism),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                 ])))
     ),
@@ -101,7 +104,8 @@ let transferTests: [AcceptanceTest] = [
                     outputTokenAmount: .amt(48.5, .usdc)
                 ),
                 .multicall([
-                    .transferErc20(tokenAmount: .amt(98.44, .usdc), recipient: .bob, network: .arbitrum),
+                    .transferErc20(
+                        tokenAmount: .amt(98.44, .usdc), recipient: .bob, network: .arbitrum),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                 ]),
             ])
@@ -129,7 +133,7 @@ let transferTests: [AcceptanceTest] = [
     ),
     .init(
         name:
-        "Alice attempts to transfers 75 USDC to Bob on Arbitrum via Bridge but doesn't have all the quotes",
+            "Alice attempts to transfers 75 USDC to Bob on Arbitrum via Bridge but doesn't have all the quotes",
         given: [
             .tokenBalance(.alice, .amt(50, .usdc), .arbitrum),
             .tokenBalance(.alice, .amt(50, .usdc), .base),
@@ -143,7 +147,7 @@ let transferTests: [AcceptanceTest] = [
                         }
                     ),
                     fees: [
-                        .arbitrum: 0.04,
+                        .arbitrum: 0.04
                     ]
                 )
             ),
@@ -204,7 +208,10 @@ let transferTests: [AcceptanceTest] = [
                     // Amount in terms of ETH = 0.06 / 4000 = 0.000015
                     .quotePay(payment: .amt(0.000015, .weth), payee: .stax, quote: .basic),
                 ]),
-                .transferErc20(tokenAmount: .amt(0.3, .weth), recipient: .bob, network: .arbitrum),
+                .multicall([
+                    .wrapAsset(.eth),
+                    .transferErc20(tokenAmount: .amt(0.3, .weth), recipient: .bob, network: .arbitrum),
+                ]),
             ])
         )
     ),
@@ -227,7 +234,8 @@ let transferTests: [AcceptanceTest] = [
                 ),
                 .multicall([
                     // Bridge 100 -> 98 arrives on arbitrum - 0.06 quote pay -> 97.94 USDC transfer
-                    .transferErc20(tokenAmount: .amt(97.94, .usdc), recipient: .bob, network: .arbitrum),
+                    .transferErc20(
+                        tokenAmount: .amt(97.94, .usdc), recipient: .bob, network: .arbitrum),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                 ]),
             ])
@@ -235,7 +243,7 @@ let transferTests: [AcceptanceTest] = [
     ),
     .init(
         name:
-        "WIP: Alice repays 75 USDC of a 100 USDC borrow against 0.3 WETH on cUSDCv3 on Ethereum",
+            "WIP: Alice repays 75 USDC of a 100 USDC borrow against 0.3 WETH on cUSDCv3 on Ethereum",
         given: [
             .tokenBalance(.alice, .amt(0.5, .weth), .ethereum),
             .cometSupply(.alice, .amt(0.3, .weth), .cusdcv3, .ethereum),
@@ -253,7 +261,8 @@ let transferTests: [AcceptanceTest] = [
         )
     ),
     .init(
-        name: "Alice transfers MAX USDC (with uint256.max) to Bob on Arbitrum via Bridge, but some funds are unbridgeable",
+        name:
+            "Alice transfers MAX USDC (with uint256.max) to Bob on Arbitrum via Bridge, but some funds are unbridgeable",
         given: [
             .tokenBalance(.alice, .amt(50, .usdc), .arbitrum),
             .tokenBalance(.alice, .amt(50, .usdc), .base),
@@ -266,12 +275,13 @@ let transferTests: [AcceptanceTest] = [
                 // Only 50 USDC is transferred because the other 50 USDC is unbridgeable (bridge min is 51 USDC).
                 // Payment is made on Base, where there are unbridgeable funds
                 .transferErc20(tokenAmount: .amt(50, .usdc), recipient: .bob, network: .arbitrum),
-                .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic)
+                .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
             ])
         )
     ),
     .init(
-        name: "Alice transfers to Bob on Arbitrum via Bridge, with bridge amount adjusted to be the min bridge amount",
+        name:
+            "Alice transfers to Bob on Arbitrum via Bridge, with bridge amount adjusted to be the min bridge amount",
         given: [
             .tokenBalance(.alice, .amt(50, .usdc), .arbitrum),
             .tokenBalance(.alice, .amt(50, .usdc), .base),
@@ -281,7 +291,7 @@ let transferTests: [AcceptanceTest] = [
         when: .transfer(from: .alice, to: .bob, amount: .amt(50.1, .usdc), on: .arbitrum),
         expect: .success(
             .multi([
-                    .multicall([
+                .multicall([
                     .bridge(
                         bridge: "Across",
                         srcNetwork: .base,
@@ -292,18 +302,20 @@ let transferTests: [AcceptanceTest] = [
                     ),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                 ]),
-                .transferErc20(tokenAmount: .amt(50.1, .usdc), recipient: .bob, network: .arbitrum)
+                .transferErc20(tokenAmount: .amt(50.1, .usdc), recipient: .bob, network: .arbitrum),
             ])
         )
     ),
     .init(
-        name: "Alice transfers to Bob on Arbitrum via Bridge, when total paymentFees > unbridgeableAmount",
+        name:
+            "Alice transfers to Bob on Arbitrum via Bridge, when total paymentFees > unbridgeableAmount",
         given: [
             .tokenBalance(.alice, .amt(50, .usdc), .arbitrum),
             .tokenBalance(.alice, .amt(30, .usdc), .base),
             .quote(
                 .custom(
-                    quoteId: Hex("0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
                     prices: Dictionary(
                         uniqueKeysWithValues: Token.knownCases.map { token in
                             (token, token.defaultUsdPrice)
@@ -327,13 +339,15 @@ let transferTests: [AcceptanceTest] = [
         )
     ),
     .init(
-        name: "Alice transfers MAX to Bob on Arbitrum via Bridge, when total paymentFees > unbridgeableAmount",
+        name:
+            "Alice transfers MAX to Bob on Arbitrum via Bridge, when total paymentFees > unbridgeableAmount",
         given: [
             .tokenBalance(.alice, .amt(50, .usdc), .arbitrum),
             .tokenBalance(.alice, .amt(30, .usdc), .base),
             .quote(
                 .custom(
-                    quoteId: Hex("0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
                     prices: Dictionary(
                         uniqueKeysWithValues: Token.knownCases.map { token in
                             (token, token.defaultUsdPrice)
@@ -346,13 +360,14 @@ let transferTests: [AcceptanceTest] = [
         when: .transfer(from: .alice, to: .bob, amount: .max(.usdc), on: .arbitrum),
         expect: .success(
             .single(
-                    .multicall([
-                        // Only 10 USDC is available to transfer since payment has to be made on Arbitrum
-                        // due to unbridgeable funds on Base
-                        .transferErc20(tokenAmount: .amt(10, .usdc), recipient: .bob, network: .arbitrum),
-                        .quotePay(payment: .amt(40, .usdc), payee: .stax, quote: .basic)
+                .multicall([
+                    // Only 10 USDC is available to transfer since payment has to be made on Arbitrum
+                    // due to unbridgeable funds on Base
+                    .transferErc20(
+                        tokenAmount: .amt(10, .usdc), recipient: .bob, network: .arbitrum),
+                    .quotePay(payment: .amt(40, .usdc), payee: .stax, quote: .basic),
                 ])
             )
         )
-    )
+    ),
 ]
