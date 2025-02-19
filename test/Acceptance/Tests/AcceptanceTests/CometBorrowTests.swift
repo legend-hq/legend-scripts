@@ -46,8 +46,8 @@ let cometBorrowTests: [AcceptanceTest] = [
                     ),
                     .quotePay(
                         payment: .amt(0.1, .usdc), payee: .stax, quote: .basic
-                    ),
-                ])
+                    )
+                ], executionType: .immediate)
             )
         )
     ),
@@ -77,7 +77,7 @@ let cometBorrowTests: [AcceptanceTest] = [
                     .quotePay(
                         payment: .amt(0.1, .usdc), payee: .stax, quote: .basic
                     ),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -111,9 +111,10 @@ let cometBorrowTests: [AcceptanceTest] = [
                     borrowAmount: .amt(1, .usdt),
                     collateralAmounts: [.amt(1, .wbtc)],
                     market: .cusdcv3,
-                    network: .base
+                    network: .base,
+                    executionType: .immediate
                 ),
-                .quotePay(payment: .amt(1.1, .usdc), payee: .stax, quote: .basic),
+                .quotePay(payment: .amt(1.1, .usdc), payee: .stax, quote: .basic, executionType: .immediate),
             ])
         )
     ),
@@ -137,9 +138,10 @@ let cometBorrowTests: [AcceptanceTest] = [
                     borrowAmount: .amt(1, .usdt),
                     collateralAmounts: [.amt(1, .wbtc)],
                     market: .cusdcv3,
-                    network: .optimism
+                    network: .optimism,
+                    executionType: .immediate
                 ),
-                .quotePay(payment: .amt(0.16, .usdc), payee: .stax, quote: .basic),
+                .quotePay(payment: .amt(0.16, .usdc), payee: .stax, quote: .basic, executionType: .immediate),
             ])
         )
     ),
@@ -176,7 +178,7 @@ let cometBorrowTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(1.5, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -216,12 +218,13 @@ let cometBorrowTests: [AcceptanceTest] = [
                         outputTokenAmount: .amt(1.178, .usdc)
                     ),
                     .quotePay(payment: .amt(0.3, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .supplyMultipleAssetsAndBorrowFromComet(
                     borrowAmount: .amt(2, .usdc),
                     collateralAmounts: [.amt(1, .weth)],
                     market: .cusdcv3,
-                    network: .base
+                    network: .base,
+                    executionType: .contingent
                 ),
             ])
         ),
@@ -253,7 +256,7 @@ let cometBorrowTests: [AcceptanceTest] = [
                         network: .base
                     ),
                     .quotePay(payment: .init(fromWei: 5000000000000, ofToken: .weth), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),

@@ -29,50 +29,56 @@ enum Call: CustomStringConvertible, Equatable {
         srcNetwork: Network,
         destinationNetwork: Network,
         inputTokenAmount: TokenAmount,
-        outputTokenAmount: TokenAmount
+        outputTokenAmount: TokenAmount,
+        executionType: ExecutionType? = nil
     )
-    case claimCometRewards(cometRewards: [CometReward], comets: [Comet], accounts: [Account], network: Network)
+    case claimCometRewards(cometRewards: [CometReward], comets: [Comet], accounts: [Account], network: Network, executionType: ExecutionType? = nil)
     case claimMorphoRewards(
         distributors: [MorphoDistributor], accounts: [Account], rewardsClaimable: [TokenAmount],
-        proofs: [MorphoClaimProof], network: Network)
-    case transferErc20(tokenAmount: TokenAmount, recipient: Account, network: Network)
-    case supplyToComet(tokenAmount: TokenAmount, market: Comet, network: Network)
+        proofs: [MorphoClaimProof], network: Network, executionType: ExecutionType? = nil)
+    case transferErc20(tokenAmount: TokenAmount, recipient: Account, network: Network, executionType: ExecutionType? = nil)
+    case supplyToComet(tokenAmount: TokenAmount, market: Comet, network: Network, executionType: ExecutionType? = nil)
     case supplyMultipleAssetsAndBorrowFromComet(
         borrowAmount: TokenAmount,
         collateralAmounts: [TokenAmount],
         market: Comet,
-        network: Network
+        network: Network,
+        executionType: ExecutionType? = nil
     )
     case repayAndWithdrawMultipleAssetsFromComet(
         repayAmount: TokenAmount,
         collateralAmounts: [TokenAmount],
         market: Comet,
-        network: Network
+        network: Network,
+        executionType: ExecutionType? = nil
     )
-    case supplyToMorphoVault(tokenAmount: TokenAmount, vault: MorphoVault, network: Network)
-    case withdrawFromMorphoVault(tokenAmount: TokenAmount, vault: MorphoVault, network: Network)
+    case supplyToMorphoVault(tokenAmount: TokenAmount, vault: MorphoVault, network: Network, executionType: ExecutionType? = nil)
+    case withdrawFromMorphoVault(tokenAmount: TokenAmount, vault: MorphoVault, network: Network, executionType: ExecutionType? = nil)
     case swap(
         sellAmount: TokenAmount,
         buyAmount: TokenAmount,
         exchange: Exchange,
-        network: Network
+        network: Network,
+        executionType: ExecutionType? = nil
     )
-    case quotePay(payment: TokenAmount, payee: Account, quote: Quote)
+    case quotePay(payment: TokenAmount, payee: Account, quote: Quote, executionType: ExecutionType? = nil)
     case repayAndWithdrawCollateralFromMorpho(
         repayAmount: TokenAmount,
         collateralAmount: TokenAmount,
         market: Morpho,
-        network: Network
+        network: Network,
+        executionType: ExecutionType? = nil
     )
     case supplyCollateralAndBorrowFromMorpho(
         borrowAmount: TokenAmount,
         collateralAmount: TokenAmount,
         market: Morpho,
-        network: Network
+        network: Network,
+        executionType: ExecutionType? = nil
     )
-    case multicall(_ calls: [Call])
-    case withdrawFromComet(tokenAmount: TokenAmount, market: Comet, network: Network)
-    case wrapAsset(_ token: Token)
+    case multicall(_ calls: [Call], executionType: ExecutionType? = nil)
+    case withdrawFromComet(tokenAmount: TokenAmount, market: Comet, network: Network, executionType: ExecutionType? = nil)
+    case wrapAsset(_ token: Token, executionType: ExecutionType? = nil)
     case unknownFunctionCall(String, String, ABI.Value)
     case unknownScriptCall(EthAddress, Hex)
 
@@ -86,7 +92,10 @@ enum Call: CustomStringConvertible, Equatable {
         ("ApproveAndSwap", ApproveAndSwap.creationCode, ApproveAndSwap.functions),
     ]
 
-    static func tryDecodeCall(scriptAddress: EthAddress, calldata: Hex, network: Network) -> Call {
+    static func tryDecodeCall(scriptAddress: EthAddress, calldata: Hex, network: Network, executionType: ExecutionType, isNestedCall: Bool = false) -> Call {
+        // We only attach execution type to the outermost call on each chain
+        let executionTypeForCall = isNestedCall ? nil : executionType;
+
         if scriptAddress == getScriptAddress(AcrossActions.creationCode) {
             if let (
                 _,
@@ -107,7 +116,8 @@ enum Call: CustomStringConvertible, Equatable {
                         amount: depositV3Params.outputAmount,
                         network: Network.fromChainId(BigInt(depositV3Params.destinationChainId)),
                         address: depositV3Params.outputToken
-                    )
+                    ),
+                    executionType: executionTypeForCall
                 )
             }
         }
@@ -121,7 +131,8 @@ enum Call: CustomStringConvertible, Equatable {
                         amount: amount, network: network, address: token
                     ),
                     recipient: Account.from(address: recipient),
-                    network: network
+                    network: network,
+                    executionType: executionTypeForCall
                 )
             }
         }
@@ -135,7 +146,8 @@ enum Call: CustomStringConvertible, Equatable {
                         amount: quotedAmount, network: network, address: paymentToken
                     ),
                     payee: Account.from(address: payee),
-                    quote: Quote.findQuote(quoteId: quoteId, prices: [:], fees: [:])
+                    quote: Quote.findQuote(quoteId: quoteId, prices: [:], fees: [:]),
+                    executionType: executionTypeForCall
                 )
             }
         }
@@ -143,9 +155,9 @@ enum Call: CustomStringConvertible, Equatable {
         if scriptAddress == getScriptAddress(Multicall.creationCode) {
             if let (callContracts, callDatas) = try? Multicall.runDecode(input: calldata) {
                 let calls = zip(callContracts, callDatas).map {
-                    Call.tryDecodeCall(scriptAddress: $0, calldata: $1, network: network)
+                    Call.tryDecodeCall(scriptAddress: $0, calldata: $1, network: network, executionType: executionType, isNestedCall: true)
                 }
-                return .multicall(calls)
+                return .multicall(calls, executionType: executionTypeForCall)
             }
         }
 
@@ -161,7 +173,8 @@ enum Call: CustomStringConvertible, Equatable {
                     accounts: accounts.map {account in
                         Account.from(address: account)
                     },
-                    network: network
+                    network: network,
+                    executionType: executionTypeForCall
                 )
             }
         }
@@ -173,7 +186,8 @@ enum Call: CustomStringConvertible, Equatable {
                         amount: amount, network: network, address: asset
                     ),
                     market: Comet.from(network: network, address: comet),
-                    network: network
+                    network: network,
+                    executionType: executionTypeForCall
                 )
             } else if let (comet, to, asset, amount) = try? CometSupplyActions.supplyToDecode(
                 input: calldata)
@@ -197,7 +211,8 @@ enum Call: CustomStringConvertible, Equatable {
                         amount: amount, network: network, address: asset
                     ),
                     market: Comet.from(network: network, address: comet),
-                    network: network
+                    network: network,
+                    executionType: executionTypeForCall
                 )
             }
         }
@@ -210,7 +225,8 @@ enum Call: CustomStringConvertible, Equatable {
                     repayAmount: Token.getTokenAmount(amount: repayAmount, network: network, address: baseAsset),
                     collateralAmounts: collateralAmounts,
                     market: Comet.from(network: network, address: comet),
-                    network: network
+                    network: network,
+                    executionType: executionTypeForCall
                 )
             }
         }
@@ -222,7 +238,8 @@ enum Call: CustomStringConvertible, Equatable {
                     borrowAmount: Token.getTokenAmount(amount: borrowAmount, network: network, address: baseAsset),
                     collateralAmounts: collateralAmounts,
                     market: Comet.from(network: network, address: comet),
-                    network: network
+                    network: network,
+                    executionType: executionTypeForCall
                 )
             }
         }
@@ -236,7 +253,8 @@ enum Call: CustomStringConvertible, Equatable {
                     borrowAmount: TokenAmount(fromWei: borrowTokenAmount, ofToken: borrowToken),
                     collateralAmount: TokenAmount(fromWei: collateralTokenAmount, ofToken: collateralToken),
                     market: Morpho(collateralToken: collateralToken, borrowToken: borrowToken),
-                    network: network
+                    network: network,
+                    executionType: executionTypeForCall
                 )
             } else if let (_, marketParams, repayAmount, withdrawAmount) = try? MorphoActions.repayAndWithdrawCollateralDecode(input: calldata) {
                 let repayToken = Token.from(network: network, address: marketParams.loanToken)
@@ -246,7 +264,8 @@ enum Call: CustomStringConvertible, Equatable {
                     repayAmount: TokenAmount(fromWei: repayAmount, ofToken: repayToken),
                     collateralAmount: TokenAmount(fromWei: withdrawAmount, ofToken: collateralToken),
                     market: Morpho(collateralToken: collateralToken, borrowToken: repayToken),
-                    network: network
+                    network: network,
+                    executionType: executionTypeForCall
                 )
             }
         }
@@ -269,7 +288,8 @@ enum Call: CustomStringConvertible, Equatable {
                     proofs: proofs.map { proof in
                         MorphoClaimProof.from(proof: proof)
                     },
-                    network: network
+                    network: network,
+                    executionType: executionTypeForCall
                 )
             }
         }
@@ -279,7 +299,8 @@ enum Call: CustomStringConvertible, Equatable {
                 return .supplyToMorphoVault(
                     tokenAmount: Token.getTokenAmount(amount: amount, network: network, address: asset),
                     vault: MorphoVault.from(network: network, address: vault),
-                    network: network
+                    network: network,
+                    executionType: executionTypeForCall
                 )
             } else if let (vaultAddress, amount) = try? MorphoVaultActions.withdrawDecode(input: calldata) {
                 let vault = MorphoVault.from(network: network, address: vaultAddress);
@@ -324,14 +345,15 @@ enum Call: CustomStringConvertible, Equatable {
                         address: to,
                         data: data
                     ),
-                    network: network
+                    network: network,
+                    executionType: executionTypeForCall
                 )
             }
         }
 
         if scriptAddress == getScriptAddress(WrapperActions.creationCode) {
             if let _ = try? WrapperActions.wrapAllETHDecode(input: calldata) {
-                return .wrapAsset(.eth)
+                return .wrapAsset(.eth, executionType: executionTypeForCall)
             }
         }
 
@@ -349,56 +371,57 @@ enum Call: CustomStringConvertible, Equatable {
 
     var description: String {
         switch self {
-        case let .bridge(bridge, chainId, destinationChainId, inputTokenAmount, outputTokenAmount):
+        case let .bridge(bridge, chainId, destinationChainId, inputTokenAmount, outputTokenAmount, executionType):
             return
-                "bridge(\(bridge), \(inputTokenAmount.amount) \(inputTokenAmount.token.symbol) to receive \(outputTokenAmount.amount) \(outputTokenAmount.token.symbol) from \(chainId.description) to \(destinationChainId.description))"
-        case let .claimCometRewards(cometRewards, comets, accounts, network):
+                "bridge(\(bridge), \(inputTokenAmount.amount) \(inputTokenAmount.token.symbol) to receive \(outputTokenAmount.amount) \(outputTokenAmount.token.symbol) from \(chainId.description) to \(destinationChainId.description))\(executionTypeDescription(executionType))"
+        case let .claimCometRewards(cometRewards, comets, accounts, network, executionType):
             return
-                "claimCometRewards(claiming from \(cometRewards.map { $0.description }.joined(separator: ", ")) for \(comets.map { $0.description }.joined(separator: ", ")) for \(accounts.map { $0.description }.joined(separator: ", ")) on \(network.description))"
-        case let .claimMorphoRewards(distributors, accounts, rewardsClaimable, proofs, network):
+                "claimCometRewards(claiming from \(cometRewards.map { $0.description }.joined(separator: ", ")) for \(comets.map { $0.description }.joined(separator: ", ")) for \(accounts.map { $0.description }.joined(separator: ", ")) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .claimMorphoRewards(distributors, accounts, rewardsClaimable, proofs, network, executionType):
             return
-                "claimMorphoRewards(claiming \(rewardsClaimable.map { $0.token.symbol }.joined(separator: ", ")) from \(distributors.map { $0.description }.joined(separator: ", ")) for \(accounts.map { $0.description }.joined(separator: ", ")) with proofs \(proofs.map { $0.description }.joined(separator: ", ")) on \(network.description))"
-        case let .transferErc20(tokenAmount, recipient, network):
+                "claimMorphoRewards(claiming \(rewardsClaimable.map { $0.token.symbol }.joined(separator: ", ")) from \(distributors.map { $0.description }.joined(separator: ", ")) for \(accounts.map { $0.description }.joined(separator: ", ")) with proofs \(proofs.map { $0.description }.joined(separator: ", ")) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .transferErc20(tokenAmount, recipient, network, executionType):
             return
-                "transferErc20(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(recipient.description) on \(network.description))"
-        case let .quotePay(payment, payee, quoteId):
+                "transferErc20(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(recipient.description) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .quotePay(payment, payee, quoteId, executionType):
             return
-                "quotePay(\(payment.amount) \(payment.token.symbol) to \(payee.description), quoteId: \(quoteId))"
-        case let .supplyToComet(tokenAmount, market, network):
+                "quotePay(\(payment.amount) \(payment.token.symbol) to \(payee.description), quoteId: \(quoteId))\(executionTypeDescription(executionType))"
+        case let .supplyToComet(tokenAmount, market, network, executionType):
             return
-                "supplyToComet(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(market.description) on \(network.description))"
-        case let .supplyMultipleAssetsAndBorrowFromComet(borrowAmount, collateralAmounts, market, network):
+                "supplyToComet(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(market.description) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .supplyMultipleAssetsAndBorrowFromComet(borrowAmount, collateralAmounts, market, network, executionType):
             let collateralsString = collateralAmounts.map { collateralAmount in
                 "\(collateralAmount.amount) \(collateralAmount.token.symbol)"
             }.joined(separator: ",")
-            return "supplyMultipleAssetsAndBorrowFromComet(supply [\(collateralsString)] and borrow \(borrowAmount.amount) \(borrowAmount.token.symbol) from \(market.description) on \(network.description) )"
+            return "supplyMultipleAssetsAndBorrowFromComet(supply [\(collateralsString)] and borrow \(borrowAmount.amount) \(borrowAmount.token.symbol) from \(market.description) on \(network.description))\(executionTypeDescription(executionType))"
         case let .repayAndWithdrawMultipleAssetsFromComet(
             repayAmount,
             collateralAmounts,
             market,
-            network
+            network,
+            executionType
         ):
             let withdrawString = collateralAmounts.map { collateralAmount in
                 "\(collateralAmount.amount) \(collateralAmount.token.symbol)"
             }.joined(separator: ",")
-            return "repayAndWithdrawMultipleAssetsFromComet(repay \(repayAmount.amount) \(repayAmount.token.symbol), and withdraw [\(withdrawString)] from \(market.description) on \(network.description))"
-        case let .withdrawFromComet(tokenAmount, market, network):
+            return "repayAndWithdrawMultipleAssetsFromComet(repay \(repayAmount.amount) \(repayAmount.token.symbol), and withdraw [\(withdrawString)] from \(market.description) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .withdrawFromComet(tokenAmount, market, network, executionType):
             return
-                "withdrawFromComet(\(tokenAmount.amount) \(tokenAmount.token.symbol) from \(market.description) on \(network.description))"
-        case let .supplyToMorphoVault(tokenAmount, vault, network):
-            return "supplyToMorphoVault(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(vault.description) on \(network.description))"
-        case let .withdrawFromMorphoVault(tokenAmount, vault, network):
-            return "withdrawFromMorphoVault(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(vault.description) on \(network.description))"
-        case let .swap(sellAmount, buyAmount, _, network):
-            return "swap(\(sellAmount.amount) \(sellAmount.token.symbol) for \(buyAmount.amount) \(buyAmount.token.symbol) on \(network.description))"
-        case let .multicall(calls):
-            return "multicall(\(calls.map { $0.description }.joined(separator: ", ")))"
-        case let .wrapAsset(token):
-            return "wrapAsset(\(token.symbol))"
-        case let .repayAndWithdrawCollateralFromMorpho(repayAmount, collateralAmount, market, network):
-            return "repayAndWithdrawCollateralFromMorpho(repay \(repayAmount.amount) \(repayAmount.token.symbol), withdraw \(collateralAmount.amount) \(collateralAmount.token.symbol) from \(market.description) on \(network.description))"
-        case let .supplyCollateralAndBorrowFromMorpho(borrowAmount, collateralAmount, market, network):
-            return "supplyCollateralAndBorrowFromMorpho(borrow \(borrowAmount.amount) \(borrowAmount.token.symbol), supply \(collateralAmount.amount) \(collateralAmount.token.symbol) from \(market.description) on \(network.description))"
+                "withdrawFromComet(\(tokenAmount.amount) \(tokenAmount.token.symbol) from \(market.description) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .supplyToMorphoVault(tokenAmount, vault, network, executionType):
+            return "supplyToMorphoVault(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(vault.description) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .withdrawFromMorphoVault(tokenAmount, vault, network, executionType):
+            return "withdrawFromMorphoVault(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(vault.description) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .swap(sellAmount, buyAmount, _, network, executionType):
+            return "swap(\(sellAmount.amount) \(sellAmount.token.symbol) for \(buyAmount.amount) \(buyAmount.token.symbol) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .multicall(calls, executionType):
+            return "multicall(\(calls.map { $0.description }.joined(separator: ", ")))\(executionTypeDescription(executionType))"
+        case let .wrapAsset(token, executionType):
+            return "wrapAsset(\(token.symbol))\(executionTypeDescription(executionType))"
+        case let .repayAndWithdrawCollateralFromMorpho(repayAmount, collateralAmount, market, network, executionType):
+            return "repayAndWithdrawCollateralFromMorpho(repay \(repayAmount.amount) \(repayAmount.token.symbol), withdraw \(collateralAmount.amount) \(collateralAmount.token.symbol) from \(market.description) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .supplyCollateralAndBorrowFromMorpho(borrowAmount, collateralAmount, market, network, executionType):
+            return "supplyCollateralAndBorrowFromMorpho(borrow \(borrowAmount.amount) \(borrowAmount.token.symbol), supply \(collateralAmount.amount) \(collateralAmount.token.symbol) from \(market.description) on \(network.description))\(executionTypeDescription(executionType))"
         case let .unknownFunctionCall(name, function, value):
             return "unknownFunctionCall(\(name), \(function), \(value))"
         case let .unknownScriptCall(scriptSource, calldata):
@@ -408,12 +431,16 @@ enum Call: CustomStringConvertible, Equatable {
 
     var descriptionExt: String {
         switch self {
-        case let .multicall(calls):
+        case let .multicall(calls, executionType):
             return
-                "multicall:\n\(calls.map { "\n\t\t\t- \($0.descriptionExt)" }.joined(separator: "\n"))\n"
+                "multicall\(executionTypeDescription(executionType)):\n\(calls.map { "\n\t\t\t- \($0.descriptionExt)" }.joined(separator: "\n"))\n"
         default:
             return description
         }
+    }
+
+    func executionTypeDescription(_ executionType: ExecutionType?) -> String {
+        return executionType != nil ? " [Execution type: \(executionType!.description)]" : ""
     }
 }
 
@@ -894,6 +921,44 @@ enum Exchange: Hashable, Equatable {
             return .updatedZeroEx
         case _:
             return .unknownExchange(address, data)
+        }
+    }
+}
+
+enum ExecutionType: Hashable, Equatable {
+    case immediate
+    case delayed
+    case recurrent
+    case contingent
+    case unknownExecutionType(String)
+
+    var description: String {
+        switch self {
+        case .immediate:
+            return "Immediate"
+        case .delayed:
+            return "Delayed"
+        case .recurrent:
+            return "Recurrent"
+        case .contingent:
+            return "Contingent"
+        case let .unknownExecutionType(value):
+            return value
+        }
+    }
+
+    static func from(executionType: String) -> ExecutionType {
+        switch executionType {
+        case "IMMEDIATE":
+            return .immediate
+        case "DELAYED":
+            return .delayed
+        case "RECURRENT":
+            return .recurrent
+        case "CONTINGENT":
+            return .contingent
+        case _:
+            return .unknownExecutionType(executionType)
         }
     }
 }
@@ -1863,8 +1928,10 @@ func customFatalError(_ message: String, file: String = #file, line: Int = #line
 func buildResultToCalls(builderResult: QuarkBuilder.QuarkBuilderBase.BuilderResult) -> [Call] {
     return zip(builderResult.quarkOperations, builderResult.actions).map { operation, action in
         Call.tryDecodeCall(
-            scriptAddress: operation.scriptAddress, calldata: operation.scriptCalldata,
-            network: Network.fromChainId(BigInt(action.chainId))
+            scriptAddress: operation.scriptAddress,
+            calldata: operation.scriptCalldata,
+            network: Network.fromChainId(BigInt(action.chainId)),
+            executionType: ExecutionType.from(executionType: action.executionType)
         )
     }
 }
