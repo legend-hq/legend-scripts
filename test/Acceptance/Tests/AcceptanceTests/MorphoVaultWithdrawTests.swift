@@ -24,7 +24,7 @@ let morphoVaultWithdrawTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -50,7 +50,7 @@ let morphoVaultWithdrawTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -98,7 +98,7 @@ let morphoVaultWithdrawTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),

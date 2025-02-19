@@ -27,6 +27,9 @@ library QuarkOperationHelper {
     ) internal pure returns (IQuarkWallet.QuarkOperation[] memory, Actions.Action[] memory) {
         if (quarkOperations.length != actions.length) revert Errors.BadData();
 
+        // First see if there are any bridge operations since that will affect the `Action.executionType` later on
+        bool hasBridgeOperation = containsBridgeOperation(actions);
+
         // Group operations and actions by chain id
         HashMap.Map memory groupedQuarkOperations = HashMap.newMap();
         HashMap.Map memory groupedActions = HashMap.newMap();
@@ -72,6 +75,9 @@ library QuarkOperationHelper {
                     List.toQuarkOperationArray(groupedQuarkOperationsList), List.toActionArray(groupedActionsList)
                 );
             }
+
+            // Update the execution type based on the presence of bridge operations in the mix
+            mergedActions[i].executionType = getExecutionType(mergedActions[i], hasBridgeOperation);
         }
 
         return (mergedQuarkOperations, mergedActions);
@@ -130,6 +136,30 @@ library QuarkOperationHelper {
         });
 
         return (mergedQuarkOperation, primaryAction);
+    }
+
+    function containsBridgeOperation(Actions.Action[] memory actions) internal pure returns (bool) {
+        bool hasBridge;
+        for (uint256 i = 0; i < actions.length; ++i) {
+            if (Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_BRIDGE)) {
+                hasBridge = true;
+                break;
+            }
+        }
+        return hasBridge;
+    }
+
+    function getExecutionType(Actions.Action memory action, bool hasBridgeOperation)
+        internal
+        pure
+        returns (string memory)
+    {
+        string memory executionType = action.executionType;
+        // TODO: Should we ignore recurrent operations as well?
+        if (hasBridgeOperation && !Strings.stringEq(action.actionType, Actions.ACTION_TYPE_BRIDGE)) {
+            executionType = Actions.EXECUTION_TYPE_CONTINGENT;
+        }
+        return executionType;
     }
 
     function wrapOperationsWithTokenPayment(

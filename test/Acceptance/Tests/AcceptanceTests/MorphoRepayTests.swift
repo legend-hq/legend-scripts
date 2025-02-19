@@ -77,7 +77,7 @@ let morphoRepayTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -106,7 +106,7 @@ let morphoRepayTests: [AcceptanceTest] = [
                         network: .base
                     ),
                     .quotePay(payment: .amt(0.02, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -133,7 +133,7 @@ let morphoRepayTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -178,12 +178,13 @@ let morphoRepayTests: [AcceptanceTest] = [
                     ),
                     // one mainnet operation (0.1) + one base operation (0.2)
                     .quotePay(payment: .amt(0.3, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .repayAndWithdrawCollateralFromMorpho(
                     repayAmount: .amt(2, .usdc),
                     collateralAmount: .amt(0, .weth),
                     market: .morpho(.weth, .usdc),
-                    network: .base
+                    network: .base,
+                    executionType: .contingent
                 )
             ])
         )
@@ -211,7 +212,7 @@ let morphoRepayTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -261,12 +262,13 @@ let morphoRepayTests: [AcceptanceTest] = [
                     ),
                     // one mainnet operation (0.1) + one base operation (0.1)
                     .quotePay(payment: .amt(0.2, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .repayAndWithdrawCollateralFromMorpho(
                     repayAmount: .max(.usdc),
                     collateralAmount: .amt(0, .weth),
                     market: .morpho(.weth, .usdc),
-                    network: .base
+                    network: .base,
+                    executionType: .contingent
                 )
             ])
         )
@@ -295,7 +297,7 @@ let morphoRepayTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     )

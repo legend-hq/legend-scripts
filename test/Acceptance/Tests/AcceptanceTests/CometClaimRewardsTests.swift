@@ -14,12 +14,12 @@ let cometClaimRewardsTests: [AcceptanceTest] = [
         ),
         expect: .success(
             .multi([
-                .claimCometRewards(cometRewards: [.wethReward], comets: [.cwethv3], accounts: [.alice], network: .ethereum),
+                .claimCometRewards(cometRewards: [.wethReward], comets: [.cwethv3], accounts: [.alice], network: .ethereum, executionType: .immediate),
                 .multicall([
                     .claimCometRewards(cometRewards: [.usdcReward], comets: [.cusdcv3], accounts: [.alice], network: .base),
                     .quotePay(
                         payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             ])
         )
     ),
@@ -47,7 +47,7 @@ let cometClaimRewardsTests: [AcceptanceTest] = [
                     .claimCometRewards(cometRewards: [.usdcReward], comets: [.cusdcv3], accounts: [.alice], network: .ethereum),
                     .quotePay(
                         payment: .amt(0.5, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),

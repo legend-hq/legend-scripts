@@ -17,14 +17,15 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                     srcNetwork: .ethereum,
                     destinationNetwork: .base,
                     inputTokenAmount: .amt(3, .usdc),
-                    outputTokenAmount: .amt(1.97, .usdc)
+                    outputTokenAmount: .amt(1.97, .usdc),
+                    executionType: .immediate
                 ),
                 .multicall([
                     .supplyToMorphoVault(
                         tokenAmount: .amt(4.85, .usdc), vault: .usdc, network: .base
                     ),
                     .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .contingent),
             ])
         )
     ),
@@ -57,7 +58,8 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                     srcNetwork: .arbitrum,
                     destinationNetwork: .base,
                     inputTokenAmount: .amt(3, .usdc),
-                    outputTokenAmount: .amt(1.97, .usdc)
+                    outputTokenAmount: .amt(1.97, .usdc),
+                    executionType: .immediate
                 ),
                 .multicall([
                     .supplyToMorphoVault(
@@ -66,7 +68,7 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                     .quotePay(
                         // Slightly larger than 6 since quark builder adds a small buffer
                         payment: .amt(6, .degen), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .contingent),
             ])
         )
     ),
@@ -176,7 +178,7 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -211,7 +213,8 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                     srcNetwork: .base,
                     destinationNetwork: .ethereum,
                     inputTokenAmount: .amt(1.5, .usdc),
-                    outputTokenAmount: .amt(0.485, .usdc)
+                    outputTokenAmount: .amt(0.485, .usdc),
+                    executionType: .immediate
                 ),
                 .multicall([
                     .supplyToMorphoVault(
@@ -220,7 +223,7 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .contingent)
             ])
         )
     ),
@@ -248,7 +251,7 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -275,7 +278,7 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -306,11 +309,12 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                     ),
                     // .1 for mainnet operation + .02 for base operation
                     .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .supplyToMorphoVault(
                     tokenAmount: .amt(5, .usdc),
                     vault: .usdc,
-                    network: .base
+                    network: .base,
+                    executionType: .contingent
                 )
             ])
         )
@@ -346,7 +350,8 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                     srcNetwork: .ethereum,
                     destinationNetwork: .base,
                     inputTokenAmount: .amt(3, .usdc),
-                    outputTokenAmount: .amt(1.97, .usdc)
+                    outputTokenAmount: .amt(1.97, .usdc),
+                    executionType: .immediate
                 ),
                 .multicall([
                     .supplyToMorphoVault(
@@ -355,7 +360,7 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                         network: .base
                     ),
                     .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .contingent),
             ])
         )
     ),
@@ -404,7 +409,8 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                     srcNetwork: .ethereum,
                     destinationNetwork: .base,
                     inputTokenAmount: .amt(3, .usdc),
-                    outputTokenAmount: .amt(1.97, .usdc)
+                    outputTokenAmount: .amt(1.97, .usdc),
+                    executionType: .immediate
                 ),
                 .multicall([
                     .supplyToMorphoVault(
@@ -413,7 +419,7 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                         network: .base
                     ),
                     .quotePay(payment: .amt(0.6, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .contingent),
             ])
         )
     ),
@@ -457,11 +463,12 @@ let morphoVaultSupplyTests: [AcceptanceTest] = [
                         outputTokenAmount: .amt(2, .usdc)
                     ),
                     .quotePay(payment: .amt(0.6, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .supplyToMorphoVault(
                     tokenAmount: .amt(5, .usdc),
                     vault: .usdc,
-                    network: .base
+                    network: .base,
+                    executionType: .contingent
                 )
             ])
         )

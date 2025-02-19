@@ -25,7 +25,7 @@ let cometRepayTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -108,7 +108,7 @@ let cometRepayTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -135,7 +135,7 @@ let cometRepayTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
 
@@ -164,7 +164,7 @@ let cometRepayTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -192,7 +192,7 @@ let cometRepayTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -233,12 +233,13 @@ let cometRepayTests: [AcceptanceTest] = [
                         outputTokenAmount: .amt(2, .usdc)
                     ),
                     .quotePay(payment: .amt(0.3, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .repayAndWithdrawMultipleAssetsFromComet(
                     repayAmount: .amt(2, .usdc),
                     collateralAmounts: [.amt(1, .wbtc)],
                     market: .cusdcv3,
-                    network: .base
+                    network: .base,
+                    executionType: .contingent
                 ),
             ])
         )
@@ -281,12 +282,13 @@ let cometRepayTests: [AcceptanceTest] = [
                         outputTokenAmount: .amt(10.01, .usdc)
                     ),
                     .quotePay(payment: .amt(0.2, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .repayAndWithdrawMultipleAssetsFromComet(
                     repayAmount: .max(.usdc),
                     collateralAmounts: [],
                     market: .cusdcv3,
-                    network: .base
+                    network: .base,
+                    executionType: .contingent
                 ),
             ])
         )
@@ -324,7 +326,8 @@ let cometRepayTests: [AcceptanceTest] = [
                     srcNetwork: .ethereum,
                     destinationNetwork: .base,
                     inputTokenAmount: .amt(10, .usdc),
-                    outputTokenAmount: .amt(8.9, .usdc)
+                    outputTokenAmount: .amt(8.9, .usdc),
+                    executionType: .immediate
                 ),
                 .multicall([
                     .repayAndWithdrawMultipleAssetsFromComet(
@@ -334,7 +337,7 @@ let cometRepayTests: [AcceptanceTest] = [
                         network: .base
                     ),
                     .quotePay(payment: .amt(0.2, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .contingent),
             ])
         )
     ),

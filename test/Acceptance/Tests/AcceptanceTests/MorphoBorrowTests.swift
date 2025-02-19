@@ -59,7 +59,7 @@ let morphoBorrowTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -86,7 +86,7 @@ let morphoBorrowTests: [AcceptanceTest] = [
                         network: .base
                     ),
                     .quotePay(payment: .amt(0.02, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -113,7 +113,7 @@ let morphoBorrowTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -139,7 +139,7 @@ let morphoBorrowTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -187,9 +187,9 @@ let morphoBorrowTests: [AcceptanceTest] = [
         when: .payWith(
             currency: .wbtc,
             .morphoBorrow(
-                from: .alice, 
-                borrowAmount: .amt(1, .usdc), 
-                collateralAmount: .max(.wbtc), 
+                from: .alice,
+                borrowAmount: .amt(1, .usdc),
+                collateralAmount: .max(.wbtc),
                 on: .ethereum
             )
         ),
@@ -197,13 +197,13 @@ let morphoBorrowTests: [AcceptanceTest] = [
             .single(
                 .multicall([
                     .supplyCollateralAndBorrowFromMorpho(
-                        borrowAmount: .amt(1, .usdc), 
-                        collateralAmount: .init(fromWei: 499999900, ofToken: .wbtc), 
-                        market: .init(collateralToken: .wbtc, borrowToken: .usdc), 
+                        borrowAmount: .amt(1, .usdc),
+                        collateralAmount: .init(fromWei: 499999900, ofToken: .wbtc),
+                        market: .init(collateralToken: .wbtc, borrowToken: .usdc),
                         network: .ethereum
                     ),
                     .quotePay(payment: .init(fromWei: 100, ofToken: .wbtc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     )

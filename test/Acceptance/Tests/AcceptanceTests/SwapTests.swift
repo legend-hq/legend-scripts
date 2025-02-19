@@ -18,7 +18,8 @@ let swapTests: [AcceptanceTest] = [
                     srcNetwork: .ethereum,
                     destinationNetwork: .base,
                     inputTokenAmount: .amt(4_005.0, .usdc),
-                    outputTokenAmount: .amt(3_963.95, .usdc)
+                    outputTokenAmount: .amt(3_963.95, .usdc),
+                    executionType: .immediate
                 ),
                 .multicall([
                     .swap(
@@ -31,7 +32,7 @@ let swapTests: [AcceptanceTest] = [
                         network: .base
                     ),
                     .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .contingent),
             ])
         )
     ),
@@ -178,7 +179,7 @@ let swapTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -208,7 +209,7 @@ let swapTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -237,7 +238,7 @@ let swapTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -279,7 +280,7 @@ let swapTests: [AcceptanceTest] = [
                         network: .ethereum
                     ),
                     .quotePay(payment: .amt(5, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -311,12 +312,13 @@ let swapTests: [AcceptanceTest] = [
                         outputTokenAmount: .amt(1000, .usdc)
                     ),
                     .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .swap(
                     sellAmount: .amt(3000, .usdc),
                     buyAmount: .amt(1, .weth),
                     exchange: .zeroEx,
-                    network: .base
+                    network: .base,
+                    executionType: .contingent
                 )
             ])
         )
@@ -363,12 +365,13 @@ let swapTests: [AcceptanceTest] = [
                         outputTokenAmount: .amt(1000, .usdc)
                     ),
                     .quotePay(payment: .amt(6, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .swap(
                     sellAmount: .amt(3000, .usdc),
                     buyAmount: .amt(1, .weth),
                     exchange: .zeroEx,
-                    network: .base
+                    network: .base,
+                    executionType: .contingent
                 )
             ])
         )
@@ -397,10 +400,11 @@ let swapTests: [AcceptanceTest] = [
                     // We multiply by 0.99 to account for a 1% slippage buffer
                     buyAmount: .amt(1.5 * 0.99, .weth),
                     exchange: .updatedZeroEx,
-                    network: .base
+                    network: .base,
+                    executionType: .immediate
                 ),
                 // Payment is made on Ethereum, where there are unbridgeable funds
-                .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic)
+                .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic, executionType: .immediate)
             ])
         )
     ),
@@ -431,12 +435,13 @@ let swapTests: [AcceptanceTest] = [
                         outputTokenAmount: .amt(989, .usdc)
                     ),
                     .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .swap(
                     sellAmount: .amt(2000.1, .usdc),
                     buyAmount: .amt(1, .weth),
                     exchange: .zeroEx,
-                    network: .base
+                    network: .base,
+                    executionType: .contingent
                 )
             ])
         )

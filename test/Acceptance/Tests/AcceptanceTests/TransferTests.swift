@@ -15,7 +15,9 @@ let transferTests: [AcceptanceTest] = [
                     .transferErc20(
                         tokenAmount: .amt(10, .usdc), recipient: .bob, network: .ethereum),
                     .quotePay(payment: .amt(0.10, .usdc), payee: .stax, quote: .basic),
-                ])))
+                ], executionType: .immediate)
+            )
+        )
     ),
     .init(
         name: "Alice transfers 10 USDC to Bob on Arbitrum",
@@ -30,7 +32,9 @@ let transferTests: [AcceptanceTest] = [
                     .transferErc20(
                         tokenAmount: .amt(10, .usdc), recipient: .bob, network: .arbitrum),
                     .quotePay(payment: .amt(0.04, .usdc), payee: .stax, quote: .basic),
-                ])))
+                ], executionType: .immediate)
+            )
+        )
     ),
     .init(
         name: "Alice transfers 10 USDC to Bob on Optimism",
@@ -45,7 +49,9 @@ let transferTests: [AcceptanceTest] = [
                     .transferErc20(
                         tokenAmount: .amt(10, .usdc), recipient: .bob, network: .optimism),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
-                ])))
+                ], executionType: .immediate)
+            )
+        )
     ),
     .init(
         name: "Alice attempts transfers MAX USDC to Bob on Arbitrum",
@@ -101,13 +107,14 @@ let transferTests: [AcceptanceTest] = [
                     srcNetwork: .base,
                     destinationNetwork: .arbitrum,
                     inputTokenAmount: .amt(50, .usdc),
-                    outputTokenAmount: .amt(48.5, .usdc)
+                    outputTokenAmount: .amt(48.5, .usdc),
+                    executionType: .immediate
                 ),
                 .multicall([
                     .transferErc20(
                         tokenAmount: .amt(98.44, .usdc), recipient: .bob, network: .arbitrum),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .contingent),
             ])
         )
     ),
@@ -178,8 +185,8 @@ let transferTests: [AcceptanceTest] = [
                         outputTokenAmount: .amt(48.00, .usdc)
                     ),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
-                ]),
-                .transferErc20(tokenAmount: .amt(98, .usdc), recipient: .bob, network: .arbitrum),
+                ], executionType: .immediate),
+                .transferErc20(tokenAmount: .amt(98, .usdc), recipient: .bob, network: .arbitrum, executionType: .contingent),
             ])
         )
     ),
@@ -207,11 +214,11 @@ let transferTests: [AcceptanceTest] = [
                     // Total quote = 0.02 + 0.04 = 0.06
                     // Amount in terms of ETH = 0.06 / 4000 = 0.000015
                     .quotePay(payment: .amt(0.000015, .weth), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .multicall([
                     .wrapAsset(.eth),
                     .transferErc20(tokenAmount: .amt(0.3, .weth), recipient: .bob, network: .arbitrum),
-                ]),
+                ], executionType: .contingent),
             ])
         )
     ),
@@ -230,14 +237,15 @@ let transferTests: [AcceptanceTest] = [
                     srcNetwork: .base,
                     destinationNetwork: .arbitrum,
                     inputTokenAmount: .amt(100, .usdc),
-                    outputTokenAmount: .amt(98.00, .usdc)
+                    outputTokenAmount: .amt(98.00, .usdc),
+                    executionType: .immediate
                 ),
                 .multicall([
                     // Bridge 100 -> 98 arrives on arbitrum - 0.06 quote pay -> 97.94 USDC transfer
                     .transferErc20(
                         tokenAmount: .amt(97.94, .usdc), recipient: .bob, network: .arbitrum),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .contingent),
             ])
         )
     ),
@@ -274,8 +282,8 @@ let transferTests: [AcceptanceTest] = [
             .multi([
                 // Only 50 USDC is transferred because the other 50 USDC is unbridgeable (bridge min is 51 USDC).
                 // Payment is made on Base, where there are unbridgeable funds
-                .transferErc20(tokenAmount: .amt(50, .usdc), recipient: .bob, network: .arbitrum),
-                .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
+                .transferErc20(tokenAmount: .amt(50, .usdc), recipient: .bob, network: .arbitrum, executionType: .immediate),
+                .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic, executionType: .immediate),
             ])
         )
     ),
@@ -301,8 +309,8 @@ let transferTests: [AcceptanceTest] = [
                         outputTokenAmount: .amt(0.395, .usdc)
                     ),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
-                ]),
-                .transferErc20(tokenAmount: .amt(50.1, .usdc), recipient: .bob, network: .arbitrum),
+                ], executionType: .immediate),
+                .transferErc20(tokenAmount: .amt(50.1, .usdc), recipient: .bob, network: .arbitrum, executionType: .contingent),
             ])
         )
     ),
@@ -366,7 +374,7 @@ let transferTests: [AcceptanceTest] = [
                     .transferErc20(
                         tokenAmount: .amt(10, .usdc), recipient: .bob, network: .arbitrum),
                     .quotePay(payment: .amt(40, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),

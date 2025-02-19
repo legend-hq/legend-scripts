@@ -13,7 +13,9 @@ let quotePayTests: [AcceptanceTest] = [
                 .multicall([
                     .transferErc20(tokenAmount: .amt(10, .usdc), recipient: .bob, network: .ethereum),
                     .quotePay(payment: .amt(0.10, .usdc), payee: .stax, quote: .basic),
-                ])))
+                ], executionType: .immediate)
+            )
+        )
     ),
     .init(
         name: "Alice pays with QuotePay using WETH wrapped from ETH",
@@ -32,7 +34,9 @@ let quotePayTests: [AcceptanceTest] = [
                     .transferErc20(tokenAmount: .amt(10, .usdc), recipient: .bob, network: .ethereum),
                     .wrapAsset(.eth),
                     .quotePay(payment: .amt(0.000025, .weth), payee: .stax, quote: .basic),
-                ])))
+                ], executionType: .immediate)
+            )
+        )
     ),
     .init(
         name: "Alice performs action using WETH while also paying with QuotePay using WETH (should wrap only once)",
@@ -50,7 +54,9 @@ let quotePayTests: [AcceptanceTest] = [
                     .wrapAsset(.eth),
                     .transferErc20(tokenAmount: .amt(0.5, .weth), recipient: .bob, network: .ethereum),
                     .quotePay(payment: .amt(0.000025, .weth), payee: .stax, quote: .basic),
-                ])))
+                ], executionType: .immediate)
+            )
+        )
     ),
     .init(
         name: "Alice does not have enough ETH to cover QuotePay cost after spending it on an action",
