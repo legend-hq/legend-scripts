@@ -90,6 +90,7 @@ library Actions {
         string assetSymbol;
         uint256 amount;
         uint256 srcChainId;
+        uint256 srcBalance;
         address sender;
         uint256 destinationChainId;
         address recipient;
@@ -500,6 +501,8 @@ library Actions {
          */
         List.DynamicArray memory actions = List.newList();
         List.DynamicArray memory quarkOperations = List.newList();
+        IQuarkWallet.QuarkOperation memory wrapOrUnwrapOperation;
+        Actions.Action memory wrapOrUnwrapAction;
 
         // Note: Assumes that the asset uses the same # of decimals on each chain
         uint256 balanceOnDstChain =
@@ -541,15 +544,51 @@ library Actions {
                 continue;
             }
 
+            string memory counterpartSymbol =
+                TokenWrapper.getWrapperCounterpartSymbol(srcChainAccounts.chainId, bridgeInfo.assetSymbol);
+
             Accounts.AssetPositions memory srcAssetPositions =
                 Accounts.findAssetPositions(bridgeInfo.assetSymbol, srcChainAccounts.assetPositionsList);
             Accounts.AccountBalance[] memory srcAccountBalances = srcAssetPositions.accountBalances;
+
+            Accounts.AssetPositions memory srcCounterpartAssetPositions =
+                Accounts.findAssetPositions(counterpartSymbol, srcChainAccounts.assetPositionsList);
+            Accounts.AccountBalance[] memory srcCounterpartAccountBalances =
+                srcCounterpartAssetPositions.accountBalances;
             // TODO: Make logic smarter. Currently, this uses a greedy algorithm.
             // e.g. Optimize by trying to bridge with the least amount of bridge operations
             for (uint256 j = 0; j < srcAccountBalances.length; ++j) {
-                uint256 amountToBridge = srcAccountBalances[j].balance >= amountLeftToBridge
-                    ? amountLeftToBridge
-                    : srcAccountBalances[j].balance;
+                uint256 counterpartBalance =
+                    Accounts.balanceForAccount(srcCounterpartAccountBalances, srcAccountBalances[j].account);
+                uint256 amountToBridge;
+
+                if (srcAccountBalances[j].balance >= amountLeftToBridge) {
+                    amountToBridge = amountLeftToBridge;
+                } else {
+                    if (counterpartBalance > 0) {
+                        (wrapOrUnwrapOperation, wrapOrUnwrapAction) = Actions.wrapOrUnwrapAsset(
+                            Actions.WrapOrUnwrapAsset({
+                                chainAccountsList: chainAccountsList,
+                                assetSymbol: counterpartSymbol,
+                                amountNeeded: counterpartBalance > amountToBridge ? amountToBridge : counterpartBalance,
+                                balanceOnChain: counterpartBalance,
+                                chainId: srcChainAccounts.chainId,
+                                sender: srcAccountBalances[j].account,
+                                blockTimestamp: bridgeInfo.blockTimestamp
+                            }),
+                            payment,
+                            false
+                        );
+
+                        List.addAction(actions, wrapOrUnwrapAction);
+                        List.addQuarkOperation(quarkOperations, wrapOrUnwrapOperation);
+                    }
+
+                    amountToBridge = srcAccountBalances[j].balance + counterpartBalance >= amountLeftToBridge
+                        ? amountLeftToBridge
+                        : srcAccountBalances[j].balance + counterpartBalance;
+                }
+
                 if (amountToBridge > 0) {
                     (
                         IQuarkWallet.QuarkOperation memory operation,
@@ -563,6 +602,7 @@ library Actions {
                             amount: amountToBridge,
                             // where it comes from
                             srcChainId: srcChainAccounts.chainId,
+                            srcBalance: srcAccountBalances[j].balance + counterpartBalance,
                             sender: srcAccountBalances[j].account,
                             // where it goes
                             destinationChainId: bridgeInfo.dstChainId,
@@ -731,14 +771,13 @@ library Actions {
         // If inputAmount exceeds the balance on chain, set the inputAmount to be the balance on chain.
         // However, if the balance on chain is less than the minDeposit, this means that a bridge is not
         // possible on this chain so we should skip bridging from it.
-        uint256 sumSrcBalance = Accounts.sumBalances(srcAssetPositions);
-        if (inputAmount > sumSrcBalance) {
-            if (minDeposit > sumSrcBalance) {
+        if (inputAmount > bridge.srcBalance) {
+            if (minDeposit > bridge.srcBalance) {
                 // Bridging is not possible
                 return (quarkOperation, action, 0, 0);
             } else {
-                inputAmount = sumSrcBalance;
-                outputAmount = sumSrcBalance * (1e18 - variableFeePct) / 1e18 - gasFee;
+                inputAmount = bridge.srcBalance;
+                outputAmount = bridge.srcBalance * (1e18 - variableFeePct) / 1e18 - gasFee;
             }
         }
 

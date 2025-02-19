@@ -48,7 +48,7 @@ let cometSupplyTests: [AcceptanceTest] = [
     ),
     .init(
         name:
-        "Alice supplies, but does not allow enough for quote pay (testCometSupplyInsufficientFunds)",
+            "Alice supplies, but does not allow enough for quote pay (testCometSupplyInsufficientFunds)",
         given: [.quote(.basic)],
         when: .cometSupply(from: .alice, market: .cusdcv3, amount: .amt(2, .usdc), on: .ethereum),
         expect: .revert(
@@ -172,6 +172,38 @@ let cometSupplyTests: [AcceptanceTest] = [
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
                 ])
             )
+        )
+    ),
+    .init(
+        name:
+            "Alice supplies ETH to Comet after bridging, paying via Quote Pay (testCometSupplyWithQuotePay)",
+        given: [
+            .tokenBalance(.alice, .amt(1, .usdc), .optimism),
+            .tokenBalance(.alice, .amt(1.5, .eth), .optimism),
+            .quote(.basic),
+            .acrossQuote(.amt(0.01, .eth), 0.01),
+        ],
+        when: .cometSupply(from: .alice, market: .cwethv3, amount: .amt(1, .weth), on: .base),
+        expect: .success(
+            .multi([
+                .multicall([
+                    .wrapAsset(.eth),
+                    .bridge(
+                        bridge: "Across",
+                        srcNetwork: .optimism,
+                        destinationNetwork: .base,
+                        inputTokenAmount: .amt(1.02, .weth),
+                        outputTokenAmount: .amt(1, .weth)
+                    ),
+                    .quotePay(payment: .amt(0.08, .usdc), payee: .stax, quote: .basic),
+                ]),
+                .multicall([
+                    .wrapAsset(.eth),
+                    .supplyToComet(
+                        tokenAmount: .amt(1, .weth), market: .cwethv3, network: .base
+                    )
+                ]),
+            ])
         )
     ),
 ]

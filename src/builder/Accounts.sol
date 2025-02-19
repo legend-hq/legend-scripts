@@ -480,4 +480,16 @@ library Accounts {
             }
         }
     }
+
+    function balanceForAccount(Accounts.AccountBalance[] memory accountBalances, address account)
+        internal
+        pure
+        returns (uint256 balance)
+    {
+        for (uint256 i = 0; i < accountBalances.length; ++i) {
+            if (accountBalances[i].account == account) {
+                return accountBalances[i].balance;
+            }
+        }
+    }
 }

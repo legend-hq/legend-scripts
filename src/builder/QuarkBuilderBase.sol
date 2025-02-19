@@ -23,7 +23,7 @@ import {List} from "src/builder/List.sol";
 import {HashMap} from "src/builder/HashMap.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.7.3";
+string constant QUARK_BUILDER_VERSION = "0.7.4";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -894,11 +894,16 @@ contract QuarkBuilderBase {
                 aggregateAssetBalance += Accounts.sumBalances(positions);
             }
 
+            string memory counterPartSymbol =
+                TokenWrapper.getWrapperCounterpartSymbol(chainAccountsList[i].chainId, assetSymbol);
+
             // If the asset has wrapper counterpart and can locally wrap/unwrap, accumulate the balance of the the counterpart
             // NOTE: Currently only at dst chain, and will ignore all the counterpart balance in other chains
             if (
-                chainAccountsList[i].chainId == chainId
-                    && TokenWrapper.hasWrapperContract(chainAccountsList[i].chainId, assetSymbol)
+                (
+                    chainAccountsList[i].chainId == chainId
+                        && TokenWrapper.hasWrapperContract(chainAccountsList[i].chainId, assetSymbol)
+                ) || BridgeRoutes.canBridge(chainAccountsList[i].chainId, chainId, counterPartSymbol)
             ) {
                 {
                     aggregateAssetBalance +=
