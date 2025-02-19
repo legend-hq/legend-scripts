@@ -23,7 +23,7 @@ import {List} from "src/builder/List.sol";
 import {HashMap} from "src/builder/HashMap.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.7.2";
+string constant QUARK_BUILDER_VERSION = "0.7.3";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -161,12 +161,6 @@ contract QuarkBuilderBase {
     struct MorphoRewardsClaimIntent {
         uint256 blockTimestamp;
         address claimer;
-        uint256 chainId;
-        address[] accounts;
-        uint256[] claimables;
-        address[] distributors;
-        address[] rewards;
-        bytes32[][] proofs;
         bool preferAcross;
         string paymentAssetSymbol;
     }
@@ -676,21 +670,16 @@ contract QuarkBuilderBase {
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_CLAIM_REWARDS)) {
             MorphoRewardsClaimIntent memory intent = abi.decode(actionIntent, (MorphoRewardsClaimIntent));
 
-            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.morphoClaimRewards(
+            (IQuarkWallet.QuarkOperation[] memory operations, Actions.Action[] memory actions) = Actions
+                .morphoClaimRewards(
                 Actions.MorphoClaimRewards({
                     chainAccountsList: chainAccountsList,
-                    accounts: intent.accounts,
                     blockTimestamp: intent.blockTimestamp,
-                    chainId: intent.chainId,
-                    claimables: intent.claimables,
-                    claimer: intent.claimer,
-                    distributors: intent.distributors,
-                    rewards: intent.rewards,
-                    proofs: intent.proofs
+                    claimer: intent.claimer
                 }),
                 payment
             );
-            return (Strings.OK, toList(operation), toList(action));
+            return (Strings.OK, operations, actions);
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_VAULT_SUPPLY)) {
             MorphoVaultSupplyIntent memory intent = abi.decode(actionIntent, (MorphoVaultSupplyIntent));
 

@@ -22,6 +22,7 @@ library Accounts {
         CometPositions[] cometPositions;
         MorphoPositions[] morphoPositions;
         MorphoVaultPositions[] morphoVaultPositions;
+        MorphoRewardDistribution[] morphoRewardDistributions;
     }
 
     struct QuarkSecret {
@@ -88,6 +89,14 @@ library Accounts {
     struct MorphoCollateralPosition {
         address[] accounts;
         uint256[] balances;
+    }
+
+    struct MorphoRewardDistribution {
+        address account;
+        address asset;
+        uint256 claimable;
+        address distributor;
+        bytes32[] proof;
     }
 
     struct MorphoVaultPositions {
