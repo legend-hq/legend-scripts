@@ -1817,9 +1817,7 @@ class Context {
         }
     }
 
-    func reifyMorphoRewardDistributions(network: Network) -> [QuarkBuilder.Accounts
-        .MorphoRewardDistribution]
-    {
+    func reifyMorphoRewardDistributions(network: Network) -> [QuarkBuilder.Accounts.MorphoRewardDistribution] {
         (morphoRewardDistributions[network] ?? [:]).flatMap { distributor, distributions in
             distributions.compactMap {
                 distribution -> QuarkBuilder.Accounts.MorphoRewardDistribution? in
