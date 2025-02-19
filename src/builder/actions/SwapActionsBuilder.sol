@@ -32,6 +32,7 @@ contract SwapActionsBuilder is QuarkBuilderBase {
         string[] memory assetSymbolOuts = new string[](1);
         assetSymbolOuts[0] = Accounts.findAssetPositions(intent.sellToken, intent.chainId, chainAccountsList).symbol;
 
+        // TODO: spits out balance diffs. can pass into subsequent call
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({

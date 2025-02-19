@@ -47,6 +47,7 @@ library TokenWrapper {
             underlyingToken: 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,
             wrappedSymbol: "WETH"
         });
+        // TODO: this was not there before, re-introduces
         pairs[3] = KnownWrapperTokenPair({
             chainId: 42161,
             wrapper: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,

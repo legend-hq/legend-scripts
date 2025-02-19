@@ -288,7 +288,10 @@ library Actions {
         uint256 chainId;
         address quarkAccount;
         string actionType;
-        bytes actionContext;
+        // TODO: if making this a list, we have to support it on the BE as well.
+        // or we just make a specific "swapAndSupply" action context
+        bytes[] actionContexts;
+        // TODO: remove if we make action contexts a list
         // The action context for a QuotePay, if one exists for this operation. Otherwise, empty bytes
         bytes quotePayActionContext;
         // One of the PaymentInfo.PAYMENT_METHOD_* constants.

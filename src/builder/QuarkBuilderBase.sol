@@ -232,6 +232,7 @@ contract QuarkBuilderBase {
     struct ActionIntent {
         address actor;
         uint256[] amountOuts;
+        // TODO: rename to tokens needed
         string[] assetSymbolOuts;
         string actionType;
         bytes intent;
@@ -239,6 +240,12 @@ contract QuarkBuilderBase {
         uint256 chainId;
         bool preferAcross;
     }
+
+    // TODO: will need to mark operations as immediate, contingent, etc.
+
+    // TODO: composable operations:
+    // buy and supply
+    // withdraw and supply
 
     /**
      * @dev Constructs Quark Operations and Actions for an action intent.
@@ -334,10 +341,13 @@ contract QuarkBuilderBase {
             }
         }
 
+        // TODO: we don't curretnly handle transferring assets between accounts to fund action. we only do that in bridging flow
+
         for (uint256 i = 0; i < actionIntent.assetSymbolOuts.length; ++i) {
             string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
             uint256 amountOnDst = HashMap.getOrDefaultUint256(amountsOnDst, abi.encode(assetSymbolOut), 0);
 
+            // TODO: we need to track assets in and assets out
             (IQuarkWallet.QuarkOperation[] memory wrapOrUnwrapOperations, Actions.Action[] memory wrapOrUnwrapActions) =
             constructWrapOrUnwrapActions({
                 chainAccountsList: chainAccountsList,
@@ -1255,6 +1265,7 @@ contract QuarkBuilderBase {
             // For Across, we're treating the output token as ETH since we'll cover WETH in the `wrapAllEth` action, below.
             // N.B. We will still treat the in-asset as ETH and reduce that balance on the source chain.
             string memory outAssetSymbol = bridgeActionContext.assetSymbol;
+            // TODO: may need to handle the ETH case as well, since we don't know if ETH or WETH is going to arrive on the destination
             if (
                 Strings.stringEqIgnoreCase(outAssetSymbol, "WETH")
                     && Strings.stringEqIgnoreCase(bridgeActionContext.bridgeType, Actions.BRIDGE_TYPE_ACROSS)
