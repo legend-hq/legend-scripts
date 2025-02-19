@@ -12,11 +12,11 @@ struct SwapTests {
                     .tokenBalance(.alice, .amt(4_005.0, .usdc), .base),
                     .quote(.basic),
                     .acrossQuote(.amt(1, .usdc), 0.01),
+                    .zeroExQuote(.amt(1.5, .weth), .updatedZeroEx, .base),
                 ],
                 when: .swap(
                     from: .alice, sellAmount: .max(.usdc), buyAmount: .amt(2.0, .weth),
-                    exchange: .zeroEx,
-                    on: .base),
+                    exchange: .zeroEx, on: .base),
                 expect: .success(
                     .multi([
                         .bridge(
@@ -29,9 +29,12 @@ struct SwapTests {
                         ),
                         .multicall([
                             .swap(
+                                // 4005+(4005*0.99-1)-0.12=7968.83
                                 sellAmount: .amt(7_968.83, .usdc),
-                                buyAmount: .amt(2.0, .weth),
-                                exchange: .zeroEx,
+                                // buyAmount and exchange are updated to reflect the new quote
+                                // We multiply by 0.99 to account for a 1% slippage buffer
+                                buyAmount: .amt(1.5 * 0.99, .weth),
+                                exchange: .updatedZeroEx,
                                 network: .base
                             ),
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
