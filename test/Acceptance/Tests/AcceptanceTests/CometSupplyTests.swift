@@ -253,7 +253,7 @@ struct CometSupplyTests {
     }
 
     @Test("Alice supplies ETH to Comet after bridging, paying via Quote Pay")
-    func testCometSupplyWithQuotePayAfterBridge() async throws {
+    func testCometSupplyAfterBridgeWithQuotePay() async throws {
         try await testAcceptanceTests(
             test: .init(
                 given: [
@@ -263,28 +263,26 @@ struct CometSupplyTests {
                     .acrossQuote(.amt(0.01, .eth), 0.01),
                 ],
                 when: .cometSupply(
-                    from: .alice, market: .cwethv3, amount: .amt(1, .weth), on: .base),
+                   from: .alice, market: .cwethv3, amount: .amt(1, .weth), on: .base),
                 expect: .success(
                     .multi([
-                        .multicall(
-                            [
-                                .wrapAsset(.eth),
-                                .bridge(
-                                    bridge: "Across",
-                                    srcNetwork: .optimism,
-                                    destinationNetwork: .base,
-                                    inputTokenAmount: .amt(1.02, .weth),
-                                    outputTokenAmount: .amt(1, .weth)
-                                ),
-                                .quotePay(payment: .amt(0.08, .usdc), payee: .stax, quote: .basic),
-                            ], executionType: .immediate),
-                        .multicall(
-                            [
-                                .wrapAsset(.eth),
-                                .supplyToComet(
-                                    tokenAmount: .amt(1, .weth), market: .cwethv3, network: .base
-                                ),
-                            ], executionType: .contingent),
+                        .multicall([
+                            .wrapAsset(.eth),
+                            .bridge(
+                                bridge: "Across",
+                                srcNetwork: .optimism,
+                                destinationNetwork: .base,
+                                inputTokenAmount: .amt(1.02, .weth),
+                                outputTokenAmount: .amt(1, .weth)
+                            ),
+                            .quotePay(payment: .amt(0.08, .usdc), payee: .stax, quote: .basic),
+                        ]),
+                        .multicall([
+                            .wrapAsset(.eth),
+                            .supplyToComet(
+                                tokenAmount: .amt(1, .weth), market: .cwethv3, network: .base
+                            ),
+                        ]),
                     ])
                 )
             )
