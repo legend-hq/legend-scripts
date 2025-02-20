@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity 0.8.27;
 
-import {List} from "./List.sol";
+import {Errors} from "src/builder/Errors.sol";
+import {List} from "src/builder/List.sol";
 
 library HashMap {
-    error KeyNotFound();
-
     struct Entry {
         bytes key;
         bytes value;
@@ -27,7 +26,7 @@ library HashMap {
                 return entry.value;
             }
         }
-        revert KeyNotFound();
+        revert Errors.KeyNotFound();
     }
 
     function getOrDefault(Map memory map, bytes memory key, bytes memory fallbackValue)
@@ -75,7 +74,7 @@ library HashMap {
                 return map;
             }
         }
-        revert KeyNotFound();
+        revert Errors.KeyNotFound();
     }
 
     function keys(Map memory map) internal pure returns (bytes[] memory) {
@@ -88,6 +87,7 @@ library HashMap {
     }
 
     // ========= Helper functions for common keys/values types =========
+
     function get(Map memory map, uint256 key) internal pure returns (bytes memory) {
         return get(map, abi.encode(key));
     }
@@ -122,7 +122,7 @@ library HashMap {
 
     function addOrPutUint256(Map memory map, bytes memory key, uint256 value) internal pure returns (Map memory) {
         uint256 existingValue = getOrDefaultUint256(map, key, 0);
-        return HashMap.putUint256(map, key, existingValue + value);
+        return putUint256(map, key, existingValue + value);
     }
 
     function keysUint256(Map memory map) internal pure returns (uint256[] memory) {
