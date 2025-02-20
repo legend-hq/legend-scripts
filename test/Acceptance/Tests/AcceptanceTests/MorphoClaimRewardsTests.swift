@@ -15,13 +15,13 @@ let morphoClaimRewardsTests: [AcceptanceTest] = [
         ),
         expect: .success(
             .multi([
-                .claimMorphoRewards(distributors: [.distributor, .distributor], accounts: [.alice, .alice], rewardsClaimable: [.amt(1, .weth), .amt(0.1, .wbtc)], proofs: [.validProof1, .validProof2], network: .ethereum),
+                .claimMorphoRewards(distributors: [.distributor, .distributor], accounts: [.alice, .alice], rewardsClaimable: [.amt(1, .weth), .amt(0.1, .wbtc)], proofs: [.validProof1, .validProof2], network: .ethereum, executionType: .immediate),
                 .multicall([
                     .claimMorphoRewards(distributors: [.distributor], accounts: [.alice], rewardsClaimable: [.amt(10, .usdc)], proofs: [.validProof3], network: .base),
                     .quotePay(
                         payment: .amt(0.12, .usdc), payee: .stax, quote: .basic
                     ),
-                ]),
+                ], executionType: .immediate),
             ])
         )
     ),
@@ -50,7 +50,7 @@ let morphoClaimRewardsTests: [AcceptanceTest] = [
                     .quotePay(
                         payment: .amt(0.5, .usdc), payee: .stax, quote: .basic
                     ),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),

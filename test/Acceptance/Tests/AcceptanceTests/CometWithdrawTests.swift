@@ -21,7 +21,7 @@ let cometWithdrawTests: [AcceptanceTest] = [
                         tokenAmount: .amt(1, .link), market: .cusdcv3, network: .ethereum),
                     .quotePay(
                         payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -52,7 +52,7 @@ let cometWithdrawTests: [AcceptanceTest] = [
                         tokenAmount: .amt(1, .usdc), market: .cusdcv3, network: .ethereum),
                     .quotePay(
                         payment: .amt(0.5, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -75,7 +75,7 @@ let cometWithdrawTests: [AcceptanceTest] = [
                         tokenAmount: .max(.usdc), market: .cusdcv3, network: .ethereum),
                     .quotePay(
                         payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),

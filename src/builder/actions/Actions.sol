@@ -57,6 +57,11 @@ library Actions {
     string constant ACTION_TYPE_UNWRAP = "UNWRAP";
     string constant ACTION_TYPE_QUOTE_PAY = "QUOTE_PAY";
 
+    string constant EXECUTION_TYPE_IMMEDIATE = "IMMEDIATE";
+    string constant EXECUTION_TYPE_DELAYED = "DELAYED";
+    string constant EXECUTION_TYPE_RECURRENT = "RECURRENT";
+    string constant EXECUTION_TYPE_CONTINGENT = "CONTINGENT";
+
     string constant BRIDGE_TYPE_ACROSS = "ACROSS";
     string constant BRIDGE_TYPE_CCTP = "CCTP";
 
@@ -293,6 +298,8 @@ library Actions {
         bytes32 nonceSecret;
         // The number of times an operation can be played. For non-replayable operations, this will be 1
         uint256 totalPlays;
+        // The execution type for the Quark operation (e.g. immediate, delayed, recurrent, contingent)
+        string executionType;
     }
 
     struct BorrowActionContext {
@@ -713,7 +720,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action, bridge.amount, bridge.amount);
@@ -824,7 +832,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action, inputAmount, outputAmount);
@@ -895,7 +904,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -962,7 +972,8 @@ library Actions {
                     quotePayActionContext: "",
                     paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
                     nonceSecret: accountSecret.nonceSecret,
-                    totalPlays: 1
+                    totalPlays: 1,
+                    executionType: EXECUTION_TYPE_IMMEDIATE
                 });
 
                 List.addQuarkOperation(quarkOperations, quarkOperation);
@@ -1079,7 +1090,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -1133,7 +1145,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -1188,7 +1201,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -1247,7 +1261,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -1311,7 +1326,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -1375,7 +1391,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -1429,7 +1446,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -1483,7 +1501,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -1555,7 +1574,8 @@ library Actions {
                 quotePayActionContext: "",
                 paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
                 nonceSecret: accountSecret.nonceSecret,
-                totalPlays: 1
+                totalPlays: 1,
+                executionType: EXECUTION_TYPE_IMMEDIATE
             });
 
             List.addQuarkOperation(quarkOperations, quarkOperation);
@@ -1610,7 +1630,8 @@ library Actions {
             quotePayActionContext: abi.encode(quotePayActionContext),
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -1664,7 +1685,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: isRecurring}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -1740,7 +1762,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
             nonceSecret: accountSecret.nonceSecret,
-            totalPlays: 1
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
         });
 
         return (quarkOperation, action);
@@ -1838,7 +1861,8 @@ library Actions {
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: true}),
             nonceSecret: localVars.accountSecret.nonceSecret,
-            totalPlays: RECURRING_SWAP_TOTAL_PLAYS
+            totalPlays: RECURRING_SWAP_TOTAL_PLAYS,
+            executionType: EXECUTION_TYPE_RECURRENT
         });
 
         return (quarkOperation, action);

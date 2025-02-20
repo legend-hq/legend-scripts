@@ -20,7 +20,7 @@ let cometSupplyTests: [AcceptanceTest] = [
                     .quotePay(
                         payment: .amt(0.000025, .weth), payee: .stax, quote: .basic
                     ),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -42,7 +42,7 @@ let cometSupplyTests: [AcceptanceTest] = [
                         tokenAmount: .amt(0.5, .weth), market: .cusdcv3, network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.000025, .weth), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -106,7 +106,7 @@ let cometSupplyTests: [AcceptanceTest] = [
                         tokenAmount: .amt(1, .usdc), market: .cusdcv3, network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -124,7 +124,7 @@ let cometSupplyTests: [AcceptanceTest] = [
                         tokenAmount: .amt(2.9, .usdc), market: .cusdcv3, network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -144,14 +144,15 @@ let cometSupplyTests: [AcceptanceTest] = [
                     srcNetwork: .base,
                     destinationNetwork: .arbitrum,
                     inputTokenAmount: .amt(50, .usdc),
-                    outputTokenAmount: .amt(48.5, .usdc)
+                    outputTokenAmount: .amt(48.5, .usdc),
+                    executionType: .immediate
                 ),
                 .multicall([
                     .supplyToComet(
                         tokenAmount: .amt(98.44, .usdc), market: .cusdcv3, network: .arbitrum
                     ),
                     .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .contingent),
             ])
         )
     ),
@@ -170,7 +171,7 @@ let cometSupplyTests: [AcceptanceTest] = [
                         tokenAmount: .amt(1, .usdc), market: .cusdcv3, network: .ethereum
                     ),
                     .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                ])
+                ], executionType: .immediate)
             )
         )
     ),
@@ -196,13 +197,13 @@ let cometSupplyTests: [AcceptanceTest] = [
                         outputTokenAmount: .amt(1, .weth)
                     ),
                     .quotePay(payment: .amt(0.08, .usdc), payee: .stax, quote: .basic),
-                ]),
+                ], executionType: .immediate),
                 .multicall([
                     .wrapAsset(.eth),
                     .supplyToComet(
                         tokenAmount: .amt(1, .weth), market: .cwethv3, network: .base
                     )
-                ]),
+                ], executionType: .contingent),
             ])
         )
     ),
