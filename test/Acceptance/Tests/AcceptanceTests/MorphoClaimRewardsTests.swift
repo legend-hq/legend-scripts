@@ -22,7 +22,8 @@ struct MorphoClaimRewardsTests {
                         .claimMorphoRewards(
                             distributors: [.distributor, .distributor], accounts: [.alice, .alice],
                             rewardsClaimable: [.amt(1, .weth), .amt(0.1, .wbtc)],
-                            proofs: [.validProof1, .validProof2], network: .ethereum),
+                            proofs: [.validProof1, .validProof2], network: .ethereum,
+                            executionType: .immediate),
                         .multicall([
                             .claimMorphoRewards(
                                 distributors: [.distributor], accounts: [.alice],
@@ -31,7 +32,8 @@ struct MorphoClaimRewardsTests {
                             .quotePay(
                                 payment: .amt(0.12, .usdc), payee: .stax, quote: .basic
                             ),
-                        ]),
+                        ],
+                        executionType: .immediate),
                     ])
                 )
             )
@@ -70,7 +72,7 @@ struct MorphoClaimRewardsTests {
                             .quotePay(
                                 payment: .amt(0.5, .usdc), payee: .stax, quote: .basic
                             ),
-                        ])
+                        ], executionType: .immediate)
                     )
                 )
             )

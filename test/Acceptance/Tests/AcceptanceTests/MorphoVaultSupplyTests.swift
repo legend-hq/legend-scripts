@@ -291,7 +291,8 @@ struct MorphoVaultSupplyTests {
                                 network: .ethereum
                             ),
                             .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                        ])
+                        ], executionType: .immediate
+                        )
                     )
                 )
             )
@@ -326,7 +327,7 @@ struct MorphoVaultSupplyTests {
                             ),
                             // .1 for mainnet operation + .02 for base operation
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                        ]),
+                        ],  executionType: .immediate),
                         .supplyToMorphoVault(
                             tokenAmount: .amt(5, .usdc),
                             vault: .usdc,

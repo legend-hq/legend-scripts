@@ -168,9 +168,10 @@ struct CometBorrowTests {
                             borrowAmount: .amt(1, .usdt),
                             collateralAmounts: [.amt(1, .wbtc)],
                             market: .cusdcv3,
-                            network: .optimism
+                            network: .optimism,
+                            executionType: .immediate
                         ),
-                        .quotePay(payment: .amt(0.16, .usdc), payee: .stax, quote: .basic),
+                        .quotePay(payment: .amt(0.16, .usdc), payee: .stax, quote: .basic, executionType: .immediate),
                     ])
                 )
             )
@@ -214,7 +215,7 @@ struct CometBorrowTests {
                                 network: .ethereum
                             ),
                             .quotePay(payment: .amt(1.5, .usdc), payee: .stax, quote: .basic),
-                        ])
+                        ], executionType: .immediate)
                     )
                 )
             )

@@ -276,13 +276,13 @@ struct CometSupplyTests {
                                 outputTokenAmount: .amt(1, .weth)
                             ),
                             .quotePay(payment: .amt(0.08, .usdc), payee: .stax, quote: .basic),
-                        ]),
+                        ], executionType: .immediate),
                         .multicall([
                             .wrapAsset(.eth),
                             .supplyToComet(
                                 tokenAmount: .amt(1, .weth), market: .cwethv3, network: .base
                             ),
-                        ]),
+                        ], executionType: .contingent),
                     ])
                 )
             )

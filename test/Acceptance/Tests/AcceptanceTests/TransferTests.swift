@@ -288,12 +288,12 @@ struct TransferTests {
                             // Total quote = 0.02 + 0.04 = 0.06
                             // Amount in terms of ETH = 0.06 / 4000 = 0.000015
                             .quotePay(payment: .amt(0.000015, .weth), payee: .stax, quote: .basic),
-                        ]),
+                        ], executionType: .immediate),
                         .multicall([
                             .wrapAsset(.eth),
                             .transferErc20(
                                 tokenAmount: .amt(0.3, .weth), recipient: .bob, network: .arbitrum),
-                        ]),
+                        ], executionType: .contingent),
                     ])
                 )
             )
@@ -352,7 +352,7 @@ struct TransferTests {
                         // Payment is made on Base, where there are unbridgeable funds
                         .transferErc20(
                             tokenAmount: .amt(50, .usdc), recipient: .bob, network: .arbitrum, executionType: .immediate),
-                        .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic, executionType: .contingent),
+                        .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic, executionType: .immediate),
                     ])
                 )
             )

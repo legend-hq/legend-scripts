@@ -28,7 +28,7 @@ struct MorphoVaultWithdrawTests {
                                 network: .ethereum
                             ),
                             .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                        ])
+                        ], executionType: .immediate)
                     )
                 )
             )
@@ -58,7 +58,7 @@ struct MorphoVaultWithdrawTests {
                                 network: .ethereum
                             ),
                             .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                        ])
+                        ], executionType: .immediate)
                     )
                 )
             )
@@ -114,7 +114,7 @@ struct MorphoVaultWithdrawTests {
                                 network: .ethereum
                             ),
                             .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                        ])
+                        ], executionType: .immediate)
                     )
                 )
             )

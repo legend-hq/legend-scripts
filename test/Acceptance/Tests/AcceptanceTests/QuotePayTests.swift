@@ -14,11 +14,13 @@ struct QuotePayTests {
                 when: .transfer(from: .alice, to: .bob, amount: .amt(10, .usdc), on: .ethereum),
                 expect: .success(
                     .single(
-                        .multicall([
-                            .transferErc20(
-                                tokenAmount: .amt(10, .usdc), recipient: .bob, network: .ethereum),
-                            .quotePay(payment: .amt(0.10, .usdc), payee: .stax, quote: .basic),
-                        ]
+                        .multicall(
+                            [
+                                .transferErc20(
+                                    tokenAmount: .amt(10, .usdc), recipient: .bob,
+                                    network: .ethereum),
+                                .quotePay(payment: .amt(0.10, .usdc), payee: .stax, quote: .basic),
+                            ], executionType: .immediate
                         )
                     )
                 )
@@ -41,13 +43,15 @@ struct QuotePayTests {
                 ),
                 expect: .success(
                     .single(
-                        .multicall([
-                            .transferErc20(
-                                tokenAmount: .amt(10, .usdc), recipient: .bob, network: .ethereum),
-                            .wrapAsset(.eth),
-                            .quotePay(payment: .amt(0.000025, .weth), payee: .stax, quote: .basic),
-                        ]
-                        )
+                        .multicall(
+                            [
+                                .transferErc20(
+                                    tokenAmount: .amt(10, .usdc), recipient: .bob,
+                                    network: .ethereum),
+                                .wrapAsset(.eth),
+                                .quotePay(
+                                    payment: .amt(0.000025, .weth), payee: .stax, quote: .basic),
+                            ], executionType: .immediate)
                     )
                 )
             )
@@ -75,7 +79,7 @@ struct QuotePayTests {
                             .transferErc20(
                                 tokenAmount: .amt(0.5, .weth), recipient: .bob, network: .ethereum),
                             .quotePay(payment: .amt(0.000025, .weth), payee: .stax, quote: .basic),
-                        ]
+                        ], executionType: .immediate
                         )
                     )
                 )

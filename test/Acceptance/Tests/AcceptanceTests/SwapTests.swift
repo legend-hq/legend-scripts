@@ -459,7 +459,7 @@ struct SwapTests {
                             executionType: .immediate
                         ),
                         // Payment is made on Ethereum, where there are unbridgeable funds
-                        .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic, executionType: .contingent),
+                        .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic, executionType: .immediate),
                     ])
                 )
             )
