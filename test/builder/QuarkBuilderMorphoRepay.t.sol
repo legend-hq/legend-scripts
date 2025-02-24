@@ -86,7 +86,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
             chainId: 8453,
             account: address(0xa11ce),
             nonceSecret: ALICE_DEFAULT_SECRET,
-            assetSymbols: Arrays.stringArray("USDC", "USDT", "LINK", "WETH"),
+            assetSymbols: Arrays.stringArray("USDC", "USDT", "cbETH", "WETH"),
             assetBalances: Arrays.uintArray(0.4e6, 0, 0, 1e18), // user does not have enough USDC
             cometPortfolios: emptyCometPortfolios_(),
             morphoPortfolios: emptyMorphoPortfolios_(),

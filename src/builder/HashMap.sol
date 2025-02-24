@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity 0.8.27;
 
-import {List} from "./List.sol";
+import {List} from "src/builder/List.sol";
 
 library HashMap {
     error KeyNotFound();
@@ -88,11 +88,20 @@ library HashMap {
     }
 
     // ========= Helper functions for common keys/values types =========
+
     function get(Map memory map, uint256 key) internal pure returns (bytes memory) {
         return get(map, abi.encode(key));
     }
 
+    function get(Map memory map, address key) internal pure returns (bytes memory) {
+        return get(map, abi.encode(key));
+    }
+
     function contains(Map memory map, uint256 key) internal pure returns (bool) {
+        return contains(map, abi.encode(key));
+    }
+
+    function contains(Map memory map, address key) internal pure returns (bool) {
         return contains(map, abi.encode(key));
     }
 
@@ -122,7 +131,25 @@ library HashMap {
 
     function addOrPutUint256(Map memory map, bytes memory key, uint256 value) internal pure returns (Map memory) {
         uint256 existingValue = getOrDefaultUint256(map, key, 0);
-        return HashMap.putUint256(map, key, existingValue + value);
+        return putUint256(map, key, existingValue + value);
+    }
+
+    function keysAddress(Map memory map) internal pure returns (address[] memory) {
+        bytes[] memory keysBytes = keys(map);
+        address[] memory decodedKeys = new address[](keysBytes.length);
+        for (uint256 i = 0; i < keysBytes.length; ++i) {
+            decodedKeys[i] = abi.decode(keysBytes[i], (address));
+        }
+        return decodedKeys;
+    }
+
+    function keysString(Map memory map) internal pure returns (string[] memory) {
+        bytes[] memory keysBytes = keys(map);
+        string[] memory decodedKeys = new string[](keysBytes.length);
+        for (uint256 i = 0; i < keysBytes.length; ++i) {
+            decodedKeys[i] = abi.decode(keysBytes[i], (string));
+        }
+        return decodedKeys;
     }
 
     function keysUint256(Map memory map) internal pure returns (uint256[] memory) {

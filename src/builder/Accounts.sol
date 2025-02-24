@@ -14,6 +14,7 @@ import {TokenWrapper} from "./TokenWrapper.sol";
 library Accounts {
     error QuarkSecretNotFound(address account);
     error AssetPositionNotFound(string symbol);
+    error AccountBalanceNotFound(address account);
 
     struct ChainAccounts {
         uint256 chainId;
@@ -220,6 +221,20 @@ library Accounts {
         revert AssetPositionNotFound(assetSymbol);
     }
 
+    function findAccountBalance(address account, AssetPositions memory assetPositions)
+        internal
+        pure
+        returns (AccountBalance memory found)
+    {
+        for (uint256 i = 0; i < assetPositions.accountBalances.length; ++i) {
+            if (assetPositions.accountBalances[i].account == account) {
+                return assetPositions.accountBalances[i];
+            }
+        }
+
+        revert AccountBalanceNotFound(account);
+    }
+
     function getAssetInfo(address[] memory assetAddresses, Accounts.AssetPositions[] memory assetPositionsList)
         internal
         pure
@@ -406,7 +421,6 @@ library Accounts {
     * @param chainAccountsList The list of chain accounts to check
     * @param payment The payment currency and cost per chains
     * @param amountsOnDst A map of the amount of assets on the dst chain after bridging
-    * @param bridgeFees A map of bridge fees by asset symbol
     * @param chainIdsInvolved The list of chainIds involved for the current intent
     * @param assetSymbol The symbol of the asset to check the balance for
     * @return The total available asset balance less the fees
@@ -415,7 +429,6 @@ library Accounts {
         Accounts.ChainAccounts[] memory chainAccountsList,
         PaymentInfo.Payment memory payment,
         HashMap.Map memory amountsOnDst,
-        HashMap.Map memory bridgeFees,
         List.DynamicArray memory chainIdsInvolved,
         string memory assetSymbol
     ) internal pure returns (uint256) {
@@ -425,10 +438,9 @@ library Accounts {
             : 0;
 
         uint256 balanceOnDstAfterBridge = HashMap.getOrDefaultUint256(amountsOnDst, abi.encode(assetSymbol), 0);
-        uint256 totalBridgeFees = HashMap.getOrDefaultUint256(bridgeFees, abi.encode(assetSymbol), 0);
 
         uint256 aggregateBalance = Accounts.totalBalance(assetSymbol, chainAccountsList);
-        uint256 unbridgedBalance = aggregateBalance - balanceOnDstAfterBridge - totalBridgeFees;
+        uint256 unbridgedBalance = aggregateBalance - balanceOnDstAfterBridge;
 
         // If payment fees are higher than the unbridged balance, it means that we cannot use the unbridged
         // funds to pay for the fees, so fees need to be paid on the destination chain
