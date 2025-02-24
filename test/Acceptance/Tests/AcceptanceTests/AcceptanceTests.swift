@@ -489,10 +489,11 @@ func getScriptAddress(_ creationCode: Hex) -> EthAddress {
 enum Account: Hashable, Equatable {
     case alice
     case bob
+    case carl
     case stax
     case unknownAccount(EthAddress)
 
-    static let knownCases: [Account] = [.alice, .bob, .stax]
+    static let knownCases: [Account] = [.alice, .bob, .carl, .stax]
 
     var description: String {
         switch self {
@@ -500,6 +501,8 @@ enum Account: Hashable, Equatable {
             return "Alice"
         case .bob:
             return "Bob"
+        case .carl:
+            return "Carl"
         case .stax:
             return "stax"
         case let .unknownAccount(address):
@@ -510,9 +513,11 @@ enum Account: Hashable, Equatable {
     var address: EthAddress {
         switch self {
         case .alice:
-            return EthAddress("0x00000000000000000000000000000000000A1BC5")
+            return EthAddress("0x00000000000000000000000000000000000A11CE")
         case .bob:
             return EthAddress("0x00000000000000000000000000000000000B0B0B")
+        case .carl:
+            return EthAddress("0x000000000000000000000000000000000000CA51")
         case .stax:
             return EthAddress("0x7ea8d6119596016935543d90Ee8f5126285060A1")
         case let .unknownAccount(address):
@@ -1324,14 +1329,14 @@ class Context {
         allNetworks.map { network in
             QuarkBuilder.Accounts.ChainAccounts(
                 chainId: BigUInt(network.chainId),
-                quarkSecrets: [
+                quarkSecrets: Account.knownCases.map { account in
                     .init(
-                        account: sender.address,
+                        account: account.address,
                         nonceSecret: Hex(
                             "0x5555555555555555555555555555555555555555555555555555555555555555"
                         )
                     )
-                ],
+                },
                 assetPositionsList: reifyTokenPositions(network: network),
                 cometPositions: reifyCometPositions(network: network),
                 morphoPositions: reifyMorphoPositions(network: network),
