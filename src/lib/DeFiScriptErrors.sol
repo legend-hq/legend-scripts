@@ -8,7 +8,7 @@ pragma solidity 0.8.27;
  */
 library DeFiScriptErrors {
     error InvalidInput();
-    error TransferFailed(bytes data);
+    error TransferFailed();
     error ApproveAndSwapFailed(bytes data);
     error TooMuchSlippage(uint256 expectedBuyAmount, uint256 actualBuyAmount);
 }

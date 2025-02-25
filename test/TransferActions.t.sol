@@ -331,9 +331,7 @@ contract TransferActionsTest is Test {
                 Multicall.MulticallError.selector,
                 1,
                 callContracts[1],
-                abi.encodeWithSelector(
-                    DeFiScriptErrors.TransferFailed.selector, abi.encodeWithSelector(QuarkScript.ReentrantCall.selector)
-                )
+                abi.encodeWithSelector(DeFiScriptErrors.TransferFailed.selector)
             )
         );
         wallet.executeQuarkOperation(op, signature);
@@ -407,11 +405,7 @@ contract TransferActionsTest is Test {
         assertEq(address(wallet).balance, 10 ether);
         assertEq(address(evilReceiver).balance, 0 ether);
         // Reentering into the QuarkWallet fails due to there being no active callback
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DeFiScriptErrors.TransferFailed.selector, abi.encodeWithSelector(QuarkWallet.NoActiveCallback.selector)
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DeFiScriptErrors.TransferFailed.selector));
         vm.resumeGasMetering();
         wallet.executeQuarkOperation(op, signature);
         assertEq(address(wallet).balance, 10 ether);
@@ -439,14 +433,7 @@ contract TransferActionsTest is Test {
         assertEq(address(evilReceiver).balance, 0 ether);
         vm.resumeGasMetering();
         // Not replayable signature will blocked by QuarkWallet during executeQuarkOperation
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                DeFiScriptErrors.TransferFailed.selector,
-                abi.encodeWithSelector(
-                    QuarkNonceManager.NonReplayableNonce.selector, address(wallet), op.nonce, op.nonce
-                )
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(DeFiScriptErrors.TransferFailed.selector));
         wallet.executeQuarkOperation(op, signature);
         // assert on native ETH balance
         assertEq(address(wallet).balance, 10 ether);
