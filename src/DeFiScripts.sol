@@ -208,9 +208,9 @@ contract TransferActions is QuarkScript {
      * @param amount The amount to transfer
      */
     function transferNativeToken(address recipient, uint256 amount) external nonReentrant {
-        (bool success, bytes memory data) = payable(recipient).call{value: amount}("");
+        bool success = payable(recipient).send(amount);
         if (!success) {
-            revert DeFiScriptErrors.TransferFailed(data);
+            revert DeFiScriptErrors.TransferFailed();
         }
     }
 }
