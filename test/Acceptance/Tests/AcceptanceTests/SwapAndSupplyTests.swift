@@ -275,6 +275,59 @@ struct SwapAndSupplyTests {
         )
     }
 
+    @Test("Alice swaps, then bridges funds from Ethereum to Base, then supplies, paying with QuotePay")
+    func testSwapBridgeAndSupplySucceeds() async throws {
+        try await testAcceptanceTests(
+            test: .init(
+                given: [
+                    .tokenBalance(.alice, .amt(3000, .usdc), .ethereum),
+                    .quote(.basic),
+                    .acrossQuote(.amt(0.01, .weth), 0.01),
+                ],
+                when: .swapAndSupply(
+                    swap: (
+                        from: .alice,
+                        sellAmount: .amt(2000, .usdc),
+                        buyAmount: .amt(1.1, .weth),
+                        exchange: .zeroEx,
+                        on: .ethereum
+                    ),
+                    supply: (
+                        from: .alice, market: .cwethv3, amount: .amt(1, .weth), on: .base
+                    )
+                ),
+                expect: .success(
+                    .multi([
+                        .multicall([
+                            .swap(
+                                sellAmount: .amt(2000, .usdc),
+                                buyAmount: .amt(1.1, .weth),
+                                exchange: .zeroEx,
+                                network: .ethereum
+                            ),
+                            .bridge(
+                                bridge: "Across",
+                                srcNetwork: .ethereum,
+                                destinationNetwork: .base,
+                                // 1 + 0.01 Across base fee + (1 * .01) Across pct fee = 1011
+                                inputTokenAmount: .amt(1.02, .weth),
+                                outputTokenAmount: .amt(1, .weth)
+                            ),
+                            .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
+                        ], executionType: .immediate),
+                        .multicall([
+                            .wrapAsset(.eth),
+                            .supplyToComet(
+                                tokenAmount: .amt(1, .weth), market: .cwethv3,
+                                network: .base
+                            ),
+                        ], executionType: .contingent),
+                    ])
+                )
+            )
+        )
+    }
+
     @Test("Alice bridges and swaps max and supplies an amount, paying with QuotePay")
     func testBridgeSwapMaxAndSupplyWithQuotePaySucceeds() async throws {
         try await testAcceptanceTests(
