@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import {Arrays} from "test/builder/lib/Arrays.sol";
+import {Arrays} from "src/builder/lib/Arrays.sol";
 import {Accounts, PaymentInfo, QuarkBuilderTest} from "test/builder/lib/QuarkBuilderTest.sol";
 import {Actions} from "src/builder/actions/Actions.sol";
 import {CCTPBridgeActions} from "src/BridgeScripts.sol";
@@ -374,13 +374,7 @@ contract QuarkBuilderCometClaimRewardsTest is Test, QuarkBuilderTest {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                QuarkBuilderBase.UnableToConstructActionIntent.selector,
-                false,
-                "",
-                0,
-                "IMPOSSIBLE_TO_CONSTRUCT",
-                "USDC",
-                100e6
+                QuarkBuilderBase.UnableToConstructQuotePay.selector, "IMPOSSIBLE_TO_CONSTRUCT", "USDC", 100e6
             )
         );
         builder.cometClaimRewards(

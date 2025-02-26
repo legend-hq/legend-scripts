@@ -24,7 +24,7 @@ import {HashMap} from "src/builder/HashMap.sol";
 import {BalanceChanges} from "src/builder/BalanceChanges.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.8.1";
+string constant QUARK_BUILDER_VERSION = "0.8.2";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -55,17 +55,10 @@ contract QuarkBuilderBase {
     error InvalidInput();
     error MaxCostTooHigh();
     error MissingWrapperCounterpart();
-    error BalanceNotRight(uint256 paymentAssetBalance, uint256 assetsIn, uint256 assetsOut);
     error InvalidRepayActionContext();
+    error UnableToConstructBridge(string bridgeAssetSymbol, uint256 bridgeFees);
     error UnableToConstructPaycall(string assetSymbol, uint256 maxCost);
-    error UnableToConstructActionIntent(
-        bool bridgingError,
-        string bridgeAssetSymbol,
-        uint256 bridgeFees,
-        string quotePayStatus,
-        string paymentAssetSymbol,
-        uint256 quoteAmount
-    );
+    error UnableToConstructQuotePay(string quotePayStatus, string paymentAssetSymbol, uint256 quoteAmount);
 
     /* ===== Intents ===== */
 
@@ -219,6 +212,15 @@ contract QuarkBuilderBase {
         string paymentAssetSymbol;
     }
 
+    struct SwapAndSupplyIntent {
+        ZeroExSwapIntent swapIntent;
+        CometSupplyIntent supplyIntent;
+        // TODO: Add other supply (e.g. morpho) intents?
+        uint256 blockTimestamp;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
     /**
      * @dev Intent for an action to be executed by the Quark Wallet
      * @param actor The address of the actor who is initiating the action
@@ -241,10 +243,6 @@ contract QuarkBuilderBase {
         bool preferAcross;
     }
 
-    /**
-     * @dev Constructs Quark Operations and Actions for an action intent.
-     *      The constructed operations will include bridging and wrapping of assets if needed.
-     */
     function constructOperationsAndActions(
         ActionIntent memory actionIntent,
         Accounts.ChainAccounts[] memory chainAccountsList,
@@ -254,15 +252,69 @@ contract QuarkBuilderBase {
         pure
         returns (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray)
     {
+        (quarkOperationsArray, actionsArray) = constructOperationsAndActionsWithoutQuotePay(
+            actionIntent, chainAccountsList, payment, quarkOperationsArray, actionsArray
+        );
+        (quarkOperationsArray, actionsArray) = constructQuotePayOperation({
+            quarkOperationsArray: quarkOperationsArray,
+            actionsArray: actionsArray,
+            payment: payment,
+            chainAccountsList: chainAccountsList,
+            actionIntent: actionIntent
+        });
+        return (quarkOperationsArray, actionsArray);
+    }
+
+    function constructOperationsAndActions(
+        ActionIntent[] memory actionIntents,
+        Accounts.ChainAccounts[] memory chainAccountsList,
+        PaymentInfo.Payment memory payment
+    )
+        internal
+        pure
+        returns (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray)
+    {
+        for (uint256 i = 0; i < actionIntents.length; ++i) {
+            (quarkOperationsArray, actionsArray) = constructOperationsAndActionsWithoutQuotePay(
+                actionIntents[i], chainAccountsList, payment, quarkOperationsArray, actionsArray
+            );
+        }
+        (quarkOperationsArray, actionsArray) = constructQuotePayOperation({
+            quarkOperationsArray: quarkOperationsArray,
+            actionsArray: actionsArray,
+            payment: payment,
+            chainAccountsList: chainAccountsList,
+            // TODO: We use the last action intent for now, but does it matter?
+            actionIntent: actionIntents[actionIntents.length - 1]
+        });
+        return (quarkOperationsArray, actionsArray);
+    }
+
+    /**
+     * @dev Constructs Quark Operations and Actions for an action intent.
+     *      The constructed operations will include bridging and wrapping of assets if needed.
+     */
+    function constructOperationsAndActionsWithoutQuotePay(
+        ActionIntent memory actionIntent,
+        Accounts.ChainAccounts[] memory chainAccountsList,
+        PaymentInfo.Payment memory payment,
+        IQuarkWallet.QuarkOperation[] memory existingQuarkOperations,
+        Actions.Action[] memory existingActions
+    )
+        internal
+        pure
+        returns (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray)
+    {
         // Sanity check on ActionIntent
-        if (actionIntent.amountOuts.length != actionIntent.assetSymbolOuts.length) {
+        if (
+            actionIntent.amountOuts.length != actionIntent.assetSymbolOuts.length
+                || existingQuarkOperations.length != existingActions.length
+        ) {
             revert InvalidInput();
         }
 
-        List.DynamicArray memory actions = List.newList();
-        List.DynamicArray memory quarkOperations = List.newList();
-
-        string memory bridgeErrorSymbol;
+        List.DynamicArray memory actions = List.fromActionArray(existingActions);
+        List.DynamicArray memory quarkOperations = List.fromQuarkOperationArray(existingQuarkOperations);
 
         // Track the amount of each asset that will be bridged to the destination chain
         HashMap.Map memory amountsOnDst = HashMap.newMap();
@@ -332,8 +384,9 @@ contract QuarkBuilderBase {
                 }
 
                 if (amountLeftToBridge > 0 && !isMaxBridge) {
-                    bridgeErrorSymbol = assetSymbolOut;
-                    break;
+                    revert UnableToConstructBridge(
+                        assetSymbolOut, HashMap.getOrDefaultUint256(bridgeFees, abi.encode(assetSymbolOut), 0)
+                    );
                 }
             } else {
                 HashMap.addOrPutUint256(amountsOnDst, abi.encode(assetSymbolOut), amountNeededOnDst);
@@ -394,84 +447,11 @@ contract QuarkBuilderBase {
             });
         }
 
-        string memory quotePayResult = Strings.OK;
-        uint256 totalQuoteAmount;
-
-        // Generate a QuotePay operation if the payment method is with tokens and the action is non-recurring
-        if (!PaymentInfo.isOffchainPayment(payment) && !Actions.isRecurringAction(actionIntent.actionType)) {
-            (
-                IQuarkWallet.QuarkOperation[] memory quotePayOperations,
-                Actions.Action[] memory quotePayActions,
-                string memory result,
-                uint256 totalQuoteAmount_
-            ) = generateQuotePayOperations(
-                PaymentBalanceAssertionArgs({
-                    actions: List.toActionArray(actions),
-                    chainAccountsList: chainAccountsList,
-                    targetChainId: actionIntent.chainId,
-                    account: actionIntent.actor,
-                    blockTimestamp: actionIntent.blockTimestamp,
-                    payment: payment
-                })
-            );
-
-            quotePayResult = result;
-            totalQuoteAmount = totalQuoteAmount_;
-
-            for (uint256 i = 0; i < quotePayOperations.length; ++i) {
-                List.addAction(actions, quotePayActions[i]);
-                List.addQuarkOperation(quarkOperations, quotePayOperations[i]);
-                chainAccountsList = adjustChainAccountBalances({
-                    action: quotePayActions[i],
-                    chainAccountsList: chainAccountsList,
-                    account: actionIntent.actor
-                });
-            }
-        }
-
-        bool hasBridgeError = !Strings.stringEqIgnoreCase(bridgeErrorSymbol, "");
-        if (hasBridgeError || !Strings.isOk(quotePayResult)) {
-            revert UnableToConstructActionIntent(
-                hasBridgeError,
-                bridgeErrorSymbol,
-                HashMap.getOrDefaultUint256(bridgeFees, abi.encode(bridgeErrorSymbol), 0),
-                quotePayResult,
-                payment.currency,
-                totalQuoteAmount
-            );
-        }
-
         // Convert to array
         quarkOperationsArray = List.toQuarkOperationArray(quarkOperations);
         actionsArray = List.toActionArray(actions);
 
-        // Merge operations that are from the same chain into one Multicall operation
-        (quarkOperationsArray, actionsArray) =
-            QuarkOperationHelper.mergeSameChainOperations(quarkOperationsArray, actionsArray);
-
-        // Wrap operations around Paycall if payment is with token and the action is recurring
-        if (!PaymentInfo.isOffchainPayment(payment) && Actions.isRecurringAction(actionIntent.actionType)) {
-            assertSufficientPaymentTokensForPaycall(
-                PaymentBalanceAssertionArgs({
-                    actions: List.toActionArray(actions),
-                    chainAccountsList: chainAccountsList,
-                    targetChainId: actionIntent.chainId,
-                    account: actionIntent.actor,
-                    blockTimestamp: actionIntent.blockTimestamp,
-                    payment: payment
-                })
-            );
-
-            quarkOperationsArray = QuarkOperationHelper.wrapOperationsWithTokenPayment({
-                quarkOperations: quarkOperationsArray,
-                actions: actionsArray,
-                payment: payment
-            });
-        }
-
-        // Merge operations that are from the same chain into one Multicall operation
-        (quarkOperationsArray, actionsArray) =
-            QuarkOperationHelper.mergeSameChainOperations(quarkOperationsArray, actionsArray);
+        return (quarkOperationsArray, actionsArray);
     }
 
     function constructOperationsAndActionsFromIntent(
@@ -805,6 +785,80 @@ contract QuarkBuilderBase {
         } else {
             return (Strings.ERROR, new IQuarkWallet.QuarkOperation[](1), new Actions.Action[](1));
         }
+    }
+
+    function constructQuotePayOperation(
+        IQuarkWallet.QuarkOperation[] memory quarkOperationsArray,
+        Actions.Action[] memory actionsArray,
+        PaymentInfo.Payment memory payment,
+        Accounts.ChainAccounts[] memory chainAccountsList,
+        ActionIntent memory actionIntent
+    ) internal pure returns (IQuarkWallet.QuarkOperation[] memory, Actions.Action[] memory) {
+        List.DynamicArray memory actions = List.fromActionArray(actionsArray);
+        List.DynamicArray memory quarkOperations = List.fromQuarkOperationArray(quarkOperationsArray);
+
+        // Generate a QuotePay operation if the payment method is with tokens and the action is non-recurring
+        if (!PaymentInfo.isOffchainPayment(payment) && !Actions.isRecurringAction(actionIntent.actionType)) {
+            (
+                IQuarkWallet.QuarkOperation[] memory quotePayOperations,
+                Actions.Action[] memory quotePayActions,
+                string memory quotePayResult,
+                uint256 totalQuoteAmount
+            ) = generateQuotePayOperations(
+                PaymentBalanceAssertionArgs({
+                    actions: List.toActionArray(actions),
+                    chainAccountsList: chainAccountsList,
+                    targetChainId: actionIntent.chainId,
+                    account: actionIntent.actor,
+                    blockTimestamp: actionIntent.blockTimestamp,
+                    payment: payment
+                })
+            );
+
+            if (!Strings.isOk(quotePayResult)) {
+                revert UnableToConstructQuotePay(quotePayResult, payment.currency, totalQuoteAmount);
+            }
+
+            for (uint256 i = 0; i < quotePayOperations.length; ++i) {
+                List.addAction(actions, quotePayActions[i]);
+                List.addQuarkOperation(quarkOperations, quotePayOperations[i]);
+                chainAccountsList = adjustChainAccountBalances({
+                    action: quotePayActions[i],
+                    chainAccountsList: chainAccountsList,
+                    account: actionIntent.actor
+                });
+            }
+
+            // Convert to array
+            quarkOperationsArray = List.toQuarkOperationArray(quarkOperations);
+            actionsArray = List.toActionArray(actions);
+        }
+
+        // Wrap operations around Paycall if payment is with token and the action is recurring
+        if (!PaymentInfo.isOffchainPayment(payment) && Actions.isRecurringAction(actionIntent.actionType)) {
+            assertSufficientPaymentTokensForPaycall(
+                PaymentBalanceAssertionArgs({
+                    actions: List.toActionArray(actions),
+                    chainAccountsList: chainAccountsList,
+                    targetChainId: actionIntent.chainId,
+                    account: actionIntent.actor,
+                    blockTimestamp: actionIntent.blockTimestamp,
+                    payment: payment
+                })
+            );
+
+            quarkOperationsArray = QuarkOperationHelper.wrapOperationsWithTokenPayment({
+                quarkOperations: quarkOperationsArray,
+                actions: actionsArray,
+                payment: payment
+            });
+        }
+
+        // Merge operations that are from the same chain into one Multicall operation
+        (quarkOperationsArray, actionsArray) =
+            QuarkOperationHelper.mergeSameChainOperations(quarkOperationsArray, actionsArray);
+
+        return (quarkOperationsArray, actionsArray);
     }
 
     /* ===== Helper functions ===== */

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.27;
 
 import {CometActionsBuilder} from "src/builder/actions/CometActionsBuilder.sol";
+import {ComposedActionsBuilder} from "src/builder/actions/ComposedActionsBuilder.sol";
 import {MorphoVaultActionsBuilder} from "src/builder/actions/MorphoVaultActionsBuilder.sol";
 import {MorphoActionsBuilder} from "src/builder/actions/MorphoActionsBuilder.sol";
 import {SwapActionsBuilder} from "src/builder/actions/SwapActionsBuilder.sol";
@@ -9,6 +10,7 @@ import {TransferActionsBuilder} from "src/builder/actions/TransferActionsBuilder
 
 contract QuarkBuilder is
     CometActionsBuilder,
+    ComposedActionsBuilder,
     MorphoVaultActionsBuilder,
     MorphoActionsBuilder,
     SwapActionsBuilder,

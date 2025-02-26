@@ -18,7 +18,7 @@ import {WrapperActions} from "src/WrapperScripts.sol";
 import {QuotePay} from "src/QuotePay.sol";
 import {Quotes} from "src/builder/Quotes.sol";
 
-import {Arrays} from "test/builder/lib/Arrays.sol";
+import {Arrays} from "src/builder/lib/Arrays.sol";
 
 contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
     address constant COMET = address(0xc3d688B66703497DAA19211EEdff47f25384cdc3);
@@ -96,13 +96,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         QuarkBuilder builder = new QuarkBuilder();
         vm.expectRevert(
             abi.encodeWithSelector(
-                QuarkBuilderBase.UnableToConstructActionIntent.selector,
-                false,
-                "",
-                0,
-                "IMPOSSIBLE_TO_CONSTRUCT",
-                "USDC",
-                1_000.03e6
+                QuarkBuilderBase.UnableToConstructQuotePay.selector, "IMPOSSIBLE_TO_CONSTRUCT", "USDC", 1_000.03e6
             )
         );
 

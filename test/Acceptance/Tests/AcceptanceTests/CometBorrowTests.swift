@@ -336,10 +336,7 @@ struct CometBorrowTests {
                         on: .base
                     )),
                 expect: .revert(
-                    .unableToConstructActionIntent(
-                        false,
-                        "",
-                        0,
+                    .unableToConstructQuotePay(
                         "IMPOSSIBLE_TO_CONSTRUCT",
                         Token.weth.symbol,
                         TokenAmount.amt(0, .weth).amount

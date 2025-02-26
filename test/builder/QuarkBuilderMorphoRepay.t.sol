@@ -4,7 +4,7 @@ pragma solidity ^0.8.27;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import {Arrays} from "test/builder/lib/Arrays.sol";
+import {Arrays} from "src/builder/lib/Arrays.sol";
 import {QuarkBuilderTest, Accounts, PaymentInfo} from "test/builder/lib/QuarkBuilderTest.sol";
 import {MorphoActionsBuilder} from "src/builder/actions/MorphoActionsBuilder.sol";
 import {Actions} from "src/builder/actions/Actions.sol";
@@ -96,13 +96,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                QuarkBuilderBase.UnableToConstructActionIntent.selector,
-                false,
-                "",
-                0,
-                "IMPOSSIBLE_TO_CONSTRUCT",
-                "USDC",
-                0.5e6
+                QuarkBuilderBase.UnableToConstructQuotePay.selector, "IMPOSSIBLE_TO_CONSTRUCT", "USDC", 0.5e6
             )
         );
         builder.morphoRepay(

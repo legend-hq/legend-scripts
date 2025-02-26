@@ -102,10 +102,7 @@ struct QuotePayTests {
                     .transfer(from: .alice, to: .bob, amount: .amt(0.5, .weth), on: .ethereum)
                 ),
                 expect: .revert(
-                    .unableToConstructActionIntent(
-                        false,
-                        "",
-                        0,
+                    .unableToConstructQuotePay(
                         "IMPOSSIBLE_TO_CONSTRUCT",
                         Token.weth.symbol,
                         TokenAmount.amt(0, .weth).amount
