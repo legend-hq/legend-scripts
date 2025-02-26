@@ -3,7 +3,7 @@ pragma solidity ^0.8.27;
 
 import "forge-std/Test.sol";
 
-import {Arrays} from "test/builder/lib/Arrays.sol";
+import {Arrays} from "src/builder/lib/Arrays.sol";
 import {Accounts, PaymentInfo, QuarkBuilder, QuarkBuilderTest} from "test/builder/lib/QuarkBuilderTest.sol";
 import {QuarkBuilderBase} from "src/builder/QuarkBuilderBase.sol";
 import {CometActionsBuilder} from "src/builder/actions/CometActionsBuilder.sol";
@@ -402,13 +402,7 @@ contract QuarkBuilderCometWithdrawTest is Test, QuarkBuilderTest {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                QuarkBuilderBase.UnableToConstructActionIntent.selector,
-                false,
-                "",
-                0,
-                "IMPOSSIBLE_TO_CONSTRUCT",
-                "USDC",
-                0
+                QuarkBuilderBase.UnableToConstructQuotePay.selector, "IMPOSSIBLE_TO_CONSTRUCT", "USDC", 0
             )
         );
         builder.cometWithdraw(
@@ -430,13 +424,7 @@ contract QuarkBuilderCometWithdrawTest is Test, QuarkBuilderTest {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                QuarkBuilderBase.UnableToConstructActionIntent.selector,
-                false,
-                "",
-                0,
-                "IMPOSSIBLE_TO_CONSTRUCT",
-                "USDC",
-                0
+                QuarkBuilderBase.UnableToConstructQuotePay.selector, "IMPOSSIBLE_TO_CONSTRUCT", "USDC", 0
             )
         );
         builder.cometWithdraw(

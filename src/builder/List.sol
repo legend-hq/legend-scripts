@@ -116,6 +116,18 @@ library List {
         return result;
     }
 
+    function fromQuarkOperationArray(IQuarkWallet.QuarkOperation[] memory quarkOperationArray)
+        internal
+        pure
+        returns (DynamicArray memory)
+    {
+        List.DynamicArray memory result = List.newList();
+        for (uint256 i = 0; i < quarkOperationArray.length; ++i) {
+            List.addQuarkOperation(result, quarkOperationArray[i]);
+        }
+        return result;
+    }
+
     function indexOf(DynamicArray memory list, IQuarkWallet.QuarkOperation memory item)
         internal
         pure
@@ -158,6 +170,14 @@ library List {
         Actions.Action[] memory result = new Actions.Action[](list.length);
         for (uint256 i = 0; i < list.length; ++i) {
             result[i] = abi.decode(list.bytesArray[i], (Actions.Action));
+        }
+        return result;
+    }
+
+    function fromActionArray(Actions.Action[] memory actionArray) internal pure returns (DynamicArray memory) {
+        List.DynamicArray memory result = List.newList();
+        for (uint256 i = 0; i < actionArray.length; ++i) {
+            List.addAction(result, actionArray[i]);
         }
         return result;
     }

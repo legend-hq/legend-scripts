@@ -127,10 +127,7 @@ struct CometWithdrawTests {
                     on: .ethereum
                 ),
                 expect: .revert(
-                    .unableToConstructActionIntent(
-                        false,
-                        "",
-                        0,
+                    .unableToConstructQuotePay(
                         "IMPOSSIBLE_TO_CONSTRUCT",
                         Token.usdc.symbol,
                         TokenAmount.amt(0, .usdc).amount
@@ -166,10 +163,7 @@ struct CometWithdrawTests {
                     on: .ethereum
                 ),
                 expect: .revert(
-                    .unableToConstructActionIntent(
-                        false,
-                        "",
-                        0,
+                    .unableToConstructQuotePay(
                         "IMPOSSIBLE_TO_CONSTRUCT",
                         Token.usdc.symbol,
                         TokenAmount.amt(0, .usdc).amount

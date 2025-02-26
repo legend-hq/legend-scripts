@@ -93,10 +93,7 @@ struct TransferTests {
                     from: .alice, to: .bob, amount: .amt(100, .usdc), on: .arbitrum
                 ),
                 expect: .revert(
-                    .unableToConstructActionIntent(
-                        false,
-                        "",
-                        0,
+                    .unableToConstructQuotePay(
                         "UNABLE_TO_CONSTRUCT",
                         Token.usdc.symbol,
                         TokenAmount.amt(0.04, .usdc).amount
@@ -120,13 +117,9 @@ struct TransferTests {
                     from: .alice, to: .bob, amount: .amt(100, .usdc), on: .arbitrum
                 ),
                 expect: .revert(
-                    .unableToConstructActionIntent(
-                        true,
+                    .unableToConstructBridge(
                         Token.usdc.symbol,
-                        TokenAmount.amt(1.5, .usdc).amount,
-                        "UNABLE_TO_CONSTRUCT",
-                        Token.usdc.symbol,
-                        TokenAmount.amt(0.06, .usdc).amount
+                        TokenAmount.amt(1.5, .usdc).amount
                     )
                 )
             )
@@ -182,13 +175,9 @@ struct TransferTests {
                     from: .alice, to: .bob, amount: .amt(99, .usdc), on: .arbitrum
                 ),
                 expect: .revert(
-                    .unableToConstructActionIntent(
-                        true,
+                    .unableToConstructBridge(
                         Token.usdc.symbol,
-                        TokenAmount.amt(1.5, .usdc).amount,
-                        "UNABLE_TO_CONSTRUCT",
-                        Token.usdc.symbol,
-                        TokenAmount.amt(0.06, .usdc).amount
+                        TokenAmount.amt(1.5, .usdc).amount
                     )
                 )
             )
@@ -419,10 +408,7 @@ struct TransferTests {
                 when: .transfer(from: .alice, to: .bob, amount: .amt(20, .usdc), on: .arbitrum),
                 expect: .revert(
                     // There is no way to construct a valid transfer of 20 USDC
-                    .unableToConstructActionIntent(
-                        false,
-                        "",
-                        0,
+                    .unableToConstructQuotePay(
                         "UNABLE_TO_CONSTRUCT",
                         Token.usdc.symbol,
                         TokenAmount.amt(40, .usdc).amount

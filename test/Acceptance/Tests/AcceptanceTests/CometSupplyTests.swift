@@ -115,10 +115,7 @@ struct CometSupplyTests {
                         from: .alice, market: .cusdcv3, amount: .amt(1, .usdc), on: .ethereum)
                 ),
                 expect: .revert(
-                    .unableToConstructActionIntent(
-                        false,
-                        "",
-                        0,
+                    .unableToConstructQuotePay(
                         "IMPOSSIBLE_TO_CONSTRUCT",
                         Token.usdc.symbol,
                         TokenAmount.amt(1000.03, .usdc).amount

@@ -19,7 +19,7 @@ import {WrapperActions} from "src/WrapperScripts.sol";
 import {QuotePay} from "src/QuotePay.sol";
 import {Quotes} from "src/builder/Quotes.sol";
 
-import {Arrays} from "test/builder/lib/Arrays.sol";
+import {Arrays} from "src/builder/lib/Arrays.sol";
 
 contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
     function morphoSupplyIntent_(
@@ -78,13 +78,7 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                QuarkBuilderBase.UnableToConstructActionIntent.selector,
-                false,
-                "",
-                0,
-                "IMPOSSIBLE_TO_CONSTRUCT",
-                "USDC",
-                1_000.1e6
+                QuarkBuilderBase.UnableToConstructQuotePay.selector, "IMPOSSIBLE_TO_CONSTRUCT", "USDC", 1_000.1e6
             )
         );
         builder.morphoVaultSupply(

@@ -15,7 +15,7 @@ import {QuarkBuilder} from "src/builder/QuarkBuilder.sol";
 import {Quotes} from "src/builder/Quotes.sol";
 import {Strings} from "src/builder/Strings.sol";
 import {MorphoInfo} from "src/builder/MorphoInfo.sol";
-import {Arrays} from "test/builder/lib/Arrays.sol";
+import {Arrays} from "src/builder/lib/Arrays.sol";
 
 contract QuarkBuilderTest {
     uint256 constant BLOCK_TIMESTAMP = 123_456_789;

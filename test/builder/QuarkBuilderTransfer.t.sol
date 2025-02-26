@@ -4,7 +4,7 @@ pragma solidity ^0.8.27;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import {Arrays} from "test/builder/lib/Arrays.sol";
+import {Arrays} from "src/builder/lib/Arrays.sol";
 import {QuarkBuilderTest} from "test/builder/lib/QuarkBuilderTest.sol";
 
 import {CCTPBridgeActions} from "src/BridgeScripts.sol";
@@ -130,13 +130,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         QuarkBuilder builder = new QuarkBuilder();
         vm.expectRevert(
             abi.encodeWithSelector(
-                QuarkBuilderBase.UnableToConstructActionIntent.selector,
-                false,
-                "",
-                0,
-                "IMPOSSIBLE_TO_CONSTRUCT",
-                "USDC",
-                1_000.1e6
+                QuarkBuilderBase.UnableToConstructQuotePay.selector, "IMPOSSIBLE_TO_CONSTRUCT", "USDC", 1_000.1e6
             )
         );
         builder.transfer(
@@ -180,13 +174,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         // the funds are used on chain 1 for the transfer
         vm.expectRevert(
             abi.encodeWithSelector(
-                QuarkBuilderBase.UnableToConstructActionIntent.selector,
-                false,
-                "",
-                0,
-                "UNABLE_TO_CONSTRUCT",
-                "USDC",
-                3.3e6
+                QuarkBuilderBase.UnableToConstructQuotePay.selector, "UNABLE_TO_CONSTRUCT", "USDC", 3.3e6
             )
         );
         builder.transfer(

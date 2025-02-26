@@ -144,10 +144,7 @@ struct MorphoVaultSupplyTests {
                     on: .ethereum
                 ),
                 expect: .revert(
-                    .unableToConstructActionIntent(
-                        false,
-                        "",
-                        0,
+                    .unableToConstructQuotePay(
                         "IMPOSSIBLE_TO_CONSTRUCT",
                         Token.usdc.symbol,
                         TokenAmount.amt(1000.1, .usdc).amount
