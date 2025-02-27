@@ -289,8 +289,8 @@ struct TransferTests {
         try await testAcceptanceTests(
             test:  .init(
                 given: [
-                    .tokenBalance(.alice, .amt(0.5, .eth), .base),
-                    .tokenBalance(.alice, .amt(0.3, .weth), .arbitrum),
+                    .tokenBalance(.alice, .amt(0.8, .eth), .base),
+                    .tokenBalance(.alice, .amt(0, .weth), .arbitrum),
                     .tokenBalance(.alice, .amt(5, .usdc), .base),
                     .quote(.basic),
                     .acrossQuote(.amt(0.01, .weth), 0.01),
