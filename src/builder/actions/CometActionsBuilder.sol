@@ -125,7 +125,7 @@ contract CometActionsBuilder is QuarkBuilderBase {
                 actor: intent.sender,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
-                actionType: Actions.ACTION_TYPE_SUPPLY,
+                actionType: Actions.ACTION_TYPE_COMET_SUPPLY,
                 intent: abi.encode(intent),
                 blockTimestamp: intent.blockTimestamp,
                 chainId: intent.chainId,

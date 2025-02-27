@@ -165,14 +165,14 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "SUPPLY", "action type is 'SUPPLY'");
+        assertEq(result.actions[0].actionType, "COMET_SUPPLY", "action type is 'COMET_SUPPLY'");
         assertEq(result.actions[0].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.SupplyActionContext({
+                Actions.CometSupplyActionContext({
                     amount: 1e6,
                     assetSymbol: "USDC",
                     chainId: 1,
@@ -181,7 +181,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
                     token: USDC_1
                 })
             ),
-            "action context encoded from SupplyActionContext"
+            "action context encoded from CometSupplyActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -248,14 +248,14 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "SUPPLY", "action type is 'SUPPLY'");
+        assertEq(result.actions[0].actionType, "COMET_SUPPLY", "action type is 'COMET_SUPPLY'");
         assertEq(result.actions[0].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.SupplyActionContext({
+                Actions.CometSupplyActionContext({
                     amount: 3e6,
                     assetSymbol: "USDC",
                     chainId: 1,
@@ -264,7 +264,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
                     token: USDC_1
                 })
             ),
-            "action context encoded from SupplyActionContext"
+            "action context encoded from CometSupplyActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -347,14 +347,14 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "SUPPLY", "action type is 'SUPPLY'");
+        assertEq(result.actions[0].actionType, "COMET_SUPPLY", "action type is 'COMET_SUPPLY'");
         assertEq(result.actions[0].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.SupplyActionContext({
+                Actions.CometSupplyActionContext({
                     amount: 1e18,
                     assetSymbol: "WETH",
                     chainId: 1,
@@ -363,7 +363,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
                     token: WETH_1
                 })
             ),
-            "action context encoded from SupplyActionContext"
+            "action context encoded from CometSupplyActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -416,14 +416,14 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "SUPPLY", "action type is 'SUPPLY'");
+        assertEq(result.actions[0].actionType, "COMET_SUPPLY", "action type is 'COMET_SUPPLY'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.SupplyActionContext({
+                Actions.CometSupplyActionContext({
                     amount: 1e6,
                     assetSymbol: "USDC",
                     chainId: 1,
@@ -432,7 +432,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
                     token: USDC_1
                 })
             ),
-            "action context encoded from SupplyActionContext"
+            "action context encoded from CometSupplyActionContext"
         );
         assertEq(
             result.actions[0].quotePayActionContext,
@@ -573,14 +573,14 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         // second action
         assertEq(result.actions[1].chainId, 8453, "second action is on chainid 8453");
         assertEq(result.actions[1].quarkAccount, address(0xb0b), "0xb0b sends the funds");
-        assertEq(result.actions[1].actionType, "SUPPLY", "action type is 'SUPPLY'");
+        assertEq(result.actions[1].actionType, "COMET_SUPPLY", "action type is 'COMET_SUPPLY'");
         assertEq(result.actions[1].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[1].nonceSecret, BOB_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[1].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[1].actionContext,
             abi.encode(
-                Actions.SupplyActionContext({
+                Actions.CometSupplyActionContext({
                     amount: 5e6,
                     assetSymbol: "USDC",
                     chainId: 8453,
@@ -589,7 +589,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
                     token: USDC_8453
                 })
             ),
-            "action context encoded from SupplyActionContext"
+            "action context encoded from CometSupplyActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -714,14 +714,14 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         // second action
         assertEq(result.actions[1].chainId, 8453, "second action is on chainid 8453");
         assertEq(result.actions[1].quarkAccount, address(0xb0b), "0xb0b sends the funds");
-        assertEq(result.actions[1].actionType, "SUPPLY", "action type is 'SUPPLY'");
+        assertEq(result.actions[1].actionType, "COMET_SUPPLY", "action type is 'COMET_SUPPLY'");
         assertEq(result.actions[1].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[1].nonceSecret, BOB_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[1].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[1].actionContext,
             abi.encode(
-                Actions.SupplyActionContext({
+                Actions.CometSupplyActionContext({
                     amount: 6e6,
                     assetSymbol: "USDC",
                     chainId: 8453,
@@ -730,7 +730,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
                     token: USDC_8453
                 })
             ),
-            "action context encoded from SupplyActionContext"
+            "action context encoded from CometSupplyActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -841,14 +841,14 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         // second action
         assertEq(result.actions[1].chainId, 8453, "operation is on chainid 8453");
         assertEq(result.actions[1].quarkAccount, address(0xb0b), "0xb0b sends the funds");
-        assertEq(result.actions[1].actionType, "SUPPLY", "action type is 'SUPPLY'");
+        assertEq(result.actions[1].actionType, "COMET_SUPPLY", "action type is 'COMET_SUPPLY'");
         assertEq(result.actions[1].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[1].nonceSecret, BOB_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[1].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[1].actionContext,
             abi.encode(
-                Actions.SupplyActionContext({
+                Actions.CometSupplyActionContext({
                     amount: 5e6,
                     assetSymbol: "USDC",
                     chainId: 8453,
@@ -857,7 +857,7 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
                     token: USDC_8453
                 })
             ),
-            "action context encoded from SupplyActionContext"
+            "action context encoded from CometSupplyActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data

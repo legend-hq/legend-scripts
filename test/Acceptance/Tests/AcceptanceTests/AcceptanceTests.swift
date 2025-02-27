@@ -1178,6 +1178,20 @@ enum Token: Hashable, Equatable {
     }
 }
 
+enum LendingMarket: Hashable, Equatable {
+    case comet(Comet)
+    case morpho(MorphoVault)
+    
+    var marketType: String {
+        switch self {
+        case .comet:
+            return "COMET"
+        case .morpho:
+            return "MORPHO"
+        }
+    }
+}
+
 extension BigUInt {
     static let max = BigUInt(1) << 256 - 1
 }
@@ -1258,7 +1272,7 @@ indirect enum When {
     )
     case swapAndSupply(
         swap: (from: Account, sellAmount: TokenAmount, buyAmount: TokenAmount, exchange: Exchange, on: Network),
-        supply: (from: Account, market: Comet, amount: TokenAmount, on: Network)
+        supply: (from: Account, market: LendingMarket, amount: TokenAmount, on: Network)
     )
     case payWith(currency: Token, When)
 
@@ -1696,6 +1710,7 @@ class Context {
                 ),
                 withFunctions: ffis
             )
+        // TODO: Looks like we currently ignore `vault`, which seems quite error prone for a test
         case let .morphoVaultSupply(from, _, amount, network):
             return try await QuarkBuilder.morphoVaultSupply(
                 intent: .init(
@@ -1798,47 +1813,63 @@ class Context {
                 ),
                 withFunctions: ffis
             )
-        case let .swapAndSupply(swapIntent, supplyIntent):
-            guard let sellToken = swapIntent.sellAmount.token.address(network: swapIntent.on),
-                  let buyToken = swapIntent.buyAmount.token.address(network: swapIntent.on)
+        case let .swapAndSupply(swap, supply):
+            guard let sellToken = swap.sellAmount.token.address(network: swap.on),
+                  let buyToken = swap.buyAmount.token.address(network: swap.on)
             else {
                 fatalError("Cannot swap unknown token")
             }
 
-            let swapIntent = QuarkBuilder.QuarkBuilderBase.ZeroExSwapIntent.init(
-                chainId: BigUInt(swapIntent.on.chainId),
-                entryPoint: swapIntent.exchange.entryPoint,
-                swapData: swapIntent.exchange.swapData,
+            let swapIntent = QuarkBuilder.QuarkBuilderBase.ZeroExSwapIntent(
+                chainId: BigUInt(swap.on.chainId),
+                entryPoint: swap.exchange.entryPoint,
+                swapData: swap.exchange.swapData,
                 sellToken: sellToken,
-                sellAmount: swapIntent.sellAmount.amount,
+                sellAmount: swap.sellAmount.amount,
                 buyToken: buyToken,
-                buyAmount: swapIntent.buyAmount.amount,
+                buyAmount: swap.buyAmount.amount,
                 feeToken: buyToken,
-                feeAmount: swapIntent.buyAmount.amount / BigUInt(100),
-                sender: swapIntent.from.address,
+                feeAmount: swap.buyAmount.amount / BigUInt(100),
+                sender: swap.from.address,
                 isExactOut: false,
                 blockTimestamp: BigUInt(1_000_000),
                 preferAcross: true,
                 paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
             )
 
-            let supplyIntent = QuarkBuilder.QuarkBuilderBase.CometSupplyIntent.init(
-                amount: supplyIntent.amount.amount,
-                assetSymbol: supplyIntent.amount.token.symbol,
-                blockTimestamp: BigUInt(1_000_000),
-                chainId: BigUInt(supplyIntent.on.chainId),
-                comet: supplyIntent.market.address(network: supplyIntent.on),
-                sender: supplyIntent.from.address,
-                preferAcross: true,
-                paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
-            )
+            let supplyIntent: QuarkBuilder.QuarkBuilderBase.SupplyIntent
+            switch supply.market {
+            case let .comet(cometMarket):
+                supplyIntent = .init(
+                    amount: supply.amount.amount,
+                    assetSymbol: supply.amount.token.symbol,
+                    chainId: BigUInt(supply.on.chainId),
+                    marketType: supply.market.marketType,
+                    market: cometMarket.address(network: supply.on),
+                    sender: supply.from.address,
+                    blockTimestamp: BigUInt(1_000_000),
+                    preferAcross: true,
+                    paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                )
+
+            case .morpho(_):
+                supplyIntent = .init(
+                    amount: supply.amount.amount,
+                    assetSymbol: supply.amount.token.symbol,
+                    chainId: BigUInt(supply.on.chainId),
+                    marketType: supply.market.marketType,
+                    market: EthAddress("0x0000000000000000000000000000000000000000"),
+                    sender: supply.from.address,
+                    blockTimestamp: BigUInt(1_000_000),
+                    preferAcross: true,
+                    paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                )
+            }
 
             return try await QuarkBuilder.swapAndSupply(
                 intent: .init(
                     swapIntent: swapIntent,
                     supplyIntent: supplyIntent,
-                    blockTimestamp: BigUInt(1_000_000),
-                    preferAcross: true,
                     paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
                 ),
                 chainAccountsList: chainAccounts,
