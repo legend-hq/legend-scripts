@@ -290,7 +290,6 @@ struct TransferTests {
             test:  .init(
                 given: [
                     .tokenBalance(.alice, .amt(0.8, .eth), .base),
-                    .tokenBalance(.alice, .amt(0, .weth), .arbitrum),
                     .tokenBalance(.alice, .amt(5, .usdc), .base),
                     .quote(.basic),
                     .acrossQuote(.amt(0.01, .weth), 0.01),
@@ -302,15 +301,15 @@ struct TransferTests {
                             .multicall(
                                 [
                                     .bridge(
-                                        bridge: "Across", 
-                                        srcNetwork: .base, 
-                                        destinationNetwork: .arbitrum, 
-                                        inputTokenAmount: .amt(0.414, .eth), 
-                                        outputTokenAmount: .amt(0.4, .eth)
+                                        bridge: "Across",
+                                        srcNetwork: .base,
+                                        destinationNetwork: .arbitrum,
+                                        inputTokenAmount: .amt(0.717, .eth),
+                                        outputTokenAmount: .amt(0.7, .eth)
                                     ),
                                     .quotePay(
                                         payment: .amt(0.06, .usdc),
-                                        payee: .stax, 
+                                        payee: .stax,
                                         quote: .basic
                                     )
                                 ],
@@ -320,7 +319,7 @@ struct TransferTests {
                                 [
                                     .unwrapWETHUpTo(
                                         tokenAmount: .amt(0.7, .weth)
-                                    ),    
+                                    ),
                                     .transferNativeToken(
                                         tokenAmount: .amt(0.7, .eth),
                                         recipient: .bob,

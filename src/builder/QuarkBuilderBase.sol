@@ -1500,14 +1500,21 @@ contract QuarkBuilderBase {
         if (Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_BRIDGE)) {
             Actions.BridgeActionContext memory bridgeActionContext =
                 abi.decode(action.actionContext, (Actions.BridgeActionContext));
-            // For Across, we're treating the output token as ETH since we'll cover WETH in the `wrapAllEth` action, below.
-            // N.B. We will still treat the in-asset as ETH and reduce that balance on the source chain.
+            // For Across, if the output token is ETH or WETH, we always treat it as the counterpart asset.
+            // This ensures that on the destination chain, ETH will be wrapped into WETH, or WETH will be unwrapped into ETH as needed.
+            // Note: This works because the input/output token is always the one used in the next action.
+            //       Before bridging, we convert any counterpart tokens into the required token for the subsequent action.
             string memory outAssetSymbol = bridgeActionContext.assetSymbol;
             if (
                 Strings.stringEqIgnoreCase(outAssetSymbol, "WETH")
                     && Strings.stringEqIgnoreCase(bridgeActionContext.bridgeType, Actions.BRIDGE_TYPE_ACROSS)
             ) {
                 outAssetSymbol = "ETH";
+            } else if (
+                Strings.stringEqIgnoreCase(outAssetSymbol, "ETH")
+                    && Strings.stringEqIgnoreCase(bridgeActionContext.bridgeType, Actions.BRIDGE_TYPE_ACROSS)
+            ) {
+                outAssetSymbol = "WETH";
             }
 
             BalanceChanges.addOrPutUint256(
