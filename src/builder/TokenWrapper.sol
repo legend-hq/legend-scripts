@@ -123,6 +123,20 @@ library TokenWrapper {
         return "";
     }
 
+    function getWrapperCounterpartAddress(uint256 chainId, string memory assetSymbol) internal pure returns (address) {
+        if (hasWrapperContract(chainId, assetSymbol)) {
+            KnownWrapperTokenPair memory p = getKnownWrapperTokenPair(chainId, assetSymbol);
+            if (isWrappedToken(chainId, assetSymbol)) {
+                return p.underlyingToken;
+            } else {
+                return p.wrapper;
+            }
+        }
+
+        // Return empty string if no counterpart
+        return address(0);
+    }
+
     function isWrappedToken(uint256 chainId, string memory tokenSymbol) internal pure returns (bool) {
         return Strings.stringEqIgnoreCase(tokenSymbol, getKnownWrapperTokenPair(chainId, tokenSymbol).wrappedSymbol);
     }

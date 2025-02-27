@@ -758,14 +758,19 @@ library Actions {
         Accounts.QuarkSecret memory accountSecret =
             Accounts.findQuarkSecret(bridge.sender, srcChainAccounts.quarkSecrets);
 
+        address srcAsset = srcAssetPositions.asset;
+        if (Strings.stringEqIgnoreCase(srcAssetPositions.symbol, "ETH")) {
+            srcAsset = TokenWrapper.getWrapperCounterpartAddress(srcChainAccounts.chainId, "ETH");
+        }
+
+        address dstAsset = dstAssetPositions.asset;
+        if (Strings.stringEqIgnoreCase(dstAssetPositions.symbol, "ETH")) {
+            dstAsset = TokenWrapper.getWrapperCounterpartAddress(dstChainAccounts.chainId, "ETH");
+        }
+
         // Make FFI call to fetch a quote from Across API
-        (uint256 gasFee, uint256 variableFeePct, uint256 minDeposit) = FFI.requestAcrossQuote(
-            srcAssetPositions.asset,
-            dstAssetPositions.asset,
-            bridge.srcChainId,
-            bridge.destinationChainId,
-            bridge.amount
-        );
+        (uint256 gasFee, uint256 variableFeePct, uint256 minDeposit) =
+            FFI.requestAcrossQuote(srcAsset, dstAsset, bridge.srcChainId, bridge.destinationChainId, bridge.amount);
 
         // The quote should consist of a fixed gas fee and variable fee. To calculate the input
         // amount, we scale the bridge.amount by the variable fee and add the fixed gas fee to it.
@@ -791,6 +796,8 @@ library Actions {
             }
         }
 
+        bool useNativeToken = Strings.stringEqIgnoreCase(srcAssetPositions.symbol, "ETH") ? true : false;
+
         // Construct QuarkOperation
         quarkOperation = IQuarkWallet.QuarkOperation({
             nonce: accountSecret.nonceSecret,
@@ -799,15 +806,14 @@ library Actions {
             scriptCalldata: Across.encodeBridgeAction(
                 bridge.srcChainId,
                 bridge.destinationChainId,
-                srcAssetPositions.asset,
-                dstAssetPositions.asset,
+                srcAsset,
+                dstAsset,
                 inputAmount,
                 outputAmount,
                 bridge.sender,
                 bridge.recipient,
                 bridge.blockTimestamp,
-                // TODO: Determine when to set this to true. Probably requires reading QuarkState
-                false // useNativeToken
+                useNativeToken
             ),
             scriptSources: new bytes[](0),
             expiry: bridge.blockTimestamp + BRIDGE_EXPIRY_BUFFER
