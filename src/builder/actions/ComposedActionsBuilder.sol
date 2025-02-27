@@ -73,4 +73,60 @@ contract ComposedActionsBuilder is QuarkBuilderBase {
             eip712Data: EIP712Helper.eip712DataForQuarkOperations(quarkOperationsArray, actionsArray)
         });
     }
+
+    function migrateSupplies(
+        MigrateSuppliesIntent memory intent,
+        Accounts.ChainAccounts[] memory chainAccountsList,
+        Quotes.Quote memory quote
+    ) external pure returns (BuilderResult memory) {
+        PaymentInfo.Payment memory payment =
+            Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
+
+        uint256[] memory withdrawAmountOuts = new uint256[](0);
+        string[] memory withdrawAssetSymbolOuts = new string[](0);
+
+        uint256[] memory supplyAmountOuts = Arrays.uintArray(intent.supplyIntent.amount);
+        string[] memory supplyAssetSymbolOuts = Arrays.stringArray(intent.supplyIntent.assetSymbol);
+
+        uint256 numIntents = intent.withdrawIntents.length + 1;
+        ActionIntent[] memory actionIntents = new ActionIntent[](numIntents);
+        for (uint256 i = 0; i < intent.withdrawIntents.length; ++i) {
+            WithdrawIntent memory withdrawIntent = intent.withdrawIntents[i];
+            actionIntents[i] = ActionIntent({
+                actor: withdrawIntent.withdrawer,
+                amountOuts: withdrawAmountOuts,
+                assetSymbolOuts: withdrawAssetSymbolOuts,
+                actionType: Actions.ACTION_TYPE_WITHDRAW,
+                intent: abi.encode(withdrawIntent),
+                blockTimestamp: withdrawIntent.blockTimestamp,
+                chainId: withdrawIntent.chainId,
+                preferAcross: withdrawIntent.preferAcross
+            });
+        }
+        actionIntents[numIntents - 1] = ActionIntent({
+            actor: intent.supplyIntent.sender,
+            amountOuts: supplyAmountOuts,
+            assetSymbolOuts: supplyAssetSymbolOuts,
+            actionType: Actions.ACTION_TYPE_SUPPLY,
+            intent: abi.encode(intent.supplyIntent),
+            blockTimestamp: intent.supplyIntent.blockTimestamp,
+            chainId: intent.supplyIntent.chainId,
+            preferAcross: intent.supplyIntent.preferAcross
+        });
+
+        (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
+        constructOperationsAndActions({
+            actionIntents: actionIntents,
+            chainAccountsList: chainAccountsList,
+            payment: payment
+        });
+
+        return BuilderResult({
+            version: VERSION,
+            actions: actionsArray,
+            quarkOperations: quarkOperationsArray,
+            paymentCurrency: payment.currency,
+            eip712Data: EIP712Helper.eip712DataForQuarkOperations(quarkOperationsArray, actionsArray)
+        });
+    }
 }

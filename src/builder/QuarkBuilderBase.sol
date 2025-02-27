@@ -24,7 +24,7 @@ import {HashMap} from "src/builder/HashMap.sol";
 import {BalanceChanges} from "src/builder/BalanceChanges.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.8.3";
+string constant QUARK_BUILDER_VERSION = "0.8.4";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -47,8 +47,8 @@ contract QuarkBuilderBase {
 
     string public constant VERSION = QUARK_BUILDER_VERSION;
 
-    string constant SUPPLY_INTENT_COMET = "COMET";
-    string constant SUPPLY_INTENT_MORPHO = "MORPHO";
+    string constant PROTOCOL_COMET = "COMET";
+    string constant PROTOCOL_MORPHO = "MORPHO";
 
     /* ===== Custom Errors ===== */
 
@@ -221,6 +221,14 @@ contract QuarkBuilderBase {
         string paymentAssetSymbol;
     }
 
+    struct MigrateSuppliesIntent {
+        WithdrawIntent[] withdrawIntents;
+        SupplyIntent supplyIntent;
+        string paymentAssetSymbol;
+    }
+
+    /* ===== Generic Intents for Composed Actions ===== */
+
     struct SupplyIntent {
         uint256 amount;
         string assetSymbol;
@@ -229,6 +237,19 @@ contract QuarkBuilderBase {
         string marketType;
         address market;
         address sender;
+        uint256 blockTimestamp;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    struct WithdrawIntent {
+        uint256 amount;
+        string assetSymbol;
+        uint256 chainId;
+        // e.g. "COMPOUND", "MORPHO"
+        string marketType;
+        address market;
+        address withdrawer;
         uint256 blockTimestamp;
         bool preferAcross;
         string paymentAssetSymbol;
@@ -576,7 +597,7 @@ contract QuarkBuilderBase {
                     intent.assetSymbol
                 );
             }
-            if (Strings.stringEqIgnoreCase(intent.marketType, SUPPLY_INTENT_COMET)) {
+            if (Strings.stringEqIgnoreCase(intent.marketType, PROTOCOL_COMET)) {
                 (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.cometSupplyAsset(
                     Actions.CometSupply({
                         chainAccountsList: chainAccountsList,
@@ -590,7 +611,7 @@ contract QuarkBuilderBase {
                     payment
                 );
                 return (Strings.OK, toList(operation), toList(action));
-            } else if (Strings.stringEqIgnoreCase(intent.marketType, SUPPLY_INTENT_MORPHO)) {
+            } else if (Strings.stringEqIgnoreCase(intent.marketType, PROTOCOL_MORPHO)) {
                 (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.morphoVaultSupply(
                     Actions.MorphoVaultSupply({
                         chainAccountsList: chainAccountsList,
@@ -636,7 +657,7 @@ contract QuarkBuilderBase {
                 payment
             );
             return (Strings.OK, toList(operation), toList(action));
-        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_WITHDRAW)) {
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_COMET_WITHDRAW)) {
             CometWithdrawIntent memory intent = abi.decode(actionIntent, (CometWithdrawIntent));
 
             (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.cometWithdrawAsset(
@@ -652,6 +673,41 @@ contract QuarkBuilderBase {
                 payment
             );
             return (Strings.OK, toList(operation), toList(action));
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_WITHDRAW)) {
+            WithdrawIntent memory intent = abi.decode(actionIntent, (WithdrawIntent));
+
+            if (Strings.stringEqIgnoreCase(intent.marketType, PROTOCOL_COMET)) {
+                (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions
+                    .cometWithdrawAsset(
+                    Actions.CometWithdraw({
+                        chainAccountsList: chainAccountsList,
+                        assetSymbol: intent.assetSymbol,
+                        amount: intent.amount,
+                        chainId: intent.chainId,
+                        comet: intent.market,
+                        withdrawer: intent.withdrawer,
+                        blockTimestamp: intent.blockTimestamp
+                    }),
+                    payment
+                );
+                return (Strings.OK, toList(operation), toList(action));
+            } else if (Strings.stringEqIgnoreCase(intent.marketType, PROTOCOL_MORPHO)) {
+                (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions
+                    .morphoVaultWithdraw(
+                    Actions.MorphoVaultWithdraw({
+                        chainAccountsList: chainAccountsList,
+                        assetSymbol: intent.assetSymbol,
+                        amount: intent.amount,
+                        chainId: intent.chainId,
+                        withdrawer: intent.withdrawer,
+                        blockTimestamp: intent.blockTimestamp
+                    }),
+                    payment
+                );
+                return (Strings.OK, toList(operation), toList(action));
+            } else {
+                return (Strings.ERROR, new IQuarkWallet.QuarkOperation[](0), new Actions.Action[](0));
+            }
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_BORROW)) {
             MorphoBorrowIntent memory intent = abi.decode(actionIntent, (MorphoBorrowIntent));
             if (intent.collateralAmount == type(uint256).max) {
@@ -1670,9 +1726,9 @@ contract QuarkBuilderBase {
                 action.quarkAccount,
                 wrapOrUnwrapActionContext.amount
             );
-        } else if (Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_WITHDRAW)) {
-            Actions.WithdrawActionContext memory withdrawActionContext =
-                abi.decode(action.actionContext, (Actions.WithdrawActionContext));
+        } else if (Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_COMET_WITHDRAW)) {
+            Actions.CometWithdrawActionContext memory withdrawActionContext =
+                abi.decode(action.actionContext, (Actions.CometWithdrawActionContext));
             // If withdrawing max, we need to calculate the approximate amount that will be withdrawn
             uint256 withdrawAmount = withdrawActionContext.amount == type(uint256).max
                 ? cometWithdrawMaxAmount(

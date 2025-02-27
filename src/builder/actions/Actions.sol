@@ -51,6 +51,7 @@ library Actions {
     string constant ACTION_TYPE_MORPHO_VAULT_SUPPLY = "MORPHO_VAULT_SUPPLY";
     string constant ACTION_TYPE_SWAP = "SWAP";
     string constant ACTION_TYPE_TRANSFER = "TRANSFER";
+    string constant ACTION_TYPE_COMET_WITHDRAW = "COMET_WITHDRAW";
     string constant ACTION_TYPE_WITHDRAW = "WITHDRAW";
     string constant ACTION_TYPE_MORPHO_VAULT_WITHDRAW = "MORPHO_VAULT_WITHDRAW";
     string constant ACTION_TYPE_WITHDRAW_AND_BORROW = "WITHDRAW_AND_BORROW";
@@ -412,7 +413,7 @@ library Actions {
         address token;
     }
 
-    struct WithdrawActionContext {
+    struct CometWithdrawActionContext {
         uint256 amount;
         string assetSymbol;
         uint256 chainId;
@@ -1186,7 +1187,7 @@ library Actions {
         });
 
         // Construct Action
-        WithdrawActionContext memory cometWithdrawActionContext = WithdrawActionContext({
+        CometWithdrawActionContext memory cometWithdrawActionContext = CometWithdrawActionContext({
             amount: cometWithdraw.amount,
             assetSymbol: cometWithdraw.assetSymbol,
             chainId: cometWithdraw.chainId,
@@ -1197,7 +1198,7 @@ library Actions {
         Action memory action = Actions.Action({
             chainId: cometWithdraw.chainId,
             quarkAccount: cometWithdraw.withdrawer,
-            actionType: ACTION_TYPE_WITHDRAW,
+            actionType: ACTION_TYPE_COMET_WITHDRAW,
             actionContext: abi.encode(cometWithdrawActionContext),
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
@@ -1996,8 +1997,8 @@ library Actions {
         return ts[0];
     }
 
-    function emptyWithdrawActionContext() external pure returns (WithdrawActionContext memory) {
-        WithdrawActionContext[] memory ws = new WithdrawActionContext[](1);
+    function emptyCometWithdrawActionContext() external pure returns (CometWithdrawActionContext memory) {
+        CometWithdrawActionContext[] memory ws = new CometWithdrawActionContext[](1);
         return ws[0];
     }
 

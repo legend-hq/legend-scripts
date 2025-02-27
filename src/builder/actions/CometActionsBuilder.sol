@@ -162,7 +162,7 @@ contract CometActionsBuilder is QuarkBuilderBase {
                 actor: intent.withdrawer,
                 amountOuts: amountOuts,
                 assetSymbolOuts: assetSymbolOuts,
-                actionType: Actions.ACTION_TYPE_WITHDRAW,
+                actionType: Actions.ACTION_TYPE_COMET_WITHDRAW,
                 intent: abi.encode(intent),
                 blockTimestamp: intent.blockTimestamp,
                 chainId: intent.chainId,

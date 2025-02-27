@@ -1181,7 +1181,7 @@ enum Token: Hashable, Equatable {
 enum LendingMarket: Hashable, Equatable {
     case comet(Comet)
     case morpho(MorphoVault)
-    
+
     var marketType: String {
         switch self {
         case .comet:
@@ -1274,6 +1274,10 @@ indirect enum When {
         swap: (from: Account, sellAmount: TokenAmount, buyAmount: TokenAmount, exchange: Exchange, on: Network),
         supply: (from: Account, market: LendingMarket, amount: TokenAmount, on: Network)
     )
+    case migrateSupplies(
+        withdraw: [(from: Account, market: LendingMarket, amount: TokenAmount, on: Network)],
+        supply: (from: Account, market: LendingMarket, amount: TokenAmount, on: Network)
+    )
     case payWith(currency: Token, When)
 
     var sender: Account {
@@ -1304,6 +1308,8 @@ indirect enum When {
             return from
         case let .swapAndSupply(swapIntent, _):
             return swapIntent.from
+        case let .migrateSupplies(_, supplyIntent):
+            return supplyIntent.from
         case let .payWith(_, intent):
             return intent.sender
         }
@@ -1852,7 +1858,7 @@ class Context {
                     paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
                 )
 
-            case .morpho(_):
+            case .morpho:
                 supplyIntent = .init(
                     amount: supply.amount.amount,
                     assetSymbol: supply.amount.token.symbol,
@@ -1869,6 +1875,83 @@ class Context {
             return try await QuarkBuilder.swapAndSupply(
                 intent: .init(
                     swapIntent: swapIntent,
+                    supplyIntent: supplyIntent,
+                    paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                ),
+                chainAccountsList: chainAccounts,
+                quote: .init(
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    issuedAt: 0,
+                    expiresAt: BigUInt(Date(timeIntervalSinceNow: 1_000_000).timeIntervalSince1970),
+                    assetQuotes: assetQuotes,
+                    networkOperationFees: networkOperationFees
+                ),
+                withFunctions: ffis
+            )
+        case let .migrateSupplies(withdraws, supply):
+            let withdrawIntents = withdraws.map { (from: Account, market: LendingMarket, amount: TokenAmount, on: Network) in
+                switch market {
+                case let .comet(cometMarket):
+                    return QuarkBuilder.QuarkBuilderBase.WithdrawIntent(
+                        amount: amount.amount,
+                        assetSymbol: amount.token.symbol,
+                        chainId: BigUInt(on.chainId),
+                        marketType: market.marketType,
+                        market: cometMarket.address(network: on),
+                        withdrawer: from.address,
+                        blockTimestamp: BigUInt(1_000_000),
+                        preferAcross: true,
+                        paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                    )
+
+                case .morpho:
+                    return QuarkBuilder.QuarkBuilderBase.WithdrawIntent(
+                        amount: amount.amount,
+                        assetSymbol: amount.token.symbol,
+                        chainId: BigUInt(on.chainId),
+                        marketType: market.marketType,
+                        market: EthAddress("0x0000000000000000000000000000000000000000"),
+                        withdrawer: from.address,
+                        blockTimestamp: BigUInt(1_000_000),
+                        preferAcross: true,
+                        paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                    )
+                }
+            }
+
+            let supplyIntent: QuarkBuilder.QuarkBuilderBase.SupplyIntent
+            switch supply.market {
+            case let .comet(cometMarket):
+                supplyIntent = .init(
+                    amount: supply.amount.amount,
+                    assetSymbol: supply.amount.token.symbol,
+                    chainId: BigUInt(supply.on.chainId),
+                    marketType: supply.market.marketType,
+                    market: cometMarket.address(network: supply.on),
+                    sender: supply.from.address,
+                    blockTimestamp: BigUInt(1_000_000),
+                    preferAcross: true,
+                    paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                )
+
+            case .morpho:
+                supplyIntent = .init(
+                    amount: supply.amount.amount,
+                    assetSymbol: supply.amount.token.symbol,
+                    chainId: BigUInt(supply.on.chainId),
+                    marketType: supply.market.marketType,
+                    market: EthAddress("0x0000000000000000000000000000000000000000"),
+                    sender: supply.from.address,
+                    blockTimestamp: BigUInt(1_000_000),
+                    preferAcross: true,
+                    paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                )
+            }
+
+            return try await QuarkBuilder.migrateSupplies(
+                intent: .init(
+                    withdrawIntents: withdrawIntents,
                     supplyIntent: supplyIntent,
                     paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
                 ),
