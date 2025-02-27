@@ -3,8 +3,8 @@ import Testing
 
 @Suite("Swap And Supply Tests")
 struct SwapAndSupplyTests {
-    @Test("Alice swaps and supplies on a single chain, paying with QuotePay")
-    func testLocalSwapAndSupplyWithQuotePaySucceeds() async throws {
+    @Test("Alice swaps and supplies to Comet on a single chain, paying with QuotePay")
+    func testLocalSwapAndSupplyToCometWithQuotePaySucceeds() async throws {
         try await testAcceptanceTests(
             test: .init(
                 given: [
@@ -20,7 +20,7 @@ struct SwapAndSupplyTests {
                         on: .ethereum
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .amt(0.5, .weth), on: .ethereum
+                        from: .alice, market: .comet(.cwethv3), amount: .amt(0.5, .weth), on: .ethereum
                     )
                 ),
                 expect: .success(
@@ -33,7 +33,50 @@ struct SwapAndSupplyTests {
                                 network: .ethereum
                             ),
                             .supplyToComet(
-                                tokenAmount: .amt(0.5, .weth), market: .cwethv3,
+                                tokenAmount: .amt(0.5, .weth),
+                                market: .cwethv3,
+                                network: .ethereum
+                            ),
+                            .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
+                        ], executionType: .immediate)
+                    )
+                )
+            )
+        )
+    }
+
+    @Test("Alice swaps and supplies to Morpho on a single chain, paying with QuotePay")
+    func testLocalSwapAndSupplyToMorphoWithQuotePaySucceeds() async throws {
+        try await testAcceptanceTests(
+            test: .init(
+                given: [
+                    .tokenBalance(.alice, .amt(4000, .usdc), .ethereum),
+                    .quote(.basic),
+                ],
+                when: .swapAndSupply(
+                    swap: (
+                        from: .alice,
+                        sellAmount: .amt(3000, .usdc),
+                        buyAmount: .amt(1, .weth),
+                        exchange: .zeroEx,
+                        on: .ethereum
+                    ),
+                    supply: (
+                        from: .alice, market: .morpho(.weth), amount: .amt(0.5, .weth), on: .ethereum
+                    )
+                ),
+                expect: .success(
+                    .single(
+                        .multicall([
+                            .swap(
+                                sellAmount: .amt(3000, .usdc),
+                                buyAmount: .amt(1, .weth),
+                                exchange: .zeroEx,
+                                network: .ethereum
+                            ),
+                            .supplyToMorphoVault(
+                                tokenAmount: .amt(0.5, .weth),
+                                vault: .weth,
                                 network: .ethereum
                             ),
                             .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
@@ -62,7 +105,7 @@ struct SwapAndSupplyTests {
                         on: .ethereum
                     ),
                     supply: (
-                        from: .alice, market: .cusdcv3, amount: .amt(3005, .usdc), on: .ethereum
+                        from: .alice, market: .comet(.cusdcv3), amount: .amt(3005, .usdc), on: .ethereum
                     )
                 ),
                 expect: .success(
@@ -76,7 +119,8 @@ struct SwapAndSupplyTests {
                                 network: .ethereum
                             ),
                             .supplyToComet(
-                                tokenAmount: .amt(3005, .usdc), market: .cusdcv3,
+                                tokenAmount: .amt(3005, .usdc),
+                                market: .cusdcv3,
                                 network: .ethereum
                             ),
                             .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
@@ -105,7 +149,7 @@ struct SwapAndSupplyTests {
                         on: .ethereum
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .amt(2, .weth), on: .ethereum
+                        from: .alice, market: .comet(.cwethv3), amount: .amt(2, .weth), on: .ethereum
                     )
                 ),
                 expect: .success(
@@ -120,7 +164,8 @@ struct SwapAndSupplyTests {
                                 network: .ethereum
                             ),
                             .supplyToComet(
-                                tokenAmount: .amt(2, .weth), market: .cwethv3,
+                                tokenAmount: .amt(2, .weth),
+                                market: .cwethv3,
                                 network: .ethereum
                             ),
                             .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
@@ -148,7 +193,7 @@ struct SwapAndSupplyTests {
                         on: .ethereum
                     ),
                     supply: (
-                        from: .alice, market: .cusdcv3, amount: .max(.usdc), on: .ethereum
+                        from: .alice, market: .comet(.cusdcv3), amount: .max(.usdc), on: .ethereum
                     )
                 ),
                 expect: .success(
@@ -162,7 +207,8 @@ struct SwapAndSupplyTests {
                                     network: .ethereum
                                 ),
                                 .supplyToComet(
-                                    tokenAmount: .amt(2999.9, .usdc), market: .cusdcv3,
+                                    tokenAmount: .amt(2999.9, .usdc),
+                                    market: .cusdcv3,
                                     network: .ethereum
                                 ),
                                 .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
@@ -193,7 +239,7 @@ struct SwapAndSupplyTests {
                         on: .ethereum
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .max(.weth), on: .ethereum
+                        from: .alice, market: .comet(.cwethv3), amount: .max(.weth), on: .ethereum
                     )
                 ),
                 expect: .success(
@@ -209,7 +255,8 @@ struct SwapAndSupplyTests {
                                     network: .ethereum
                                 ),
                                 .supplyToComet(
-                                    tokenAmount: .amt(2.5 * 0.99, .weth), market: .cwethv3,
+                                    tokenAmount: .amt(2.5 * 0.99, .weth),
+                                    market: .cwethv3,
                                     network: .ethereum
                                 ),
                                 .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
@@ -241,7 +288,7 @@ struct SwapAndSupplyTests {
                         on: .base
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .amt(1, .weth), on: .base
+                        from: .alice, market: .comet(.cwethv3), amount: .amt(1, .weth), on: .base
                     )
                 ),
                 expect: .success(
@@ -265,7 +312,8 @@ struct SwapAndSupplyTests {
                                 network: .base
                             ),
                             .supplyToComet(
-                                tokenAmount: .amt(1, .weth), market: .cwethv3,
+                                tokenAmount: .amt(1, .weth),
+                                market: .cwethv3,
                                 network: .base
                             ),
                         ], executionType: .contingent),
@@ -293,7 +341,7 @@ struct SwapAndSupplyTests {
                         on: .ethereum
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .amt(1, .weth), on: .base
+                        from: .alice, market: .comet(.cwethv3), amount: .amt(1, .weth), on: .base
                     )
                 ),
                 expect: .success(
@@ -318,7 +366,8 @@ struct SwapAndSupplyTests {
                         .multicall([
                             .wrapAsset(.eth),
                             .supplyToComet(
-                                tokenAmount: .amt(1, .weth), market: .cwethv3,
+                                tokenAmount: .amt(1, .weth),
+                                market: .cwethv3,
                                 network: .base
                             ),
                         ], executionType: .contingent),
@@ -348,7 +397,7 @@ struct SwapAndSupplyTests {
                         on: .base
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .amt(2, .weth), on: .base
+                        from: .alice, market: .comet(.cwethv3), amount: .amt(2, .weth), on: .base
                     )
                 ),
                 expect: .success(
@@ -373,7 +422,8 @@ struct SwapAndSupplyTests {
                                 network: .base
                             ),
                             .supplyToComet(
-                                tokenAmount: .amt(2, .weth), market: .cwethv3,
+                                tokenAmount: .amt(2, .weth),
+                                market: .cwethv3,
                                 network: .base
                             ),
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
@@ -404,7 +454,7 @@ struct SwapAndSupplyTests {
                         on: .base
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .max(.weth), on: .base
+                        from: .alice, market: .comet(.cwethv3), amount: .max(.weth), on: .base
                     )
                 ),
                 expect: .success(
@@ -429,7 +479,8 @@ struct SwapAndSupplyTests {
                                 network: .base
                             ),
                             .supplyToComet(
-                                tokenAmount: .amt(2.5 * 0.99, .weth), market: .cwethv3,
+                                tokenAmount: .amt(2.5 * 0.99, .weth),
+                                market: .cwethv3,
                                 network: .base
                             ),
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
@@ -459,7 +510,7 @@ struct SwapAndSupplyTests {
                         on: .base
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .amt(1, .weth), on: .base
+                        from: .alice, market: .comet(.cwethv3), amount: .amt(1, .weth), on: .base
                     )
                 ),
                 expect: .success(
@@ -483,7 +534,8 @@ struct SwapAndSupplyTests {
                                 network: .base
                             ),
                             .supplyToComet(
-                                tokenAmount: .amt(1, .weth), market: .cwethv3,
+                                tokenAmount: .amt(1, .weth),
+                                market: .cwethv3,
                                 network: .base
                             ),
                         ], executionType: .contingent),
@@ -511,7 +563,7 @@ struct SwapAndSupplyTests {
                         on: .unknown(7777)
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .amt(0.5, .weth), on: .ethereum
+                        from: .alice, market: .comet(.cwethv3), amount: .amt(0.5, .weth), on: .ethereum
                     )
                 ),
                 expect: .revert(
@@ -543,7 +595,7 @@ struct SwapAndSupplyTests {
                         on: .ethereum
                     ),
                     supply: (
-                        from: .alice, market: .unknownComet("0x0000000000000000000000000000000000000000"), amount: .amt(0.1, .weth), on: .lineaSepolia
+                        from: .alice, market: .comet(.unknownComet("0x0000000000000000000000000000000000000000")), amount: .amt(0.1, .weth), on: .lineaSepolia
                     )
                 ),
                 expect: .revert(
@@ -575,7 +627,7 @@ struct SwapAndSupplyTests {
                         on: .ethereum
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .amt(0.5, .weth), on: .ethereum
+                        from: .alice, market: .comet(.cwethv3), amount: .amt(0.5, .weth), on: .ethereum
                     )
                 ),
                 expect: .revert(
@@ -606,7 +658,7 @@ struct SwapAndSupplyTests {
                         on: .ethereum
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .amt(0.5, .weth), on: .ethereum
+                        from: .alice, market: .comet(.cwethv3), amount: .amt(0.5, .weth), on: .ethereum
                     )
                 ),
                 expect: .revert(
@@ -650,7 +702,7 @@ struct SwapAndSupplyTests {
                         on: .ethereum
                     ),
                     supply: (
-                        from: .alice, market: .cwethv3, amount: .amt(0.1, .weth), on: .ethereum
+                        from: .alice, market: .comet(.cwethv3), amount: .amt(0.1, .weth), on: .ethereum
                     )
                 ),
                 expect: .revert(
@@ -682,7 +734,7 @@ struct SwapAndSupplyTests {
                         on: .ethereum
                     ),
                     supply: (
-                        from: .alice, market: .cusdcv3, amount: .amt(900, .usdc), on: .ethereum
+                        from: .alice, market: .comet(.cusdcv3), amount: .amt(900, .usdc), on: .ethereum
                     )
                 ),
                 expect: .revert(

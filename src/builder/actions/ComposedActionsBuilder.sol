@@ -43,9 +43,9 @@ contract ComposedActionsBuilder is QuarkBuilderBase {
             assetSymbolOuts: swapAssetSymbolOuts,
             actionType: Actions.ACTION_TYPE_SWAP,
             intent: abi.encode(intent.swapIntent),
-            blockTimestamp: intent.blockTimestamp,
+            blockTimestamp: intent.swapIntent.blockTimestamp,
             chainId: intent.swapIntent.chainId,
-            preferAcross: intent.preferAcross
+            preferAcross: intent.swapIntent.preferAcross
         });
         actionIntents[1] = ActionIntent({
             actor: intent.supplyIntent.sender,
@@ -53,9 +53,9 @@ contract ComposedActionsBuilder is QuarkBuilderBase {
             assetSymbolOuts: supplyAssetSymbolOuts,
             actionType: Actions.ACTION_TYPE_SUPPLY,
             intent: abi.encode(intent.supplyIntent),
-            blockTimestamp: intent.blockTimestamp,
+            blockTimestamp: intent.supplyIntent.blockTimestamp,
             chainId: intent.supplyIntent.chainId,
-            preferAcross: intent.preferAcross
+            preferAcross: intent.supplyIntent.preferAcross
         });
 
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =

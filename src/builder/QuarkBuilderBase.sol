@@ -24,7 +24,7 @@ import {HashMap} from "src/builder/HashMap.sol";
 import {BalanceChanges} from "src/builder/BalanceChanges.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.8.2";
+string constant QUARK_BUILDER_VERSION = "0.8.3";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -46,6 +46,9 @@ contract QuarkBuilderBase {
     /* ===== Constants ===== */
 
     string public constant VERSION = QUARK_BUILDER_VERSION;
+
+    string constant SUPPLY_INTENT_COMET = "COMET";
+    string constant SUPPLY_INTENT_MORPHO = "MORPHO";
 
     /* ===== Custom Errors ===== */
 
@@ -214,8 +217,18 @@ contract QuarkBuilderBase {
 
     struct SwapAndSupplyIntent {
         ZeroExSwapIntent swapIntent;
-        CometSupplyIntent supplyIntent;
-        // TODO: Add other supply (e.g. morpho) intents?
+        SupplyIntent supplyIntent;
+        string paymentAssetSymbol;
+    }
+
+    struct SupplyIntent {
+        uint256 amount;
+        string assetSymbol;
+        uint256 chainId;
+        // e.g. "COMPOUND", "MORPHO"
+        string marketType;
+        address market;
+        address sender;
         uint256 blockTimestamp;
         bool preferAcross;
         string paymentAssetSymbol;
@@ -528,7 +541,7 @@ contract QuarkBuilderBase {
                 payment
             );
             return (Strings.OK, operations, actions);
-        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_SUPPLY)) {
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_COMET_SUPPLY)) {
             CometSupplyIntent memory intent = abi.decode(actionIntent, (CometSupplyIntent));
             if (intent.amount == type(uint256).max) {
                 intent.amount = Accounts.getTotalAvailableBalanceOnDst(
@@ -552,6 +565,47 @@ contract QuarkBuilderBase {
                 payment
             );
             return (Strings.OK, toList(operation), toList(action));
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_SUPPLY)) {
+            SupplyIntent memory intent = abi.decode(actionIntent, (SupplyIntent));
+            if (intent.amount == type(uint256).max) {
+                intent.amount = Accounts.getTotalAvailableBalanceOnDst(
+                    chainAccountsList,
+                    payment,
+                    amountsOnDst,
+                    List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                    intent.assetSymbol
+                );
+            }
+            if (Strings.stringEqIgnoreCase(intent.marketType, SUPPLY_INTENT_COMET)) {
+                (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.cometSupplyAsset(
+                    Actions.CometSupply({
+                        chainAccountsList: chainAccountsList,
+                        assetSymbol: intent.assetSymbol,
+                        amount: intent.amount,
+                        chainId: intent.chainId,
+                        comet: intent.market,
+                        sender: intent.sender,
+                        blockTimestamp: intent.blockTimestamp
+                    }),
+                    payment
+                );
+                return (Strings.OK, toList(operation), toList(action));
+            } else if (Strings.stringEqIgnoreCase(intent.marketType, SUPPLY_INTENT_MORPHO)) {
+                (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.morphoVaultSupply(
+                    Actions.MorphoVaultSupply({
+                        chainAccountsList: chainAccountsList,
+                        assetSymbol: intent.assetSymbol,
+                        amount: intent.amount,
+                        chainId: intent.chainId,
+                        sender: intent.sender,
+                        blockTimestamp: intent.blockTimestamp
+                    }),
+                    payment
+                );
+                return (Strings.OK, toList(operation), toList(action));
+            } else {
+                return (Strings.ERROR, new IQuarkWallet.QuarkOperation[](0), new Actions.Action[](0));
+            }
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_REPAY)) {
             CometRepayIntent memory intent = abi.decode(actionIntent, (CometRepayIntent));
             if (intent.amount == type(uint256).max) {
@@ -783,7 +837,7 @@ contract QuarkBuilderBase {
             );
             return (Strings.OK, toList(operation), toList(action));
         } else {
-            return (Strings.ERROR, new IQuarkWallet.QuarkOperation[](1), new Actions.Action[](1));
+            return (Strings.ERROR, new IQuarkWallet.QuarkOperation[](0), new Actions.Action[](0));
         }
     }
 
@@ -1532,9 +1586,9 @@ contract QuarkBuilderBase {
                     cometRepayActionContext.collateralAmounts[j]
                 );
             }
-        } else if (Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_SUPPLY)) {
-            Actions.SupplyActionContext memory cometSupplyActionContext =
-                abi.decode(action.actionContext, (Actions.SupplyActionContext));
+        } else if (Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_COMET_SUPPLY)) {
+            Actions.CometSupplyActionContext memory cometSupplyActionContext =
+                abi.decode(action.actionContext, (Actions.CometSupplyActionContext));
             BalanceChanges.addOrPutUint256(
                 assetsOutPerChain,
                 cometSupplyActionContext.assetSymbol,

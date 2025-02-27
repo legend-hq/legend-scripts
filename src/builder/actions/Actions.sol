@@ -46,6 +46,7 @@ library Actions {
     // TODO: (LHT-86) Rename ACTION_TYPE_REPAY to ACTION_TYPE_COMET_REPAY, as now we have more than one borrow market
     string constant ACTION_TYPE_REPAY = "REPAY";
     string constant ACTION_TYPE_MORPHO_REPAY = "MORPHO_REPAY";
+    string constant ACTION_TYPE_COMET_SUPPLY = "COMET_SUPPLY";
     string constant ACTION_TYPE_SUPPLY = "SUPPLY";
     string constant ACTION_TYPE_MORPHO_VAULT_SUPPLY = "MORPHO_VAULT_SUPPLY";
     string constant ACTION_TYPE_SWAP = "SWAP";
@@ -352,7 +353,7 @@ library Actions {
         address token;
     }
 
-    struct SupplyActionContext {
+    struct CometSupplyActionContext {
         uint256 amount;
         string assetSymbol;
         uint256 chainId;
@@ -1129,7 +1130,7 @@ library Actions {
         });
 
         // Construct Action
-        SupplyActionContext memory cometSupplyActionContext = SupplyActionContext({
+        CometSupplyActionContext memory cometSupplyActionContext = CometSupplyActionContext({
             amount: cometSupply.amount,
             chainId: cometSupply.chainId,
             comet: cometSupply.comet,
@@ -1140,7 +1141,7 @@ library Actions {
         Action memory action = Actions.Action({
             chainId: cometSupply.chainId,
             quarkAccount: cometSupply.sender,
-            actionType: ACTION_TYPE_SUPPLY,
+            actionType: ACTION_TYPE_COMET_SUPPLY,
             actionContext: abi.encode(cometSupplyActionContext),
             quotePayActionContext: "",
             paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
@@ -1980,8 +1981,8 @@ library Actions {
         return mr[0];
     }
 
-    function emptySupplyActionContext() external pure returns (SupplyActionContext memory) {
-        SupplyActionContext[] memory ss = new SupplyActionContext[](1);
+    function emptyCometSupplyActionContext() external pure returns (CometSupplyActionContext memory) {
+        CometSupplyActionContext[] memory ss = new CometSupplyActionContext[](1);
         return ss[0];
     }
 
