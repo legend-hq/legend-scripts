@@ -133,7 +133,7 @@ library TokenWrapper {
             }
         }
 
-        // Return empty string if no counterpart
+        // Return 0 address if no counterpart
         return address(0);
     }
 
