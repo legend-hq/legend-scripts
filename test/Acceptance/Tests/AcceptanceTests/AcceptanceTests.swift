@@ -90,14 +90,10 @@ enum Call: CustomStringConvertible, Equatable {
                 useNativeToken
             ) = try? AcrossActions.depositV3Decode(input: calldata) {
                 let dstNetwork = Network.fromChainId(BigInt(depositV3Params.destinationChainId))
-                let srcWethAddress = Token.weth.address(network: network)!
-                let dstWethAddress = Token.weth.address(network: dstNetwork)!
-                let srcEthAddress = Token.eth.address(network: network)!
-                let dstEthAddress = Token.eth.address(network: dstNetwork)!
-                let useEthSrcNetwork = useNativeToken && depositV3Params.inputToken == srcWethAddress
-                let useEthDstNetwork = useNativeToken && depositV3Params.outputToken == dstWethAddress
-                let inputTokenAddress = useEthSrcNetwork ? srcEthAddress : depositV3Params.inputToken
-                let outputTokenAddress = useEthDstNetwork ? dstEthAddress : depositV3Params.outputToken
+                let useEthSrcNetwork = useNativeToken && depositV3Params.inputToken == Token.weth.address(network: network)!
+                let useEthDstNetwork = useNativeToken && depositV3Params.outputToken == Token.weth.address(network: dstNetwork)!
+                let inputTokenAddress = useEthSrcNetwork ? Token.eth.address(network: network)! : depositV3Params.inputToken
+                let outputTokenAddress = useEthDstNetwork ? Token.eth.address(network: dstNetwork)! : depositV3Params.outputToken
 
                 return .bridge(
                     bridge: "Across",
