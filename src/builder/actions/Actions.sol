@@ -758,6 +758,8 @@ library Actions {
         Accounts.QuarkSecret memory accountSecret =
             Accounts.findQuarkSecret(bridge.sender, srcChainAccounts.quarkSecrets);
 
+        // Across API requires setting the address of native ETH transfers to the WETH address
+        // on the chain
         address srcAsset = srcAssetPositions.asset;
         if (Strings.stringEqIgnoreCase(srcAssetPositions.symbol, "ETH")) {
             srcAsset = TokenWrapper.getWrapperCounterpartAddress(srcChainAccounts.chainId, "ETH");
