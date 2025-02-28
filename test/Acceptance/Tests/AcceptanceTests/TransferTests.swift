@@ -251,6 +251,90 @@ struct TransferTests {
         )
     }
 
+    @Test("Alice transfers ETH. WETH is unwrapped and ETH is transferred")
+    func testTransferETH() async throws {
+        try await testAcceptanceTests(
+            test:  .init(
+                given: [
+                    .tokenBalance(.alice, .amt(0.5, .eth), .base),
+                    .tokenBalance(.alice, .amt(0.2, .weth), .base),
+                    .tokenBalance(.alice, .amt(5, .usdc), .base),
+                    .quote(.basic),
+                ],
+                when: .transfer(from: .alice, to: .bob, amount: .amt(0.7, .eth), on: .base),
+                expect: .success(
+                    .single(
+                        .multicall(
+                            [
+                                .unwrapWETHUpTo(
+                                    tokenAmount: .amt(0.7, .weth)
+                                ),
+                                .transferNativeToken(
+                                    tokenAmount: .amt(0.7, .eth),
+                                    recipient: .bob,
+                                    network: .base
+                                ),
+                                .quotePay(payment: .amt(0.02, .usdc), payee: .stax, quote: .basic)
+                            ],
+                            executionType: .immediate
+                        )
+                    )
+                )
+            )
+        )
+    }
+
+    @Test("Alice transfers ETH over bridge. WETH is unwrapped and ETH is transferred")
+    func testTransferETHOverBridge() async throws {
+        try await testAcceptanceTests(
+            test:  .init(
+                given: [
+                    .tokenBalance(.alice, .amt(0.8, .eth), .base),
+                    .tokenBalance(.alice, .amt(5, .usdc), .base),
+                    .quote(.basic),
+                    .acrossQuote(.amt(0.01, .weth), 0.01),
+                ],
+                when: .transfer(from: .alice, to: .bob, amount: .amt(0.7, .eth), on: .arbitrum),
+                expect: .success(
+                    .multi(
+                        [
+                            .multicall(
+                                [
+                                    .bridge(
+                                        bridge: "Across",
+                                        srcNetwork: .base,
+                                        destinationNetwork: .arbitrum,
+                                        inputTokenAmount: .amt(0.717, .eth),
+                                        outputTokenAmount: .amt(0.7, .eth)
+                                    ),
+                                    .quotePay(
+                                        payment: .amt(0.06, .usdc),
+                                        payee: .stax,
+                                        quote: .basic
+                                    )
+                                ],
+                                executionType: .immediate
+                            ),
+                            .multicall(
+                                [
+                                    .unwrapWETHUpTo(
+                                        tokenAmount: .amt(0.7, .weth)
+                                    ),
+                                    .transferNativeToken(
+                                        tokenAmount: .amt(0.7, .eth),
+                                        recipient: .bob,
+                                        network: .arbitrum
+                                    )
+                                ],
+                                executionType: .contingent
+                            ),
+                        ]
+                    )
+                )
+            )
+        )
+    }
+
     @Test("Alice transfers WETH to Bob on Arbitrum via Across [Pay with WETH]")
     func testTransferWethAndPayWithWeth() async throws {
         try await testAcceptanceTests(

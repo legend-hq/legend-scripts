@@ -21,6 +21,7 @@ enum Call: CustomStringConvertible, Equatable {
         proofs: [MorphoClaimProof], network: Network, executionType: ExecutionType? = nil
     )
     case transferErc20(tokenAmount: TokenAmount, recipient: Account, network: Network, executionType: ExecutionType? = nil)
+    case transferNativeToken(tokenAmount: TokenAmount, recipient: Account, network: Network, executionType: ExecutionType? = nil)
     case supplyToComet(tokenAmount: TokenAmount, market: Comet, network: Network, executionType: ExecutionType? = nil)
     case supplyMultipleAssetsAndBorrowFromComet(
         borrowAmount: TokenAmount,
@@ -63,6 +64,7 @@ enum Call: CustomStringConvertible, Equatable {
     case multicall(_ calls: [Call], executionType: ExecutionType? = nil)
     case withdrawFromComet(tokenAmount: TokenAmount, market: Comet, network: Network, executionType: ExecutionType? = nil)
     case wrapAsset(_ token: Token, executionType: ExecutionType? = nil)
+    case unwrapWETHUpTo(tokenAmount: TokenAmount, executionType: ExecutionType? = nil)
     case unknownFunctionCall(String, String, ABI.Value)
     case unknownScriptCall(EthAddress, Hex)
 
@@ -85,8 +87,14 @@ enum Call: CustomStringConvertible, Equatable {
                 _,
                 depositV3Params,
                 _,
-                _
+                useNativeToken
             ) = try? AcrossActions.depositV3Decode(input: calldata) {
+                let dstNetwork = Network.fromChainId(BigInt(depositV3Params.destinationChainId))
+                let useEthSrcNetwork = useNativeToken && depositV3Params.inputToken == Token.weth.address(network: network)!
+                let useEthDstNetwork = useNativeToken && depositV3Params.outputToken == Token.weth.address(network: dstNetwork)!
+                let inputTokenAddress = useEthSrcNetwork ? Token.eth.address(network: network)! : depositV3Params.inputToken
+                let outputTokenAddress = useEthDstNetwork ? Token.eth.address(network: dstNetwork)! : depositV3Params.outputToken
+
                 return .bridge(
                     bridge: "Across",
                     srcNetwork: network,
@@ -95,12 +103,12 @@ enum Call: CustomStringConvertible, Equatable {
                     inputTokenAmount: Token.getTokenAmount(
                         amount: depositV3Params.inputAmount,
                         network: network,
-                        address: depositV3Params.inputToken
+                        address: inputTokenAddress
                     ),
                     outputTokenAmount: Token.getTokenAmount(
                         amount: depositV3Params.outputAmount,
                         network: Network.fromChainId(BigInt(depositV3Params.destinationChainId)),
-                        address: depositV3Params.outputToken
+                        address: outputTokenAddress
                     ),
                     executionType: executionTypeForCall
                 )
@@ -117,6 +125,15 @@ enum Call: CustomStringConvertible, Equatable {
                     ),
                     recipient: Account.from(address: recipient),
                     network: network,
+                    executionType: executionTypeForCall
+                )
+            } else if let (recipient, amount) = try? TransferActions.transferNativeTokenDecode(input: calldata) {
+                return .transferNativeToken(
+                    tokenAmount: Token.getTokenAmount(
+                        amount: amount, network: network, address: Token.eth.address(network: network)!
+                    ),
+                    recipient: Account.from(address: recipient), 
+                    network: network, 
                     executionType: executionTypeForCall
                 )
             }
@@ -373,6 +390,11 @@ enum Call: CustomStringConvertible, Equatable {
         if scriptAddress == getScriptAddress(WrapperActions.creationCode) {
             if let _ = try? WrapperActions.wrapAllETHDecode(input: calldata) {
                 return .wrapAsset(.eth, executionType: executionTypeForCall)
+            } else if let (_, amount) = try? WrapperActions.unwrapWETHUpToDecode(input: calldata) {
+                return .unwrapWETHUpTo(
+                    tokenAmount: TokenAmount(fromWei: amount, ofToken: .weth),
+                    executionType: executionTypeForCall
+                )
             }
         }
 
@@ -402,6 +424,9 @@ enum Call: CustomStringConvertible, Equatable {
         case let .transferErc20(tokenAmount, recipient, network, executionType):
             return
                 "transferErc20(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(recipient.description) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .transferNativeToken(tokenAmount, recipient, network, executionType):
+            return
+                "transferNativeToken(\(tokenAmount) to \(recipient.description) on \(network.description))\(executionTypeDescription(executionType))"
         case let .quotePay(payment, payee, quoteId, executionType):
             return
                 "quotePay(\(payment.amount) \(payment.token.symbol) to \(payee.description), quoteId: \(quoteId))\(executionTypeDescription(executionType))"
@@ -437,6 +462,8 @@ enum Call: CustomStringConvertible, Equatable {
             return "multicall(\(calls.map { $0.description }.joined(separator: ", ")))\(executionTypeDescription(executionType))"
         case let .wrapAsset(token, executionType):
             return "wrapAsset(\(token.symbol))\(executionTypeDescription(executionType))"
+        case let .unwrapWETHUpTo(tokenAmount: tokenAmount, executionType: executionType):
+            return "unwrapWETHUpTo(\(tokenAmount.amount) \(tokenAmount.token.symbol))\(executionTypeDescription(executionType))"
         case let .repayAndWithdrawCollateralFromMorpho(repayAmount, collateralAmount, market, network, executionType):
             return "repayAndWithdrawCollateralFromMorpho(repay \(repayAmount.amount) \(repayAmount.token.symbol), withdraw \(collateralAmount.amount) \(collateralAmount.token.symbol) from \(market.description) on \(network.description))\(executionTypeDescription(executionType))"
         case let .supplyCollateralAndBorrowFromMorpho(borrowAmount, collateralAmount, market, network, executionType):
@@ -1474,11 +1501,36 @@ class Context {
             prices = quote.prices
             fees = quote.fees
         case let .acrossQuote(gasFee, feePct):
-            ffis[EthAddress("0x0000000000000000000000000000000000FF1010")] = { _ in
-                .ok(
-                    ABI.Value.tuple3(
-                        .uint256(gasFee.amount), .uint256(BigUInt(feePct * 1e18)), .uint256(0)
-                    ).encoded)
+            ffis[EthAddress("0x0000000000000000000000000000000000FF1010")] = { input in
+                let runFn = ABI.Function(
+                    name: "requestAcrossQuote",
+                    inputs: [.address, .address, .uint256, .uint256, .uint256],
+                    outputs: []
+                )
+
+                guard let decodedInput = try? runFn.decodeInput(input: input) else {
+                    return .revert(ABI.Value.string("unknown function call").encoded)
+                }
+
+                switch decodedInput {
+                case let .tuple5(.address(srcAsset), .address(dstAsset), .uint256(srcChainId), .uint256(dstChainId), .uint256(inputAmount)):
+                    let srcToken = Token.from(network: Network.fromChainId(BigInt(srcChainId)), address: srcAsset)
+                    let dstToken = Token.from(network: Network.fromChainId(BigInt(dstChainId)), address: dstAsset)
+                    let supportedBridgeableTokens = [Token.usdc, Token.weth]
+                    for token in [srcToken, dstToken] {
+                        if !supportedBridgeableTokens.contains(token) {
+                            fatalError("Unsupported token for Across bridge: \(token)")
+                        }
+                    }
+
+                    return .ok(
+                        ABI.Value.tuple3(
+                            .uint256(gasFee.amount), .uint256(BigUInt(feePct * 1e18)), .uint256(0)
+                        ).encoded
+                    )
+                default:
+                    fatalError("Unknown function call for Across FFI")
+                }
             }
         case let .acrossQuoteWithMin(gasFee, feePct, minAmount):
             ffis[EthAddress("0x0000000000000000000000000000000000FF1010")] = { _ in
