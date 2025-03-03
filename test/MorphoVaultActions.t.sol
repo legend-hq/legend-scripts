@@ -69,6 +69,31 @@ contract MorphoVaultActionsTest is Test {
         );
     }
 
+    function testDepositMax() public {
+        vm.pauseGasMetering();
+        QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
+
+        deal(USDC, address(wallet), 10_000e6);
+
+        QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
+            wallet,
+            morphoVaultActionsScripts,
+            abi.encodeWithSelector(MorphoVaultActions.deposit.selector, morphoVault, USDC, type(uint256).max),
+            ScriptType.ScriptSource
+        );
+        bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
+        assertEq(IERC20(USDC).balanceOf(address(wallet)), 10_000e6);
+        assertEq(IERC4626(morphoVault).balanceOf(address(wallet)), 0);
+
+        vm.resumeGasMetering();
+        wallet.executeQuarkOperation(op, signature);
+
+        assertEq(IERC20(USDC).balanceOf(address(wallet)), 0);
+        assertApproxEqAbs(
+            IERC4626(morphoVault).convertToAssets(IERC4626(morphoVault).balanceOf(address(wallet))), 10_000e6, 0.01e6
+        );
+    }
+
     function testWithdraw() public {
         vm.pauseGasMetering();
         QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));

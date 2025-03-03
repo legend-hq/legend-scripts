@@ -19,6 +19,9 @@ contract MorphoVaultActions {
      * @param amount The amount of the asset to deposit
      */
     function deposit(address vault, address asset, uint256 amount) external {
+        if (amount == type(uint256).max) {
+            amount = IERC20(asset).balanceOf(address(this));
+        }
         IERC20(asset).forceApprove(vault, amount);
         IMetaMorpho(vault).deposit({assets: amount, receiver: address(this)});
     }
@@ -109,6 +112,9 @@ contract MorphoActions {
         uint256 supplyAssetAmount,
         uint256 borrowAssetAmount
     ) external {
+        if (supplyAssetAmount == type(uint256).max) {
+            supplyAssetAmount = IERC20(marketParams.collateralToken).balanceOf(address(this));
+        }
         if (supplyAssetAmount > 0) {
             IERC20(marketParams.collateralToken).forceApprove(morpho, supplyAssetAmount);
             IMorpho(morpho).supplyCollateral({

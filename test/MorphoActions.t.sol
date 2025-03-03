@@ -114,6 +114,33 @@ contract MorphoActionsTest is Test {
         assertEq(IERC20(USDC).balanceOf(address(wallet)), 1000e6);
     }
 
+    function testSupplyCollateralMaxAndBorrow() public {
+        vm.pauseGasMetering();
+        QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
+
+        deal(wstETH, address(wallet), 10e18);
+
+        // Supply 10 wstETH as collateral and borrow 1000 USDC
+        QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
+            wallet,
+            MorphoActionsScripts,
+            abi.encodeWithSelector(
+                MorphoActions.supplyCollateralAndBorrow.selector, morpho, marketParams, type(uint256).max, 1000e6
+            ),
+            ScriptType.ScriptSource
+        );
+        bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
+        assertEq(IERC20(wstETH).balanceOf(address(wallet)), 10e18);
+        assertEq(IMorpho(morpho).position(marketId(marketParams), address(wallet)).collateral, 0);
+
+        vm.resumeGasMetering();
+        wallet.executeQuarkOperation(op, signature);
+
+        assertEq(IERC20(wstETH).balanceOf(address(wallet)), 0);
+        assertEq(IMorpho(morpho).position(marketId(marketParams), address(wallet)).collateral, 10e18);
+        assertEq(IERC20(USDC).balanceOf(address(wallet)), 1000e6);
+    }
+
     function testRepayMaxAndWithdrawCollateral() public {
         vm.pauseGasMetering();
         QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
