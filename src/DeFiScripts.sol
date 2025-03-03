@@ -21,6 +21,9 @@ contract CometSupplyActions {
      *   @param amount The amount to supply
      */
     function supply(address comet, address asset, uint256 amount) external {
+        if (amount == type(uint256).max) {
+            amount = IERC20(asset).balanceOf(address(this));
+        }
         IERC20(asset).forceApprove(comet, amount);
         IComet(comet).supply(asset, amount);
     }
@@ -33,6 +36,9 @@ contract CometSupplyActions {
      * @param amount The amount to supply
      */
     function supplyTo(address comet, address to, address asset, uint256 amount) external {
+        if (amount == type(uint256).max) {
+            amount = IERC20(asset).balanceOf(address(this));
+        }
         IERC20(asset).forceApprove(comet, amount);
         IComet(comet).supplyTo(to, asset, amount);
     }
@@ -46,6 +52,9 @@ contract CometSupplyActions {
      *   @param amount The amount to supply
      */
     function supplyFrom(address comet, address from, address to, address asset, uint256 amount) external {
+        if (amount == type(uint256).max) {
+            amount = IERC20(asset).balanceOf(from);
+        }
         IComet(comet).supplyFrom(from, to, asset, amount);
     }
 
@@ -61,8 +70,12 @@ contract CometSupplyActions {
         }
 
         for (uint256 i = 0; i < assets.length;) {
-            IERC20(assets[i]).forceApprove(comet, amounts[i]);
-            IComet(comet).supply(assets[i], amounts[i]);
+            uint256 amount = amounts[i];
+            if (amount == type(uint256).max) {
+                amount = IERC20(assets[i]).balanceOf(address(this));
+            }
+            IERC20(assets[i]).forceApprove(comet, amount);
+            IComet(comet).supply(assets[i], amount);
             unchecked {
                 ++i;
             }
@@ -252,9 +265,13 @@ contract CometSupplyMultipleAssetsAndBorrow {
         }
 
         for (uint256 i = 0; i < assets.length;) {
-            if (amounts[i] > 0) {
-                IERC20(assets[i]).forceApprove(comet, amounts[i]);
-                IComet(comet).supply(assets[i], amounts[i]);
+            uint256 amount = amounts[i];
+            if (amount == type(uint256).max) {
+                amount = IERC20(assets[i]).balanceOf(address(this));
+            }
+            if (amount > 0) {
+                IERC20(assets[i]).forceApprove(comet, amount);
+                IComet(comet).supply(assets[i], amount);
             }
 
             unchecked {

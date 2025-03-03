@@ -77,6 +77,40 @@ contract CometSupplyMultipleAssetsAndBorrowTest is Test {
         assertEq(IERC20(USDC).balanceOf(address(wallet)), 100e6);
     }
 
+    function testSupplyMultipleAssetsMaxAndBorrow() public {
+        vm.pauseGasMetering();
+        QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
+        bytes memory cometSupplyAndBorrowScript =
+            new YulHelper().getCode("DeFiScripts.sol/CometSupplyMultipleAssetsAndBorrow.json");
+
+        deal(WETH, address(wallet), 10 ether);
+        deal(LINK, address(wallet), 5e18);
+
+        address[] memory assets = new address[](2);
+        uint256[] memory amounts = new uint256[](2);
+        assets[0] = WETH;
+        assets[1] = LINK;
+        amounts[0] = type(uint256).max;
+        amounts[1] = 5e18;
+
+        QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
+            wallet,
+            cometSupplyAndBorrowScript,
+            abi.encodeWithSelector(CometSupplyMultipleAssetsAndBorrow.run.selector, comet, assets, amounts, USDC, 100e6),
+            ScriptType.ScriptSource
+        );
+        bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
+        assertEq(IERC20(WETH).balanceOf(address(wallet)), 10 ether);
+        assertEq(IERC20(LINK).balanceOf(address(wallet)), 5e18);
+        assertEq(IERC20(USDC).balanceOf(address(wallet)), 0e6);
+
+        vm.resumeGasMetering();
+        wallet.executeQuarkOperation(op, signature);
+        assertEq(IComet(comet).collateralBalanceOf(address(wallet), WETH), 10 ether);
+        assertEq(IComet(comet).collateralBalanceOf(address(wallet), LINK), 5e18);
+        assertEq(IERC20(USDC).balanceOf(address(wallet)), 100e6);
+    }
+
     function testInvalidInput() public {
         vm.pauseGasMetering();
         QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
