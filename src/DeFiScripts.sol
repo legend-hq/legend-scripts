@@ -205,6 +205,15 @@ contract UniswapSwapActions {
 contract TransferActions is QuarkScript {
     using SafeERC20 for IERC20;
 
+    address constant ETH_PSEUDO_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
+    event TransferExecuted(
+        address indexed sender,
+        address indexed recipient,
+        address indexed token,
+        uint256 amount
+    );
+
     /**
      * @notice Transfer ERC20 token
      * @param token The token address
@@ -213,6 +222,7 @@ contract TransferActions is QuarkScript {
      */
     function transferERC20Token(address token, address recipient, uint256 amount) external nonReentrant {
         IERC20(token).safeTransfer(recipient, amount);
+        emit TransferExecuted(address(this), recipient, token, amount);
     }
 
     /**
@@ -225,6 +235,7 @@ contract TransferActions is QuarkScript {
         if (!success) {
             revert DeFiScriptErrors.TransferFailed();
         }
+        emit TransferExecuted(address(this), recipient, ETH_PSEUDO_ADDRESS, amount);
     }
 }
 

@@ -47,6 +47,8 @@ contract TransferActionsTest is Test {
     // Contracts address on mainnet
     address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
+    address constant ETH_PSEUDO_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
     function setUp() public {
         // Fork setup
         vm.createSelectFork(
@@ -74,6 +76,8 @@ contract TransferActionsTest is Test {
 
         bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
         vm.resumeGasMetering();
+        vm.expectEmit();
+        emit TransferActions.TransferExecuted(address(wallet), bob, WETH, 10 ether);
         wallet.executeQuarkOperation(op, signature);
         assertEq(IERC20(WETH).balanceOf(address(wallet)), 0 ether);
         assertEq(IERC20(WETH).balanceOf(bob), 10 ether);
@@ -95,6 +99,8 @@ contract TransferActionsTest is Test {
         );
         bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
         vm.resumeGasMetering();
+        vm.expectEmit();
+        emit TransferActions.TransferExecuted(address(wallet), address(walletBob), WETH, 10 ether);
         wallet.executeQuarkOperation(op, signature);
         assertEq(IERC20(WETH).balanceOf(address(wallet)), 0 ether);
         assertEq(IERC20(WETH).balanceOf(address(walletBob)), 10 ether);
@@ -116,6 +122,8 @@ contract TransferActionsTest is Test {
         );
         bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
         vm.resumeGasMetering();
+        vm.expectEmit();
+        emit TransferActions.TransferExecuted(address(wallet), bob, ETH_PSEUDO_ADDRESS, 10 ether);
         wallet.executeQuarkOperation(op, signature);
         // assert on native ETH balance
         assertEq(address(wallet).balance, 0 ether);
@@ -137,6 +145,8 @@ contract TransferActionsTest is Test {
         assertEq(address(wallet).balance, 10 ether);
         assertEq(address(walletBob).balance, 0 ether);
         vm.resumeGasMetering();
+        vm.expectEmit();
+        emit TransferActions.TransferExecuted(address(wallet), address(walletBob), ETH_PSEUDO_ADDRESS, 10 ether);
         wallet.executeQuarkOperation(op, signature);
         // assert on native ETH balance
         assertEq(address(wallet).balance, 0 ether);
@@ -251,6 +261,8 @@ contract TransferActionsTest is Test {
         assertEq(address(wallet).balance, 10 ether);
         assertEq(address(evilReceiver).balance, 0 ether);
         vm.resumeGasMetering();
+        vm.expectEmit();
+        emit TransferActions.TransferExecuted(address(wallet), address(evilReceiver), ETH_PSEUDO_ADDRESS, 1 ether);
         wallet.executeQuarkOperation(op, signature);
         assertEq(address(wallet).balance, 9 ether);
         assertEq(address(evilReceiver).balance, 1 ether);
@@ -291,6 +303,8 @@ contract TransferActionsTest is Test {
         assertEq(IERC20(victimERC777).balanceOf(address(wallet)), 10 ether);
         assertEq(IERC20(victimERC777).balanceOf(address(evilReceiver)), 0 ether);
         vm.resumeGasMetering();
+        vm.expectEmit();
+        emit TransferActions.TransferExecuted(address(wallet), address(evilReceiver), address(victimERC777), 1 ether);
         wallet.executeQuarkOperation(op, signature);
         assertEq(IERC20(victimERC777).balanceOf(address(wallet)), 9 ether);
         assertEq(IERC20(victimERC777).balanceOf(address(evilReceiver)), 1 ether);
