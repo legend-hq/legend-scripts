@@ -207,12 +207,7 @@ contract TransferActions is QuarkScript {
 
     address constant ETH_PSEUDO_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
-    event TransferExecuted(
-        address indexed sender,
-        address indexed recipient,
-        address indexed token,
-        uint256 amount
-    );
+    event TransferExecuted(address indexed sender, address indexed recipient, address indexed token, uint256 amount);
 
     /**
      * @notice Transfer ERC20 token
