@@ -247,8 +247,10 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
         );
         assertEq(
             result.quarkOperations[0].scriptCalldata,
-            abi.encodeCall(MorphoVaultActions.deposit, (MorphoInfo.getMorphoVaultAddress(1, "USDC"), usdc_(1), 3e6)),
-            "calldata is MorphoVaultActions.deposit(MorphoInfo.getMorphoVaultAddress(1, USDC), usdc_(1), 3e6);"
+            abi.encodeCall(
+                MorphoVaultActions.deposit, (MorphoInfo.getMorphoVaultAddress(1, "USDC"), usdc_(1), type(uint256).max)
+            ),
+            "calldata is MorphoVaultActions.deposit(MorphoInfo.getMorphoVaultAddress(1, USDC), usdc_(1), type(uint256).max);"
         );
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
@@ -633,9 +635,10 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
         assertEq(
             result.quarkOperations[1].scriptCalldata,
             abi.encodeCall(
-                MorphoVaultActions.deposit, (MorphoInfo.getMorphoVaultAddress(8453, "USDC"), usdc_(8453), 6e6)
+                MorphoVaultActions.deposit,
+                (MorphoInfo.getMorphoVaultAddress(8453, "USDC"), usdc_(8453), type(uint256).max)
             ),
-            "calldata is MorphoVaultActions.deposit, (MorphoInfo.getMorphoVaultAddress(8453, USDC), usdc_(8453), 6e6)"
+            "calldata is MorphoVaultActions.deposit, (MorphoInfo.getMorphoVaultAddress(8453, USDC), usdc_(8453), type(uint256).max)"
         );
         assertEq(
             result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"

@@ -89,15 +89,7 @@ library QuarkOperationHelper {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Actions.Action memory)
     {
-        address[] memory callContracts = new address[](quarkOperations.length);
-        bytes[] memory callDatas = new bytes[](quarkOperations.length);
-        // We don't provide `scriptSources` to save on calldata
-        bytes[] memory scriptSources = new bytes[](0);
-
-        for (uint256 i = 0; i < quarkOperations.length; ++i) {
-            callContracts[i] = quarkOperations[i].scriptAddress;
-            callDatas[i] = quarkOperations[i].scriptCalldata;
-        }
+        (address[] memory callContracts, bytes[] memory callDatas) = getOrderedCalls(quarkOperations, actions);
 
         bytes memory multicallCalldata = abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas);
 
@@ -131,11 +123,70 @@ library QuarkOperationHelper {
             isReplayable: primaryQuarkOperation.isReplayable,
             scriptAddress: CodeJarHelper.getCodeAddress(type(Multicall).creationCode),
             scriptCalldata: multicallCalldata,
-            scriptSources: scriptSources,
+            // We don't provide `scriptSources` to save on calldata
+            scriptSources: new bytes[](0),
             expiry: primaryQuarkOperation.expiry
         });
 
         return (mergedQuarkOperation, primaryAction);
+    }
+
+    // Extracts the list of call contracts and calldatas from the QuarkOperations, while also re-ordering them if needed
+    // Note: The re-ordering rules are as follows:
+    //         - If a max supply is found and a QuotePay is found, insert the QuotePay call before the max supply to ensure tokens aren't
+    //           all sent out before the QuotePay is executed
+    //         - Otherwise, keep the QuotePay last to ensure it can be paid from funds entering the account (e.g. withdraw, swap)
+    function getOrderedCalls(IQuarkWallet.QuarkOperation[] memory quarkOperations, Actions.Action[] memory actions)
+        internal
+        pure
+        returns (address[] memory, bytes[] memory)
+    {
+        address[] memory callContracts = new address[](quarkOperations.length);
+        bytes[] memory callDatas = new bytes[](quarkOperations.length);
+
+        // Note: This assumes there is at most only a single QuotePay on a chain
+        int256 quotePayIndex = -1;
+        int256 maxActionIndex = -1;
+        for (uint256 i = 0; i < quarkOperations.length; ++i) {
+            if (Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_QUOTE_PAY)) {
+                quotePayIndex = int256(i);
+                break;
+            }
+        }
+        for (uint256 i = 0; i < quarkOperations.length; ++i) {
+            if (
+                Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_COMET_SUPPLY)
+                    || Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_MORPHO_VAULT_SUPPLY)
+            ) {
+                // TODO: We can sanity check further by verifying the script address matches the CREATE2 address of the script
+                (,, uint256 amount) =
+                    abi.decode(stripSelector(quarkOperations[i].scriptCalldata), (address, address, uint256));
+                if (amount == type(uint256).max) {
+                    maxActionIndex = int256(i);
+                    break;
+                }
+            }
+        }
+        uint256 j = 0;
+        for (uint256 i = 0; i < quarkOperations.length; ++i) {
+            // Insert quote pay right before the max action
+            if (int256(i) == maxActionIndex) {
+                if (quotePayIndex != -1) {
+                    callContracts[j] = quarkOperations[uint256(quotePayIndex)].scriptAddress;
+                    callDatas[j] = quarkOperations[uint256(quotePayIndex)].scriptCalldata;
+                    j++;
+                }
+            }
+
+            // If a max action was found, we skip re-inserting the QuotePay again (it should have already been inserted)
+            if (int256(i) == quotePayIndex && maxActionIndex != -1) continue;
+
+            callContracts[j] = quarkOperations[i].scriptAddress;
+            callDatas[j] = quarkOperations[i].scriptCalldata;
+            j++;
+        }
+
+        return (callContracts, callDatas);
     }
 
     function containsBridgeOperation(Actions.Action[] memory actions) internal pure returns (bool) {
@@ -178,5 +229,14 @@ library QuarkOperationHelper {
             );
         }
         return wrappedQuarkOperations;
+    }
+
+    function stripSelector(bytes memory data) internal pure returns (bytes memory) {
+        uint256 newLength = data.length - 4;
+        bytes memory result = new bytes(newLength);
+        for (uint256 i = 0; i < newLength; i++) {
+            result[i] = data[i + 4];
+        }
+        return result;
     }
 }

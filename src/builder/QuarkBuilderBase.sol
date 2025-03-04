@@ -24,7 +24,7 @@ import {HashMap} from "src/builder/HashMap.sol";
 import {BalanceChanges} from "src/builder/BalanceChanges.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.8.5";
+string constant QUARK_BUILDER_VERSION = "0.8.6";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -564,20 +564,20 @@ contract QuarkBuilderBase {
             return (Strings.OK, operations, actions);
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_COMET_SUPPLY)) {
             CometSupplyIntent memory intent = abi.decode(actionIntent, (CometSupplyIntent));
-            if (intent.amount == type(uint256).max) {
-                intent.amount = Accounts.getTotalAvailableBalanceOnDst(
-                    chainAccountsList,
-                    payment,
-                    amountsOnDst,
-                    List.addUniqueUint256(chainIdsInvolved, intent.chainId),
-                    intent.assetSymbol
-                );
-            }
+            uint256 maxAmount = Accounts.getTotalAvailableBalanceOnDst(
+                chainAccountsList,
+                payment,
+                amountsOnDst,
+                List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                intent.assetSymbol
+            );
+
             (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.cometSupplyAsset(
                 Actions.CometSupply({
                     chainAccountsList: chainAccountsList,
                     assetSymbol: intent.assetSymbol,
                     amount: intent.amount,
+                    maxAmount: maxAmount,
                     chainId: intent.chainId,
                     comet: intent.comet,
                     sender: intent.sender,
@@ -588,21 +588,21 @@ contract QuarkBuilderBase {
             return (Strings.OK, toList(operation), toList(action));
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_SUPPLY)) {
             SupplyIntent memory intent = abi.decode(actionIntent, (SupplyIntent));
-            if (intent.amount == type(uint256).max) {
-                intent.amount = Accounts.getTotalAvailableBalanceOnDst(
-                    chainAccountsList,
-                    payment,
-                    amountsOnDst,
-                    List.addUniqueUint256(chainIdsInvolved, intent.chainId),
-                    intent.assetSymbol
-                );
-            }
+            uint256 maxAmount = Accounts.getTotalAvailableBalanceOnDst(
+                chainAccountsList,
+                payment,
+                amountsOnDst,
+                List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                intent.assetSymbol
+            );
+
             if (Strings.stringEqIgnoreCase(intent.marketType, PROTOCOL_COMET)) {
                 (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.cometSupplyAsset(
                     Actions.CometSupply({
                         chainAccountsList: chainAccountsList,
                         assetSymbol: intent.assetSymbol,
                         amount: intent.amount,
+                        maxAmount: maxAmount,
                         chainId: intent.chainId,
                         comet: intent.market,
                         sender: intent.sender,
@@ -617,6 +617,7 @@ contract QuarkBuilderBase {
                         chainAccountsList: chainAccountsList,
                         assetSymbol: intent.assetSymbol,
                         amount: intent.amount,
+                        maxAmount: maxAmount,
                         chainId: intent.chainId,
                         sender: intent.sender,
                         blockTimestamp: intent.blockTimestamp
@@ -785,22 +786,20 @@ contract QuarkBuilderBase {
             return (Strings.OK, operations, actions);
         } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_MORPHO_VAULT_SUPPLY)) {
             MorphoVaultSupplyIntent memory intent = abi.decode(actionIntent, (MorphoVaultSupplyIntent));
-
-            if (intent.amount == type(uint256).max) {
-                intent.amount = Accounts.getTotalAvailableBalanceOnDst(
-                    chainAccountsList,
-                    payment,
-                    amountsOnDst,
-                    List.addUniqueUint256(chainIdsInvolved, intent.chainId),
-                    intent.assetSymbol
-                );
-            }
+            uint256 maxAmount = Accounts.getTotalAvailableBalanceOnDst(
+                chainAccountsList,
+                payment,
+                amountsOnDst,
+                List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                intent.assetSymbol
+            );
 
             (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.morphoVaultSupply(
                 Actions.MorphoVaultSupply({
                     chainAccountsList: chainAccountsList,
                     assetSymbol: intent.assetSymbol,
                     amount: intent.amount,
+                    maxAmount: maxAmount,
                     blockTimestamp: intent.blockTimestamp,
                     chainId: intent.chainId,
                     sender: intent.sender
