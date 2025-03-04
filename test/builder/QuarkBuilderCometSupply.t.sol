@@ -235,8 +235,8 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         );
         assertEq(
             result.quarkOperations[0].scriptCalldata,
-            abi.encodeCall(CometSupplyActions.supply, (COMET, usdc_(1), 3e6)),
-            "calldata is CometSupplyActions.supply(COMET, usdc, 3);"
+            abi.encodeCall(CometSupplyActions.supply, (COMET, usdc_(1), type(uint256).max)),
+            "calldata is CometSupplyActions.supply(COMET, usdc, type(uint256).max);"
         );
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
@@ -675,8 +675,8 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
         );
         assertEq(
             result.quarkOperations[1].scriptCalldata,
-            abi.encodeCall(CometSupplyActions.supply, (COMET, usdc_(8453), 6e6)),
-            "calldata is CometSupplyActions.supply(COMET, usdc, 5e6);"
+            abi.encodeCall(CometSupplyActions.supply, (COMET, usdc_(8453), type(uint256).max)),
+            "calldata is CometSupplyActions.supply(COMET, usdc, type(uint256).max);"
         );
         assertEq(
             result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"

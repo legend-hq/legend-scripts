@@ -240,11 +240,12 @@ struct MigrateSuppliesTests {
                             .withdrawFromMorphoVault(
                                 tokenAmount: .max(.usdc), vault: .usdc, network: .ethereum
                             ),
-                            .supplyToComet(
-                                tokenAmount: .amt(9.9, .usdc), market: .cusdcv3, network: .ethereum
-                            ),
                             .quotePay(
                                 payment: .amt(0.1, .usdc), payee: .stax, quote: .basic
+                            ),
+                            .supplyToComet(
+                                // 9.9
+                                tokenAmount: .max(.usdc), market: .cusdcv3, network: .ethereum
                             ),
                         ], executionType: .immediate)
                     )
@@ -278,11 +279,12 @@ struct MigrateSuppliesTests {
                             .withdrawFromMorphoVault(
                                 tokenAmount: .max(.usdc), vault: .usdc, network: .ethereum
                             ),
-                            .supplyToMorphoVault(
-                                tokenAmount: .amt(9.9, .usdc), vault: .usdc, network: .ethereum
-                            ),
                             .quotePay(
                                 payment: .amt(0.1, .usdc), payee: .stax, quote: .basic
+                            ),
+                            .supplyToMorphoVault(
+                                // 9.9
+                                tokenAmount: .max(.usdc), vault: .usdc, network: .ethereum
                             ),
                         ], executionType: .immediate)
                     )
@@ -394,11 +396,12 @@ struct MigrateSuppliesTests {
                             ),
                         ], executionType: .immediate),
                         .multicall([
-                            .supplyToComet(
-                                tokenAmount: .amt(17.64, .usdc), market: .cusdcv3, network: .arbitrum
-                            ),
                             .quotePay(
                                 payment: .amt(0.16, .usdc), payee: .stax, quote: .basic
+                            ),
+                            .supplyToComet(
+                                // 17.64
+                                tokenAmount: .max(.usdc), market: .cusdcv3, network: .arbitrum
                             ),
                         ], executionType: .contingent),
                     ])

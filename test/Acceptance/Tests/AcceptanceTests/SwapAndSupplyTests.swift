@@ -206,12 +206,12 @@ struct SwapAndSupplyTests {
                                     exchange: .zeroEx,
                                     network: .ethereum
                                 ),
+                                .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
                                 .supplyToComet(
-                                    tokenAmount: .amt(2999.9, .usdc),
+                                    tokenAmount: .max(.usdc), // 2999.9
                                     market: .cusdcv3,
                                     network: .ethereum
                                 ),
-                                .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
                             ],
                             executionType: .immediate
                         )
@@ -254,12 +254,12 @@ struct SwapAndSupplyTests {
                                     exchange: .updatedZeroEx,
                                     network: .ethereum
                                 ),
+                                .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
                                 .supplyToComet(
-                                    tokenAmount: .amt(2.5 * 0.99, .weth),
+                                    tokenAmount: .max(.weth), // 2.5 * 0.99
                                     market: .cwethv3,
                                     network: .ethereum
                                 ),
-                                .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
                             ],
                             executionType: .immediate
                         )
@@ -478,12 +478,12 @@ struct SwapAndSupplyTests {
                                 exchange: .updatedZeroEx,
                                 network: .base
                             ),
+                            .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                             .supplyToComet(
-                                tokenAmount: .amt(2.5 * 0.99, .weth),
+                                tokenAmount: .max(.weth), // 2.5 * 0.99
                                 market: .cwethv3,
                                 network: .base
                             ),
-                            .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .contingent),
                     ])
                 )

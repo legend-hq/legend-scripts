@@ -116,6 +116,7 @@ library Actions {
         uint256 amount;
         uint256 chainId;
         address comet;
+        uint256 maxAmount;
         address sender;
         uint256 blockTimestamp;
     }
@@ -237,6 +238,7 @@ library Actions {
         uint256 amount;
         uint256 blockTimestamp;
         uint256 chainId;
+        uint256 maxAmount;
         address sender;
     }
 
@@ -1140,7 +1142,7 @@ library Actions {
 
         // Construct Action
         CometSupplyActionContext memory cometSupplyActionContext = CometSupplyActionContext({
-            amount: cometSupply.amount,
+            amount: cometSupply.amount == type(uint256).max ? cometSupply.maxAmount : cometSupply.amount,
             chainId: cometSupply.chainId,
             comet: cometSupply.comet,
             price: assetPositions.usdPrice,
@@ -1440,7 +1442,7 @@ library Actions {
 
         // Construct Action
         MorphoVaultSupplyActionContext memory vaultSupplyActionContext = MorphoVaultSupplyActionContext({
-            amount: vaultSupply.amount,
+            amount: vaultSupply.amount == type(uint256).max ? vaultSupply.maxAmount : vaultSupply.amount,
             assetSymbol: assetPositions.symbol,
             chainId: vaultSupply.chainId,
             morphoVault: MorphoInfo.getMorphoVaultAddress(vaultSupply.chainId, vaultSupply.assetSymbol),
