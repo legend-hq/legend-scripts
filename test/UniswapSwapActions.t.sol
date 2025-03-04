@@ -109,6 +109,41 @@ contract UniswapSwapActionsTest is Test {
         assertGe(IERC20(USDC).balanceOf(address(wallet)), usdcBalance - 2000e6);
     }
 
+    function testBuyAssetMax() public {
+        // gas: do not meter set-up
+        vm.pauseGasMetering();
+
+        QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
+        deal(USDC, address(wallet), 2000e6);
+
+        // ExactIn: Limit the amount of USDC you want to spend and receive as much WETH as possible
+        QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
+            wallet,
+            swapScript,
+            abi.encodeWithSelector(
+                UniswapSwapActions.swapAssetExactIn.selector,
+                UniswapSwapActions.SwapParamsExactIn({
+                    uniswapRouter: uniswapRouter,
+                    recipient: address(wallet),
+                    tokenFrom: USDC,
+                    amount: type(uint256).max,
+                    amountOutMinimum: 1 ether,
+                    path: abi.encodePacked(USDC, uint24(500), WETH) // Path: USDC - 0.05% -> WETH
+                })
+            ),
+            ScriptType.ScriptSource
+        );
+        bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
+        // gas: meter execute
+        vm.resumeGasMetering();
+        wallet.executeQuarkOperation(op, signature);
+
+        uint256 wethBalance = IERC20(WETH).balanceOf(address(wallet));
+        uint256 usdcBalance = IERC20(USDC).balanceOf(address(wallet));
+        assertGe(wethBalance, 1 ether);
+        assertEq(usdcBalance, 0);
+    }
+
     // Lower liquidity asset may require to have two stops (USDC -> ETH -> COMP)
     function testBuyAssetTwoStops() public {
         vm.pauseGasMetering();

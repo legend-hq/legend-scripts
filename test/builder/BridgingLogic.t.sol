@@ -99,6 +99,9 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
             ),
             "script address for bridge action is correct given the code jar address"
         );
+        uint256 inputAmount =
+            0.5e18 * (1e18 + MockAcrossFFIConstants.VARIABLE_FEE_PCT) / 1e18 + MockAcrossFFIConstants.GAS_FEE;
+        uint256 outputAmount = 0.5e18;
         assertEq(
             result.quarkOperations[0].scriptCalldata,
             abi.encodeCall(
@@ -110,9 +113,9 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
                         recipient: address(0xb0b), // recipient
                         inputToken: weth_(1), // inputToken
                         outputToken: weth_(8453), // outputToken
-                        inputAmount: 0.5e18 * (1e18 + MockAcrossFFIConstants.VARIABLE_FEE_PCT) / 1e18
-                            + MockAcrossFFIConstants.GAS_FEE, // inputAmount
-                        outputAmount: 0.5e18, // outputAmount
+                        inputAmount: inputAmount, // inputAmount
+                        outputAmount: outputAmount, // outputAmount
+                        maxFee: inputAmount - outputAmount, // maxFee
                         destinationChainId: 8453, // destinationChainId
                         exclusiveRelayer: address(0), // exclusiveRelayer
                         quoteTimestamp: uint32(BLOCK_TIMESTAMP) - Across.QUOTE_TIMESTAMP_BUFFER, // quoteTimestamp
@@ -264,6 +267,7 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
                         outputToken: address(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913), // outputToken
                         inputAmount: 2.01e6, // inputAmount
                         outputAmount: 1e6, // outputAmount
+                        maxFee: 1.01e6, // maxFee
                         destinationChainId: 8453, // destinationChainId
                         exclusiveRelayer: address(0), // exclusiveRelayer
                         quoteTimestamp: uint32(BLOCK_TIMESTAMP) - 30 seconds, // quoteTimestamp

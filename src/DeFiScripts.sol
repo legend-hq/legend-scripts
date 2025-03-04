@@ -169,12 +169,16 @@ contract UniswapSwapActions {
      * @param params SwapParamsExactIn struct
      */
     function swapAssetExactIn(SwapParamsExactIn calldata params) external {
+        uint256 amount = params.amount;
+        if (amount == type(uint256).max) {
+            amount = IERC20(params.tokenFrom).balanceOf(address(this));
+        }
         IERC20(params.tokenFrom).forceApprove(params.uniswapRouter, params.amount);
         ISwapRouter02(params.uniswapRouter).exactInput(
             IV3SwapRouter.ExactInputParams({
                 path: params.path,
                 recipient: params.recipient,
-                amountIn: params.amount,
+                amountIn: amount,
                 amountOutMinimum: params.amountOutMinimum
             })
         );
@@ -212,6 +216,9 @@ contract TransferActions is QuarkScript {
      * @param amount The amount to transfer
      */
     function transferERC20Token(address token, address recipient, uint256 amount) external nonReentrant {
+        if (amount == type(uint256).max) {
+            amount = IERC20(token).balanceOf(address(this));
+        }
         IERC20(token).safeTransfer(recipient, amount);
     }
 
@@ -221,6 +228,9 @@ contract TransferActions is QuarkScript {
      * @param amount The amount to transfer
      */
     function transferNativeToken(address recipient, uint256 amount) external nonReentrant {
+        if (amount == type(uint256).max) {
+            amount = address(this).balance;
+        }
         bool success = payable(recipient).send(amount);
         if (!success) {
             revert DeFiScriptErrors.TransferFailed();

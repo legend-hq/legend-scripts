@@ -66,4 +66,28 @@ contract CCTPBridge is Test {
         wallet.executeQuarkOperation(op, signature);
         assertEq(IERC20(USDC).balanceOf(address(wallet)), 500_000e6);
     }
+
+    function testBridgeMax() public {
+        vm.pauseGasMetering();
+        QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
+        bytes memory cctpBridgeScript = new YulHelper().getCode("BridgeScripts.sol/CCTPBridgeActions.json");
+
+        deal(USDC, address(wallet), 1_000_000e6);
+
+        QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
+            wallet,
+            cctpBridgeScript,
+            abi.encodeCall(
+                CCTPBridgeActions.bridgeUSDC,
+                (tokenMessenger, type(uint256).max, 6, bytes32(uint256(uint160(address(wallet)))), USDC)
+            ),
+            ScriptType.ScriptSource
+        );
+        bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
+
+        assertEq(IERC20(USDC).balanceOf(address(wallet)), 1_000_000e6);
+        vm.resumeGasMetering();
+        wallet.executeQuarkOperation(op, signature);
+        assertEq(IERC20(USDC).balanceOf(address(wallet)), 0e6);
+    }
 }

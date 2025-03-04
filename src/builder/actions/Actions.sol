@@ -805,18 +805,19 @@ library Actions {
             nonce: accountSecret.nonceSecret,
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(Across.bridgeScriptSource()),
-            scriptCalldata: Across.encodeBridgeAction(
-                bridge.srcChainId,
-                bridge.destinationChainId,
-                srcAsset,
-                dstAsset,
-                inputAmount,
-                outputAmount,
-                bridge.sender,
-                bridge.recipient,
-                bridge.blockTimestamp,
-                useNativeToken
-            ),
+            scriptCalldata: Across.encodeBridgeAction({
+                srcChainId: bridge.srcChainId,
+                dstChainId: bridge.destinationChainId,
+                inputToken: srcAsset,
+                outputToken: dstAsset,
+                inputAmount: inputAmount,
+                outputAmount: outputAmount,
+                maxFee: inputAmount - outputAmount,
+                sender: bridge.sender,
+                recipient: bridge.recipient,
+                blockTimestamp: bridge.blockTimestamp,
+                useNativeToken: useNativeToken
+            }),
             scriptSources: new bytes[](0),
             expiry: bridge.blockTimestamp + BRIDGE_EXPIRY_BUFFER
         });
