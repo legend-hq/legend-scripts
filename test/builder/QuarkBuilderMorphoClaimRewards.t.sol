@@ -237,23 +237,40 @@ contract QuarkBuilderMorphoClaimRewardsTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainId 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "MORPHO_CLAIM_REWARDS", "action type is 'MORPHO_CLAIM_REWARDS'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
-
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.MorphoClaimRewardsActionContext({
-                    amounts: FIXTURE_CLAIMABLES,
-                    assetSymbols: FIXTURE_REWARD_ASSET_SYMBOLS,
-                    chainId: 1,
-                    prices: Arrays.uintArray(USDC_PRICE, WETH_PRICE),
-                    tokens: FIXTURE_REWARDS
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_MORPHO_CLAIM_REWARDS, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.MorphoClaimRewardsActionContext({
+                                amounts: FIXTURE_CLAIMABLES,
+                                assetSymbols: FIXTURE_REWARD_ASSET_SYMBOLS,
+                                chainId: 1,
+                                prices: Arrays.uintArray(USDC_PRICE, WETH_PRICE),
+                                tokens: FIXTURE_REWARDS
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from MorphoClaimRewardsActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data

@@ -404,7 +404,6 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         assertNotEq(result.eip712Data.hashStruct, hex"", "non-empty hashStruct");
     }
 
-    // DONE AND PASSES!
     function testSimpleBridgeTransferWithQuotePaySucceeds() public {
         Quotes.NetworkOperationFee memory networkOperationFeeBase =
             Quotes.NetworkOperationFee({chainId: 8453, opType: Quotes.OP_TYPE_BASELINE, price: 0.1e8});
@@ -489,26 +488,44 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 2, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "BRIDGE", "action type is 'BRIDGE'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.BridgeActionContext({
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    assetSymbol: "USDC",
-                    inputAmount: 2e6,
-                    outputAmount: 2e6,
-                    chainId: 1,
-                    recipient: address(0xb0b),
-                    destinationChainId: 8453,
-                    bridgeType: Actions.BRIDGE_TYPE_CCTP
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_BRIDGE, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.BridgeActionContext({
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                assetSymbol: "USDC",
+                                inputAmount: 2e6,
+                                outputAmount: 2e6,
+                                chainId: 1,
+                                recipient: address(0xb0b),
+                                destinationChainId: 8453,
+                                bridgeType: Actions.BRIDGE_TYPE_CCTP
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 0.6e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from BridgeActionContext"
+            "action context encoded from MultiActionContext"
         );
         assertEq(result.actions[1].chainId, 8453, "operation is on chainid 8453");
         assertEq(result.actions[1].quarkAccount, address(0xb0b), "0xb0b sends the funds");
@@ -599,7 +616,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         assertEq(
             result.quarkOperations[0].scriptCalldata,
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
-            "calldata is Multicall.run([transferActionsAddress, quotePayAddress], [TransferActions.transferERC20Token(USDC_1, address(0xceecee), 9.9e6), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 6e5, QUOTE_ID)]);"
+            "calldata is Multicall.run([transferActionsAddress, quotePayAddress], [TransferActions.transferERC20Token(USDC_1, address(0xceecee), 9.9e6), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 1e5, QUOTE_ID)]);"
         );
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
@@ -611,23 +628,41 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "TRANSFER", "action type is 'TRANSFER'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.TransferActionContext({
-                    amount: 9.9e6,
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    recipient: address(0xceecee)
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_TRANSFER, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.TransferActionContext({
+                                amount: 9.9e6,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                recipient: address(0xceecee)
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 1e5,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from TransferActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -904,9 +939,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         callContracts[0] = wrapperActionsAddress;
         callContracts[1] = transferActionsAddress;
         bytes[] memory callDatas = new bytes[](2);
-        callDatas[0] = abi.encodeWithSelector(
-            WrapperActions.unwrapWETHUpTo.selector, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, 1.5e18
-        );
+        callDatas[0] = abi.encodeWithSelector(WrapperActions.unwrapWETHUpTo.selector, WETH_1, 1.5e18);
         callDatas[1] = abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(0xceecee), 1.5e18);
         assertEq(
             result.quarkOperations[0].scriptCalldata,
@@ -923,23 +956,39 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "1 action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "TRANSFER", "action type is 'TRANSFER'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.TransferActionContext({
-                    amount: 1.5e18,
-                    price: 3500e8,
-                    token: eth_(),
-                    assetSymbol: "ETH",
-                    chainId: 1,
-                    recipient: address(0xceecee)
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_UNWRAP, Actions.ACTION_TYPE_TRANSFER),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.WrapOrUnwrapActionContext({
+                                amount: 0.5e18,
+                                fromAssetSymbol: "WETH",
+                                toAssetSymbol: "ETH",
+                                chainId: 1,
+                                token: WETH_1
+                            })
+                        ),
+                        abi.encode(
+                            Actions.TransferActionContext({
+                                amount: 1.5e18,
+                                price: 3500e8,
+                                token: eth_(),
+                                assetSymbol: "ETH",
+                                chainId: 1,
+                                recipient: address(0xceecee)
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from TransferActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -1011,9 +1060,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         callContracts[1] = transferActionsAddress;
         callContracts[2] = quotePayAddress;
         bytes[] memory callDatas = new bytes[](3);
-        callDatas[0] = abi.encodeWithSelector(
-            WrapperActions.unwrapWETHUpTo.selector, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, 1.5e18
-        );
+        callDatas[0] = abi.encodeWithSelector(WrapperActions.unwrapWETHUpTo.selector, WETH_1, 1.5e18);
         callDatas[1] = abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(0xceecee), 1.5e18);
         callDatas[2] =
             abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 0.1e6, QUOTE_ID);
@@ -1032,38 +1079,52 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "1 action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "TRANSFER", "action type is 'TRANSFER'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.TransferActionContext({
-                    amount: 1.5e18,
-                    price: 3500e8,
-                    token: eth_(),
-                    assetSymbol: "ETH",
-                    chainId: 1,
-                    recipient: address(0xceecee)
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(
+                        Actions.ACTION_TYPE_UNWRAP, Actions.ACTION_TYPE_TRANSFER, Actions.ACTION_TYPE_QUOTE_PAY
+                    ),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.WrapOrUnwrapActionContext({
+                                amount: 0.5e18,
+                                fromAssetSymbol: "WETH",
+                                toAssetSymbol: "ETH",
+                                chainId: 1,
+                                token: WETH_1
+                            })
+                        ),
+                        abi.encode(
+                            Actions.TransferActionContext({
+                                amount: 1.5e18,
+                                price: 3500e8,
+                                token: eth_(),
+                                assetSymbol: "ETH",
+                                chainId: 1,
+                                recipient: address(0xceecee)
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 0.1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from TransferActionContext"
-        );
-        assertEq(
-            result.actions[0].quotePayActionContext,
-            abi.encode(
-                Actions.QuotePayActionContext({
-                    amount: 0.1e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    payee: Actions.QUOTE_PAY_RECIPIENT,
-                    quoteId: QUOTE_ID
-                })
-            ),
-            "action context encoded from QuotePayActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -1135,16 +1196,14 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         callContracts[1] = transferActionsAddress;
         callContracts[2] = quotePayAddress;
         bytes[] memory callDatas = new bytes[](3);
-        callDatas[0] = abi.encodeWithSelector(
-            WrapperActions.unwrapWETHUpTo.selector, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, 2e18
-        );
+        callDatas[0] = abi.encodeWithSelector(WrapperActions.unwrapWETHUpTo.selector, WETH_1, 2e18);
         callDatas[1] = abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(0xceecee), 2e18);
         callDatas[2] =
             abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 0.1e6, QUOTE_ID);
         assertEq(
             result.quarkOperations[0].scriptCalldata,
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
-            "calldata is Multicall.run([wrapperActionsAddress, transferActionsAddress], [WrapperActions.unwrapWETHUpTo(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, 2e18), TransferActions.transferNativeToken(address(0xceecee), 2e18)]);"
+            "calldata is Multicall.run([wrapperActionsAddress, transferActionsAddress, quotePayAddress], [WrapperActions.unwrapWETHUpTo(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, 2e18), TransferActions.transferNativeToken(address(0xceecee), 2e18), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.1e6, QUOTE_ID)]);"
         );
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
@@ -1156,23 +1215,52 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "1 action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "TRANSFER", "action type is 'TRANSFER'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.TransferActionContext({
-                    amount: 2e18,
-                    price: 3500e8,
-                    token: eth_(),
-                    assetSymbol: "ETH",
-                    chainId: 1,
-                    recipient: address(0xceecee)
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(
+                        Actions.ACTION_TYPE_UNWRAP, Actions.ACTION_TYPE_TRANSFER, Actions.ACTION_TYPE_QUOTE_PAY
+                    ),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.WrapOrUnwrapActionContext({
+                                amount: 1e18,
+                                fromAssetSymbol: "WETH",
+                                toAssetSymbol: "ETH",
+                                chainId: 1,
+                                token: WETH_1
+                            })
+                        ),
+                        abi.encode(
+                            Actions.TransferActionContext({
+                                amount: 2e18,
+                                price: 3500e8,
+                                token: eth_(),
+                                assetSymbol: "ETH",
+                                chainId: 1,
+                                recipient: address(0xceecee)
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 0.1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from TransferActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -1243,8 +1331,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         callContracts[0] = wrapperActionsAddress;
         callContracts[1] = transferActionsAddress;
         bytes[] memory callDatas = new bytes[](2);
-        callDatas[0] =
-            abi.encodeWithSelector(WrapperActions.wrapAllETH.selector, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+        callDatas[0] = abi.encodeWithSelector(WrapperActions.wrapAllETH.selector, WETH_1);
         callDatas[1] =
             abi.encodeWithSelector(TransferActions.transferERC20Token.selector, WETH_1, address(0xceecee), 1.75e18);
         assertEq(
@@ -1262,23 +1349,39 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "1 action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "TRANSFER", "action type is 'TRANSFER'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.TransferActionContext({
-                    amount: 1.75e18,
-                    price: 3500e8,
-                    token: weth_(1),
-                    assetSymbol: "WETH",
-                    chainId: 1,
-                    recipient: address(0xceecee)
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_WRAP, Actions.ACTION_TYPE_TRANSFER),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.WrapOrUnwrapActionContext({
+                                amount: 1e18,
+                                fromAssetSymbol: "ETH",
+                                toAssetSymbol: "WETH",
+                                chainId: 1,
+                                token: ETH
+                            })
+                        ),
+                        abi.encode(
+                            Actions.TransferActionContext({
+                                amount: 1.75e18,
+                                price: 3500e8,
+                                token: weth_(1),
+                                assetSymbol: "WETH",
+                                chainId: 1,
+                                recipient: address(0xceecee)
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from TransferActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data

@@ -321,31 +321,47 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce does the swap");
-        assertEq(result.actions[0].actionType, "SWAP", "action type is 'SWAP'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.SwapActionContext({
-                    chainId: 1,
-                    feeAmount: 10,
-                    feeAssetSymbol: "USDC",
-                    feeToken: USDC_1,
-                    feeTokenPrice: USDC_PRICE,
-                    inputToken: WETH_1,
-                    inputTokenPrice: WETH_PRICE,
-                    inputAssetSymbol: "WETH",
-                    inputAmount: 1e18,
-                    outputToken: USDC_1,
-                    outputTokenPrice: USDC_PRICE,
-                    outputAssetSymbol: "USDC",
-                    outputAmount: 3000e6,
-                    isExactOut: false
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_WRAP, Actions.ACTION_TYPE_SWAP),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.WrapOrUnwrapActionContext({
+                                amount: 1e18,
+                                fromAssetSymbol: "ETH",
+                                toAssetSymbol: "WETH",
+                                chainId: 1,
+                                token: ETH
+                            })
+                        ),
+                        abi.encode(
+                            Actions.SwapActionContext({
+                                chainId: 1,
+                                feeAmount: 10,
+                                feeAssetSymbol: "USDC",
+                                feeToken: USDC_1,
+                                feeTokenPrice: USDC_PRICE,
+                                inputToken: WETH_1,
+                                inputTokenPrice: WETH_PRICE,
+                                inputAssetSymbol: "WETH",
+                                inputAmount: 1e18,
+                                outputToken: USDC_1,
+                                outputTokenPrice: USDC_PRICE,
+                                outputAssetSymbol: "USDC",
+                                outputAmount: 3000e6,
+                                isExactOut: false
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from SwapActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -393,7 +409,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
             "calldata is Multicall.run([approveAndSwapAddress, quotePayAddress], [ApproveAndSwap.run(ZERO_EX_ENTRY_POINT, USDC_1, 3500e6, WETH_1, 1e18, ZERO_EX_SWAP_DATA), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 5e6, QUOTE_ID)]);"
         );
         assertEq(
-            result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 3 days, "expiry is current blockTimestamp + 3 days"
+            result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
         assertEq(result.quarkOperations[0].nonce, ALICE_DEFAULT_SECRET, "unexpected nonce");
         assertEq(result.quarkOperations[0].isReplayable, false, "isReplayable is false");
@@ -402,46 +418,49 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce does the swap");
-        assertEq(result.actions[0].actionType, "SWAP", "action type is 'SWAP'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.SwapActionContext({
-                    chainId: 1,
-                    feeAmount: 10,
-                    feeAssetSymbol: "WETH",
-                    feeToken: WETH_1,
-                    feeTokenPrice: WETH_PRICE,
-                    inputToken: USDC_1,
-                    inputTokenPrice: USDC_PRICE,
-                    inputAssetSymbol: "USDC",
-                    inputAmount: 3000e6,
-                    outputToken: WETH_1,
-                    outputTokenPrice: WETH_PRICE,
-                    outputAssetSymbol: "WETH",
-                    outputAmount: 1e18,
-                    isExactOut: false
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_SWAP, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.SwapActionContext({
+                                chainId: 1,
+                                feeAmount: 10,
+                                feeAssetSymbol: "WETH",
+                                feeToken: WETH_1,
+                                feeTokenPrice: WETH_PRICE,
+                                inputToken: USDC_1,
+                                inputTokenPrice: USDC_PRICE,
+                                inputAssetSymbol: "USDC",
+                                inputAmount: 3000e6,
+                                outputToken: WETH_1,
+                                outputTokenPrice: WETH_PRICE,
+                                outputAssetSymbol: "WETH",
+                                outputAmount: 1e18,
+                                isExactOut: false
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 5e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from SwapActionContext"
-        );
-        assertEq(
-            result.actions[0].quotePayActionContext,
-            abi.encode(
-                Actions.QuotePayActionContext({
-                    amount: 5e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    payee: Actions.QUOTE_PAY_RECIPIENT,
-                    quoteId: QUOTE_ID
-                })
-            ),
-            "action context encoded from QuotePayActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -523,7 +542,7 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
             "calldata is Multicall.run([approveAndSwapAddress, quotePayAddress], [ApproveAndSwap.run(ZERO_EX_ENTRY_POINT, USDC_1, 9000e6, WETH_1, 3e18, ZERO_EX_SWAP_DATA), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 5e6, QUOTE_ID)]);"
         );
         assertEq(
-            result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 3 days, "expiry is current blockTimestamp + 3 days"
+            result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
         );
         assertEq(result.quarkOperations[0].nonce, ALICE_DEFAULT_SECRET, "unexpected nonce");
         assertEq(result.quarkOperations[0].isReplayable, false, "isReplayable is false");
@@ -532,32 +551,50 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce does the swap");
-        assertEq(result.actions[0].actionType, "SWAP", "action type is 'SWAP'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'SWAP'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.SwapActionContext({
-                    chainId: 1,
-                    feeAmount: MockZeroExFFIConstants.FEE_AMOUNT,
-                    feeAssetSymbol: "WETH",
-                    feeToken: WETH_1,
-                    feeTokenPrice: WETH_PRICE,
-                    inputToken: USDC_1,
-                    inputTokenPrice: USDC_PRICE,
-                    inputAssetSymbol: "USDC",
-                    inputAmount: 9000e6,
-                    outputToken: WETH_1,
-                    outputTokenPrice: WETH_PRICE,
-                    outputAssetSymbol: "WETH",
-                    // We multiply by 0.99 to account for a 1% slippage buffer
-                    outputAmount: MockZeroExFFIConstants.BUY_AMOUNT * 99 / 100,
-                    isExactOut: false
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_SWAP, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.SwapActionContext({
+                                chainId: 1,
+                                feeAmount: MockZeroExFFIConstants.FEE_AMOUNT,
+                                feeAssetSymbol: "WETH",
+                                feeToken: WETH_1,
+                                feeTokenPrice: WETH_PRICE,
+                                inputToken: USDC_1,
+                                inputTokenPrice: USDC_PRICE,
+                                inputAssetSymbol: "USDC",
+                                inputAmount: 9000e6,
+                                outputToken: WETH_1,
+                                outputTokenPrice: WETH_PRICE,
+                                outputAssetSymbol: "WETH",
+                                // We multiply by 0.99 to account for a 1% slippage buffer
+                                outputAmount: MockZeroExFFIConstants.BUY_AMOUNT * 99 / 100,
+                                isExactOut: false
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 5e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from SwapActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -782,41 +819,44 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 2, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "BRIDGE", "action type is 'BRIDGE'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.BridgeActionContext({
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    assetSymbol: "USDC",
-                    inputAmount: 1000e6,
-                    outputAmount: 1000e6,
-                    chainId: 1,
-                    recipient: address(0xb0b),
-                    destinationChainId: 8453,
-                    bridgeType: Actions.BRIDGE_TYPE_CCTP
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_BRIDGE, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.BridgeActionContext({
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                assetSymbol: "USDC",
+                                inputAmount: 1000e6,
+                                outputAmount: 1000e6,
+                                chainId: 1,
+                                recipient: address(0xb0b),
+                                destinationChainId: 8453,
+                                bridgeType: Actions.BRIDGE_TYPE_CCTP
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 6e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from BridgeActionContext"
-        );
-        assertEq(
-            result.actions[0].quotePayActionContext,
-            abi.encode(
-                Actions.QuotePayActionContext({
-                    amount: 6e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    payee: Actions.QUOTE_PAY_RECIPIENT,
-                    quoteId: QUOTE_ID
-                })
-            ),
-            "action context encoded from QuotePayActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         assertEq(result.actions[1].chainId, 8453, "operation is on chainid 8453");

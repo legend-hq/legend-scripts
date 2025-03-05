@@ -361,23 +361,39 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "MORPHO_VAULT_SUPPLY", "action type is 'MORPHO_VAULT_SUPPLY'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.MorphoVaultSupplyActionContext({
-                    amount: 1e18,
-                    assetSymbol: "WETH",
-                    chainId: 1,
-                    morphoVault: MorphoInfo.getMorphoVaultAddress(1, "WETH"),
-                    price: WETH_PRICE,
-                    token: WETH_1
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_WRAP, Actions.ACTION_TYPE_MORPHO_VAULT_SUPPLY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.WrapOrUnwrapActionContext({
+                                amount: 1e18,
+                                fromAssetSymbol: "ETH",
+                                toAssetSymbol: "WETH",
+                                chainId: 1,
+                                token: ETH
+                            })
+                        ),
+                        abi.encode(
+                            Actions.MorphoVaultSupplyActionContext({
+                                amount: 1e18,
+                                assetSymbol: "WETH",
+                                chainId: 1,
+                                morphoVault: MorphoInfo.getMorphoVaultAddress(1, "WETH"),
+                                price: WETH_PRICE,
+                                token: WETH_1
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from SupplyActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // // TODO: Check the contents of the EIP712 data
@@ -436,38 +452,41 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "MORPHO_VAULT_SUPPLY", "action type is 'MORPHO_VAULT_SUPPLY'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.MorphoVaultSupplyActionContext({
-                    amount: 1e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    morphoVault: MorphoInfo.getMorphoVaultAddress(1, "USDC"),
-                    price: USDC_PRICE,
-                    token: USDC_1
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_MORPHO_VAULT_SUPPLY, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.MorphoVaultSupplyActionContext({
+                                amount: 1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                morphoVault: MorphoInfo.getMorphoVaultAddress(1, "USDC"),
+                                price: USDC_PRICE,
+                                token: USDC_1
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 0.1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from SupplyActionContext"
-        );
-        assertEq(
-            result.actions[0].quotePayActionContext,
-            abi.encode(
-                Actions.QuotePayActionContext({
-                    amount: 0.1e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    payee: Actions.QUOTE_PAY_RECIPIENT,
-                    quoteId: QUOTE_ID
-                })
-            ),
-            "action context encoded from QuotePayActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -777,26 +796,44 @@ contract QuarkBuilderMorphoVaultSupplyTest is Test, QuarkBuilderTest {
         // first action
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "BRIDGE", "action type is 'BRIDGE'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.BridgeActionContext({
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    assetSymbol: "USDC",
-                    inputAmount: 2e6,
-                    outputAmount: 2e6,
-                    chainId: 1,
-                    recipient: address(0xb0b),
-                    destinationChainId: 8453,
-                    bridgeType: Actions.BRIDGE_TYPE_CCTP
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_BRIDGE, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.BridgeActionContext({
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                assetSymbol: "USDC",
+                                inputAmount: 2e6,
+                                outputAmount: 2e6,
+                                chainId: 1,
+                                recipient: address(0xb0b),
+                                destinationChainId: 8453,
+                                bridgeType: Actions.BRIDGE_TYPE_CCTP
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 0.6e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from BridgeActionContext"
+            "action context encoded from MultiActionContext"
         );
         // second action
         assertEq(result.actions[1].chainId, 8453, "operation is on chainid 8453");

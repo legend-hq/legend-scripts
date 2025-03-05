@@ -77,7 +77,8 @@ library QuarkOperationHelper {
             }
 
             // Update the execution type based on the presence of bridge operations in the mix
-            mergedActions[i].executionType = getExecutionType(mergedActions[i], hasBridgeOperation);
+            mergedActions[i].executionType =
+                getExecutionType(List.toActionArray(groupedActionsList), hasBridgeOperation);
         }
 
         return (mergedQuarkOperations, mergedActions);
@@ -94,22 +95,18 @@ library QuarkOperationHelper {
         bytes memory multicallCalldata = abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas);
 
         // Construct Quark Operation and Action
-        // Note: We give precedence last action that is not a quote pay or unwrap/wrap because
-        // any earlier operations are usually auxiliary (e.g. wrapping an asset).
         IQuarkWallet.QuarkOperation memory primaryQuarkOperation = quarkOperations[quarkOperations.length - 1];
         Actions.Action memory primaryAction = actions[actions.length - 1];
         if (actions.length > 1) {
+            string[] memory actionTypes = new string[](actions.length);
+            bytes[] memory actionContexts = new bytes[](actions.length);
             for (uint256 i = 0; i < actions.length; ++i) {
-                if (
-                    Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_QUOTE_PAY)
-                        || Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_WRAP)
-                        || Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_UNWRAP)
-                ) {
-                    continue;
-                }
-                primaryQuarkOperation = quarkOperations[i];
-                primaryAction = actions[i];
+                actionTypes[i] = actions[i].actionType;
+                actionContexts[i] = actions[i].actionContext;
             }
+            primaryAction.actionType = Actions.ACTION_TYPE_MULTI_ACTION;
+            primaryAction.actionContext =
+                abi.encode(Actions.MultiActionContext({actionTypes: actionTypes, actionContexts: actionContexts}));
         }
         // Find and attach a QuotePay action context if one is found
         for (uint256 i = 0; i < actions.length; ++i) {
@@ -200,17 +197,21 @@ library QuarkOperationHelper {
         return hasBridge;
     }
 
-    function getExecutionType(Actions.Action memory action, bool hasBridgeOperation)
+    function getExecutionType(Actions.Action[] memory actions, bool existsBridgeOperation)
         internal
         pure
         returns (string memory)
     {
-        string memory executionType = action.executionType;
-        // TODO: Should we ignore recurrent operations as well?
-        if (hasBridgeOperation && !Strings.stringEq(action.actionType, Actions.ACTION_TYPE_BRIDGE)) {
-            executionType = Actions.EXECUTION_TYPE_CONTINGENT;
+        bool existsLocalBridgeOperation;
+        for (uint256 i = 0; i < actions.length; ++i) {
+            if (Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_BRIDGE)) {
+                existsLocalBridgeOperation = true;
+                break;
+            }
         }
-        return executionType;
+        return existsBridgeOperation && !existsLocalBridgeOperation
+            ? Actions.EXECUTION_TYPE_CONTINGENT
+            : actions[actions.length - 1].executionType;
     }
 
     function wrapOperationsWithTokenPayment(
