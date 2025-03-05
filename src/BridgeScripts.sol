@@ -12,6 +12,9 @@ contract CCTPBridgeActions {
         bytes32 mintRecipient,
         address burnToken
     ) external {
+        if (amount == type(uint256).max) {
+            amount = IERC20(burnToken).balanceOf(address(this));
+        }
         IERC20(burnToken).approve(tokenMessenger, amount);
         ITokenMessenger(tokenMessenger).depositForBurn(amount, destinationDomain, mintRecipient, burnToken);
     }

@@ -100,6 +100,28 @@ contract TransferActionsTest is Test {
         assertEq(IERC20(WETH).balanceOf(address(walletBob)), 10 ether);
     }
 
+    function testTransferERC20TokenMax() public {
+        vm.pauseGasMetering();
+        QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
+
+        deal(WETH, address(wallet), 10 ether);
+
+        assertEq(IERC20(WETH).balanceOf(address(wallet)), 10 ether);
+        assertEq(IERC20(WETH).balanceOf(bob), 0 ether);
+        QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
+            wallet,
+            transferScript,
+            abi.encodeWithSelector(TransferActions.transferERC20Token.selector, WETH, bob, type(uint256).max),
+            ScriptType.ScriptSource
+        );
+
+        bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
+        vm.resumeGasMetering();
+        wallet.executeQuarkOperation(op, signature);
+        assertEq(IERC20(WETH).balanceOf(address(wallet)), 0 ether);
+        assertEq(IERC20(WETH).balanceOf(bob), 10 ether);
+    }
+
     function testTransferNativeTokenToEOA() public {
         vm.pauseGasMetering();
         QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
@@ -141,6 +163,28 @@ contract TransferActionsTest is Test {
         // assert on native ETH balance
         assertEq(address(wallet).balance, 0 ether);
         assertEq(address(walletBob).balance, 10 ether);
+    }
+
+    function testTransferNativeTokenMax() public {
+        vm.pauseGasMetering();
+        QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
+
+        deal(address(wallet), 10 ether);
+
+        assertEq(address(wallet).balance, 10 ether);
+        assertEq(bob.balance, 0 ether);
+        QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
+            wallet,
+            transferScript,
+            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, bob, type(uint256).max),
+            ScriptType.ScriptSource
+        );
+        bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
+        vm.resumeGasMetering();
+        wallet.executeQuarkOperation(op, signature);
+        // assert on native ETH balance
+        assertEq(address(wallet).balance, 0 ether);
+        assertEq(bob.balance, 10 ether);
     }
 
     function testTransferReentrancyAttackSuccessWithCallbackEnabled() public {
