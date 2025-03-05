@@ -267,28 +267,44 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 8453, "operation is on chainid 8453");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "MORPHO_BORROW", "action type is 'MORPHO_BORROW'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.MorphoBorrowActionContext({
-                    amount: 1e6,
-                    assetSymbol: "USDC",
-                    chainId: 8453,
-                    collateralAmount: 1e18,
-                    collateralTokenPrice: WETH_PRICE,
-                    collateralToken: weth_(8453),
-                    collateralAssetSymbol: "WETH",
-                    price: USDC_PRICE,
-                    token: usdc_(8453),
-                    morpho: MorphoInfo.getMorphoAddress(8453),
-                    morphoMarketId: MorphoInfo.marketId(MorphoInfo.getMarketParams(8453, "WETH", "USDC"))
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_WRAP, Actions.ACTION_TYPE_MORPHO_BORROW),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.WrapOrUnwrapActionContext({
+                                amount: 10e18,
+                                fromAssetSymbol: "ETH",
+                                toAssetSymbol: "WETH",
+                                chainId: 8453,
+                                token: ETH
+                            })
+                        ),
+                        abi.encode(
+                            Actions.MorphoBorrowActionContext({
+                                amount: 1e6,
+                                assetSymbol: "USDC",
+                                chainId: 8453,
+                                collateralAmount: 1e18,
+                                collateralTokenPrice: WETH_PRICE,
+                                collateralToken: weth_(8453),
+                                collateralAssetSymbol: "WETH",
+                                price: USDC_PRICE,
+                                token: usdc_(8453),
+                                morpho: MorphoInfo.getMorphoAddress(8453),
+                                morphoMarketId: MorphoInfo.marketId(MorphoInfo.getMarketParams(8453, "WETH", "USDC"))
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from MorphoBorrowActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         assertNotEq(result.eip712Data.digest, hex"", "non-empty digest");
@@ -371,43 +387,46 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "MORPHO_BORROW", "action type is 'MORPHO_BORROW'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.MorphoBorrowActionContext({
-                    amount: 1e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    collateralAmount: 1e8,
-                    collateralTokenPrice: WBTC_PRICE,
-                    collateralToken: wbtc_(1),
-                    collateralAssetSymbol: "WBTC",
-                    price: USDC_PRICE,
-                    token: usdc_(1),
-                    morpho: MorphoInfo.getMorphoAddress(1),
-                    morphoMarketId: MorphoInfo.marketId(MorphoInfo.getMarketParams(1, "WBTC", "USDC"))
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_MORPHO_BORROW, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.MorphoBorrowActionContext({
+                                amount: 1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                collateralAmount: 1e8,
+                                collateralTokenPrice: WBTC_PRICE,
+                                collateralToken: wbtc_(1),
+                                collateralAssetSymbol: "WBTC",
+                                price: USDC_PRICE,
+                                token: usdc_(1),
+                                morpho: MorphoInfo.getMorphoAddress(1),
+                                morphoMarketId: MorphoInfo.marketId(MorphoInfo.getMarketParams(1, "WBTC", "USDC"))
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 0.1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from MorphoBorrowActionContext"
-        );
-        assertEq(
-            result.actions[0].quotePayActionContext,
-            abi.encode(
-                Actions.QuotePayActionContext({
-                    amount: 0.1e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    payee: Actions.QUOTE_PAY_RECIPIENT,
-                    quoteId: QUOTE_ID
-                })
-            ),
-            "action context encoded from QuotePayActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         assertNotEq(result.eip712Data.digest, hex"", "non-empty digest");
@@ -490,28 +509,46 @@ contract QuarkBuilderMorphoBorrowTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "MORPHO_BORROW", "action type is 'MORPHO_MORPHO_BORROW'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.MorphoBorrowActionContext({
-                    amount: 1e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    collateralAmount: 1e8,
-                    collateralTokenPrice: WBTC_PRICE,
-                    collateralToken: wbtc_(1),
-                    collateralAssetSymbol: "WBTC",
-                    price: USDC_PRICE,
-                    token: usdc_(1),
-                    morpho: MorphoInfo.getMorphoAddress(1),
-                    morphoMarketId: MorphoInfo.marketId(MorphoInfo.getMarketParams(1, "WBTC", "USDC"))
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_MORPHO_BORROW, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.MorphoBorrowActionContext({
+                                amount: 1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                collateralAmount: 1e8,
+                                collateralTokenPrice: WBTC_PRICE,
+                                collateralToken: wbtc_(1),
+                                collateralAssetSymbol: "WBTC",
+                                price: USDC_PRICE,
+                                token: usdc_(1),
+                                morpho: MorphoInfo.getMorphoAddress(1),
+                                morphoMarketId: MorphoInfo.marketId(MorphoInfo.getMarketParams(1, "WBTC", "USDC"))
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 0.1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from MorphoBorrowActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         assertNotEq(result.eip712Data.digest, hex"", "non-empty digest");

@@ -282,28 +282,44 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 8453, "operation is on chainid 8453");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "MORPHO_REPAY", "action type is 'MORPHO_REPAY'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.MorphoRepayActionContext({
-                    amount: 1e18,
-                    assetSymbol: "WETH",
-                    chainId: 8453,
-                    collateralAmount: 0,
-                    collateralAssetSymbol: "cbETH",
-                    collateralTokenPrice: CBETH_PRICE,
-                    collateralToken: cbEth_(8453),
-                    price: WETH_PRICE,
-                    token: weth_(8453),
-                    morpho: MorphoInfo.getMorphoAddress(8453),
-                    morphoMarketId: MorphoInfo.marketId(MorphoInfo.getMarketParams(8453, "cbETH", "WETH"))
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_WRAP, Actions.ACTION_TYPE_MORPHO_REPAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.WrapOrUnwrapActionContext({
+                                amount: 1e18,
+                                fromAssetSymbol: "ETH",
+                                toAssetSymbol: "WETH",
+                                chainId: 8453,
+                                token: ETH
+                            })
+                        ),
+                        abi.encode(
+                            Actions.MorphoRepayActionContext({
+                                amount: 1e18,
+                                assetSymbol: "WETH",
+                                chainId: 8453,
+                                collateralAmount: 0,
+                                collateralAssetSymbol: "cbETH",
+                                collateralTokenPrice: CBETH_PRICE,
+                                collateralToken: cbEth_(8453),
+                                price: WETH_PRICE,
+                                token: weth_(8453),
+                                morpho: MorphoInfo.getMorphoAddress(8453),
+                                morphoMarketId: MorphoInfo.marketId(MorphoInfo.getMarketParams(8453, "cbETH", "WETH"))
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from MorphoRepayActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         assertNotEq(result.eip712Data.digest, hex"", "non-empty digest");
@@ -393,7 +409,7 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "MORPHO_REPAY", "action type is 'MORPHO_REPAY'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, ALICE_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
@@ -410,36 +426,39 @@ contract QuarkBuilderMorphoRepayTest is Test, QuarkBuilderTest {
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.MorphoRepayActionContext({
-                    amount: 1e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    collateralAmount: 0,
-                    collateralAssetSymbol: "WBTC",
-                    collateralTokenPrice: WBTC_PRICE,
-                    collateralToken: wbtc_(1),
-                    price: USDC_PRICE,
-                    token: usdc_(1),
-                    morpho: MorphoInfo.getMorphoAddress(1),
-                    morphoMarketId: MorphoInfo.marketId(MorphoInfo.getMarketParams(1, "WBTC", "USDC"))
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_MORPHO_REPAY, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.MorphoRepayActionContext({
+                                amount: 1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                collateralAmount: 0,
+                                collateralAssetSymbol: "WBTC",
+                                collateralTokenPrice: WBTC_PRICE,
+                                collateralToken: wbtc_(1),
+                                price: USDC_PRICE,
+                                token: usdc_(1),
+                                morpho: MorphoInfo.getMorphoAddress(1),
+                                morphoMarketId: MorphoInfo.marketId(MorphoInfo.getMarketParams(1, "WBTC", "USDC"))
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 0.1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from MorphoRepayActionContext"
-        );
-        assertEq(
-            result.actions[0].quotePayActionContext,
-            abi.encode(
-                Actions.QuotePayActionContext({
-                    amount: 0.1e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    payee: Actions.QUOTE_PAY_RECIPIENT,
-                    quoteId: QUOTE_ID
-                })
-            ),
-            "action context encoded from QuotePayActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         assertNotEq(result.eip712Data.digest, hex"", "non-empty digest");

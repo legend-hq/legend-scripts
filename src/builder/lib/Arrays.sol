@@ -16,6 +16,32 @@ library Arrays {
         return addresses;
     }
 
+    /* bytesArray */
+    function bytesArray(bytes memory bytes0) internal pure returns (bytes[] memory) {
+        bytes[] memory arr = new bytes[](1);
+        arr[0] = bytes0;
+        return arr;
+    }
+
+    function bytesArray(bytes memory bytes0, bytes memory bytes01) internal pure returns (bytes[] memory) {
+        bytes[] memory arr = new bytes[](2);
+        arr[0] = bytes0;
+        arr[1] = bytes01;
+        return arr;
+    }
+
+    function bytesArray(bytes memory bytes0, bytes memory bytes01, bytes memory bytes02)
+        internal
+        pure
+        returns (bytes[] memory)
+    {
+        bytes[] memory arr = new bytes[](3);
+        arr[0] = bytes0;
+        arr[1] = bytes01;
+        arr[2] = bytes02;
+        return arr;
+    }
+
     /* stringArray */
     function stringArray(string memory string0) internal pure returns (string[] memory) {
         string[] memory strings = new string[](1);
@@ -27,6 +53,18 @@ library Arrays {
         string[] memory strings = new string[](2);
         strings[0] = string0;
         strings[1] = string1;
+        return strings;
+    }
+
+    function stringArray(string memory string0, string memory string1, string memory string2)
+        internal
+        pure
+        returns (string[] memory)
+    {
+        string[] memory strings = new string[](3);
+        strings[0] = string0;
+        strings[1] = string1;
+        strings[2] = string2;
         return strings;
     }
 

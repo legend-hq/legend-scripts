@@ -28,6 +28,8 @@ contract QuarkBuilderTest {
     address constant COMET_REWARDS_1 = address(0xFEEDBEEF1);
     address constant COMET_REWARDS_8453 = address(0xFEEDBEEF8453);
 
+    address constant ETH = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+
     address constant LINK_1 = address(0xfeed01);
     address constant LINK_7777 = address(0xfeed7777);
     address constant LINK_8453 = address(0xfeed8453);

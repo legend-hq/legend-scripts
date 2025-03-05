@@ -270,8 +270,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
         callContracts[0] = wrapperActionsAddress;
         callContracts[1] = cometSupplyMultipleAssetsAndBorrowAddress;
         bytes[] memory callDatas = new bytes[](2);
-        callDatas[0] =
-            abi.encodeWithSelector(WrapperActions.wrapAllETH.selector, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+        callDatas[0] = abi.encodeWithSelector(WrapperActions.wrapAllETH.selector, WETH_1);
         callDatas[1] = abi.encodeCall(
             CometSupplyMultipleAssetsAndBorrow.run, (cometUsdc_(1), collateralTokens, collateralAmounts, usdc_(1), 1e6)
         );
@@ -292,27 +291,43 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "BORROW", "action type is 'BORROW'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[0].nonceSecret, chainPortfolios[0].nonceSecret, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.BorrowActionContext({
-                    amount: 1e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    collateralAmounts: collateralAmounts,
-                    collateralTokenPrices: collateralTokenPrices,
-                    collateralTokens: collateralTokens,
-                    collateralAssetSymbols: collateralAssetSymbols,
-                    comet: cometUsdc_(1),
-                    price: USDC_PRICE,
-                    token: usdc_(1)
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_WRAP, Actions.ACTION_TYPE_BORROW),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.WrapOrUnwrapActionContext({
+                                amount: 10e18,
+                                fromAssetSymbol: "ETH",
+                                toAssetSymbol: "WETH",
+                                chainId: 1,
+                                token: ETH
+                            })
+                        ),
+                        abi.encode(
+                            Actions.BorrowActionContext({
+                                amount: 1e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                collateralAmounts: collateralAmounts,
+                                collateralTokenPrices: collateralTokenPrices,
+                                collateralTokens: collateralTokens,
+                                collateralAssetSymbols: collateralAssetSymbols,
+                                comet: cometUsdc_(1),
+                                price: USDC_PRICE,
+                                token: usdc_(1)
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from BorrowActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -501,7 +516,6 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
         assertNotEq(result.eip712Data.hashStruct, hex"", "non-empty hashStruct");
     }
 
-    // DONE
     function testBorrowPayFromBorrow() public {
         QuarkBuilder builder = new QuarkBuilder();
 
@@ -600,7 +614,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
         assertEq(result.actions.length, 1, "one action");
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "BORROW", "action type is 'BORROW'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, chainPortfolios[0].nonceSecret, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
@@ -611,20 +625,38 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.BorrowActionContext({
-                    amount: 2e6,
-                    assetSymbol: "USDC",
-                    chainId: 1,
-                    collateralAmounts: collateralAmounts,
-                    collateralTokenPrices: collateralTokenPrices,
-                    collateralTokens: collateralTokens,
-                    collateralAssetSymbols: collateralAssetSymbols,
-                    comet: cometUsdc_(1),
-                    price: USDC_PRICE,
-                    token: usdc_(1)
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_BORROW, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.BorrowActionContext({
+                                amount: 2e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                collateralAmounts: collateralAmounts,
+                                collateralTokenPrices: collateralTokenPrices,
+                                collateralTokens: collateralTokens,
+                                collateralAssetSymbols: collateralAssetSymbols,
+                                comet: cometUsdc_(1),
+                                price: USDC_PRICE,
+                                token: usdc_(1)
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 1.5e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from BorrowActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
@@ -764,26 +796,44 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
         // first action
         assertEq(result.actions[0].chainId, 1, "operation is on chainid 1");
         assertEq(result.actions[0].quarkAccount, address(0xa11ce), "0xa11ce sends the funds");
-        assertEq(result.actions[0].actionType, "BRIDGE", "action type is 'BRIDGE'");
+        assertEq(result.actions[0].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[0].paymentMethod, "QUOTE_PAY", "payment method is 'QUOTE_PAY'");
         assertEq(result.actions[0].nonceSecret, chainPortfolios[0].nonceSecret, "unexpected nonce secret");
         assertEq(result.actions[0].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[0].actionContext,
             abi.encode(
-                Actions.BridgeActionContext({
-                    price: USDC_PRICE,
-                    token: USDC_1,
-                    assetSymbol: "USDC",
-                    inputAmount: 2e6,
-                    outputAmount: 2e6,
-                    chainId: 1,
-                    recipient: address(0xa11ce),
-                    destinationChainId: 8453,
-                    bridgeType: Actions.BRIDGE_TYPE_CCTP
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_BRIDGE, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.BridgeActionContext({
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                assetSymbol: "USDC",
+                                inputAmount: 2e6,
+                                outputAmount: 2e6,
+                                chainId: 1,
+                                recipient: address(0xa11ce),
+                                destinationChainId: 8453,
+                                bridgeType: Actions.BRIDGE_TYPE_CCTP
+                            })
+                        ),
+                        abi.encode(
+                            Actions.QuotePayActionContext({
+                                amount: 0.3e6,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                payee: Actions.QUOTE_PAY_RECIPIENT,
+                                quoteId: QUOTE_ID
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from BridgeActionContext"
+            "action context encoded from MultiActionContext"
         );
         // second action
         assertEq(result.actions[1].chainId, 8453, "operation is on chainid 8453");

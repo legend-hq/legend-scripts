@@ -58,6 +58,7 @@ library Actions {
     string constant ACTION_TYPE_WRAP = "WRAP";
     string constant ACTION_TYPE_UNWRAP = "UNWRAP";
     string constant ACTION_TYPE_QUOTE_PAY = "QUOTE_PAY";
+    string constant ACTION_TYPE_MULTI_ACTION = "MULTI_ACTION";
 
     string constant EXECUTION_TYPE_IMMEDIATE = "IMMEDIATE";
     string constant EXECUTION_TYPE_DELAYED = "DELAYED";
@@ -293,6 +294,8 @@ library Actions {
         address quarkAccount;
         string actionType;
         bytes actionContext;
+        // @dev Deprecated.
+        // @dev No longer needed now that we have `MultiActionContext`, which contains all action contexts
         // The action context for a QuotePay, if one exists for this operation. Otherwise, empty bytes
         bytes quotePayActionContext;
         // One of the PaymentInfo.PAYMENT_METHOD_* constants.
@@ -497,6 +500,11 @@ library Actions {
         address payee;
         bytes32 quoteId;
         address token;
+    }
+
+    struct MultiActionContext {
+        string[] actionTypes;
+        bytes[] actionContexts;
     }
 
     function constructBridgeOperations(

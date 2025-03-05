@@ -14,6 +14,7 @@ import {TransferActionsBuilder} from "src/builder/actions/TransferActionsBuilder
 import {Actions} from "src/builder/actions/Actions.sol";
 import {Accounts} from "src/builder/Accounts.sol";
 import {Across} from "src/builder/BridgeRoutes.sol";
+import {Arrays} from "src/builder/lib/Arrays.sol";
 import {CodeJarHelper} from "src/builder/CodeJarHelper.sol";
 import {FFI} from "src/builder/FFI.sol";
 import {Paycall} from "src/Paycall.sol";
@@ -184,23 +185,39 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
         );
         assertEq(result.actions[1].chainId, 8453, "operation is on chainid 8453");
         assertEq(result.actions[1].quarkAccount, address(0xb0b), "0xb0b sends the funds");
-        assertEq(result.actions[1].actionType, "TRANSFER", "action type is 'TRANSFER'");
+        assertEq(result.actions[1].actionType, "MULTI_ACTION", "action type is 'MULTI_ACTION'");
         assertEq(result.actions[1].paymentMethod, "OFFCHAIN", "payment method is 'OFFCHAIN'");
         assertEq(result.actions[1].nonceSecret, BOB_DEFAULT_SECRET, "unexpected nonce secret");
         assertEq(result.actions[1].totalPlays, 1, "total plays is 1");
         assertEq(
             result.actions[1].actionContext,
             abi.encode(
-                Actions.TransferActionContext({
-                    amount: 1e18,
-                    price: WETH_PRICE,
-                    token: WETH_8453,
-                    assetSymbol: "WETH",
-                    chainId: 8453,
-                    recipient: address(0xceecee)
+                Actions.MultiActionContext({
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_WRAP, Actions.ACTION_TYPE_TRANSFER),
+                    actionContexts: Arrays.bytesArray(
+                        abi.encode(
+                            Actions.WrapOrUnwrapActionContext({
+                                amount: 0.5e18,
+                                fromAssetSymbol: "ETH",
+                                toAssetSymbol: "WETH",
+                                chainId: 8453,
+                                token: ETH
+                            })
+                        ),
+                        abi.encode(
+                            Actions.TransferActionContext({
+                                amount: 1e18,
+                                price: WETH_PRICE,
+                                token: WETH_8453,
+                                assetSymbol: "WETH",
+                                chainId: 8453,
+                                recipient: address(0xceecee)
+                            })
+                        )
+                    )
                 })
             ),
-            "action context encoded from TransferActionContext"
+            "action context encoded from MultiActionContext"
         );
 
         // TODO: Check the contents of the EIP712 data
