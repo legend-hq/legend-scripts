@@ -168,11 +168,12 @@ struct CometSupplyTests {
                     .single(
                         .multicall(
                             [
+                                .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
                                 .supplyToComet(
-                                    tokenAmount: .amt(2.9, .usdc), market: .cusdcv3,
+                                    // 2.9
+                                    tokenAmount: .max(.usdc), market: .cusdcv3,
                                     network: .ethereum
                                 ),
-                                .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
                             ],
                             executionType: .immediate
                         )
@@ -206,11 +207,12 @@ struct CometSupplyTests {
                         ),
                         .multicall(
                             [
+                                .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                                 .supplyToComet(
-                                    tokenAmount: .amt(98.44, .usdc), market: .cusdcv3,
+                                    // 98.44
+                                    tokenAmount: .max(.usdc), market: .cusdcv3,
                                     network: .arbitrum
                                 ),
-                                .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                             ],
                             executionType: .contingent
                         ),

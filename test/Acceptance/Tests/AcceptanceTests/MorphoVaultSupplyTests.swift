@@ -14,7 +14,8 @@ struct MorphoVaultSupplyTests {
                     .acrossQuote(.amt(1, .usdc), 0.01),
                 ],
                 when: .morphoVaultSupply(
-                    from: .alice, vault: .usdc, amount: .max(.usdc), on: .base),
+                    from: .alice, vault: .usdc, amount: .max(.usdc), on: .base
+                ),
                 expect: .success(
                     .multi([
                         .bridge(
@@ -27,11 +28,13 @@ struct MorphoVaultSupplyTests {
                         ),
                         .multicall(
                             [
-                                .supplyToMorphoVault(
-                                    tokenAmount: .amt(4.85, .usdc), vault: .usdc, network: .base
-                                ),
                                 .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                            ], executionType: .contingent),
+                                // 4.85
+                                .supplyToMorphoVault(
+                                    tokenAmount: .max(.usdc), vault: .usdc, network: .base
+                                ),
+                            ], executionType: .contingent
+                        ),
                     ])
                 )
             )
@@ -49,20 +52,22 @@ struct MorphoVaultSupplyTests {
                     .quote(
                         .custom(
                             quoteId:
-                                "0x00000000000000000000000000000000000000000000000000000000000000CC",
+                            "0x00000000000000000000000000000000000000000000000000000000000000CC",
                             prices: [
-                                .degen: 0.01
+                                .degen: 0.01,
                             ],
                             fees: [
                                 .base: 0.02,
                                 .arbitrum: 0.04,
-                            ])
+                            ]
+                        )
                     ),
                     .acrossQuote(.amt(1, .usdc), 0.01),
                 ],
                 when: .payWith(
                     currency: .degen,
-                    .morphoVaultSupply(from: .alice, vault: .usdc, amount: .max(.usdc), on: .base)),
+                    .morphoVaultSupply(from: .alice, vault: .usdc, amount: .max(.usdc), on: .base)
+                ),
                 expect: .success(
                     .multi([
                         .bridge(
@@ -75,13 +80,16 @@ struct MorphoVaultSupplyTests {
                         ),
                         .multicall(
                             [
-                                .supplyToMorphoVault(
-                                    tokenAmount: .amt(4.97, .usdc), vault: .usdc, network: .base
-                                ),
                                 .quotePay(
                                     // Slightly larger than 6 since quark builder adds a small buffer
-                                    payment: .amt(6, .degen), payee: .stax, quote: .basic),
-                            ], executionType: .contingent),
+                                    payment: .amt(6, .degen), payee: .stax, quote: .basic
+                                ),
+                                // 4.97
+                                .supplyToMorphoVault(
+                                    tokenAmount: .max(.usdc), vault: .usdc, network: .base
+                                ),
+                            ], executionType: .contingent
+                        ),
                     ])
                 )
             )
@@ -206,7 +214,8 @@ struct MorphoVaultSupplyTests {
                                     network: .ethereum
                                 ),
                                 .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                            ], executionType: .immediate)
+                            ], executionType: .immediate
+                        )
                     )
                 )
             )
@@ -216,14 +225,14 @@ struct MorphoVaultSupplyTests {
     @Test("Alice supplies max to MorphoVault")
     func testSimpleMorphoVaultSupplyMax() async throws {
         /*
-        +1.5 on Ethereum
-        +1.5 on Base
-        -1 for Across gasFee
-        -(1.5 * .01) for Across pctFee
-        -0.1 (Eth operation fee)
-        -0.02 (Base operation fee)
-        = 1.865 USDC supplied
-        */
+         +1.5 on Ethereum
+         +1.5 on Base
+         -1 for Across gasFee
+         -(1.5 * .01) for Across pctFee
+         -0.1 (Eth operation fee)
+         -0.02 (Base operation fee)
+         = 1.865 USDC supplied
+         */
 
         try await testAcceptanceTests(
             test: .init(
@@ -251,13 +260,14 @@ struct MorphoVaultSupplyTests {
                         ),
                         .multicall(
                             [
+                                .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                                 .supplyToMorphoVault(
-                                    tokenAmount: .amt(1.865, .usdc),
+                                    tokenAmount: .max(.usdc), // 1.865
                                     vault: .usdc,
                                     network: .ethereum
                                 ),
-                                .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                            ], executionType: .contingent),
+                            ], executionType: .contingent
+                        ),
                     ])
                 )
             )
@@ -288,8 +298,7 @@ struct MorphoVaultSupplyTests {
                                 network: .ethereum
                             ),
                             .quotePay(payment: .amt(0.1, .usdc), payee: .stax, quote: .basic),
-                        ], executionType: .immediate
-                        )
+                        ], executionType: .immediate)
                     )
                 )
             )
@@ -324,7 +333,7 @@ struct MorphoVaultSupplyTests {
                             ),
                             // .1 for mainnet operation + .02 for base operation
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                        ],  executionType: .immediate),
+                        ], executionType: .immediate),
                         .supplyToMorphoVault(
                             tokenAmount: .amt(5, .usdc),
                             vault: .usdc,
@@ -340,14 +349,14 @@ struct MorphoVaultSupplyTests {
     @Test("Alice supplies max to MorphoVault, bridging funds")
     func testMorphoVaultSupplyMaxWithBridge() async throws {
         /*
-        +3 on Base
-        +3 on Ethereum
-        -1 for Across gas fee
-        -(3 * 0.01) for Across pct fee
-        -0.1 for Ethereum operation fee
-        -0.02 for Base operation fee
-        = 4.85 USDC supplied to MorphoVault
-        */
+         +3 on Base
+         +3 on Ethereum
+         -1 for Across gas fee
+         -(3 * 0.01) for Across pct fee
+         -0.1 for Ethereum operation fee
+         -0.02 for Base operation fee
+         = 4.85 USDC supplied to MorphoVault
+         */
 
         try await testAcceptanceTests(
             test: .init(
@@ -375,13 +384,14 @@ struct MorphoVaultSupplyTests {
                         ),
                         .multicall(
                             [
+                                .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                                 .supplyToMorphoVault(
-                                    tokenAmount: .amt(4.85, .usdc),
+                                    tokenAmount: .max(.usdc), // 4.85
                                     vault: .usdc,
                                     network: .base
                                 ),
-                                .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
-                            ], executionType: .contingent),
+                            ], executionType: .contingent
+                        ),
                     ])
                 )
             )
@@ -391,14 +401,14 @@ struct MorphoVaultSupplyTests {
     @Test("Alice supplies max to MorphoVault, bridging funds and paying with QuotePay")
     func testMorphoVaultSupplyMaxWithBridgeAndQuotePayAndCustomQuote() async throws {
         /*
-        +3 on Ethereum
-        +3 on Base
-        -1 for Across gas fee
-        -(3 * .01) for Across pct fee
-        -0.5 for Ethereum operation fee
-        -0.1 for Base operation fee
-        = 4.37 USDC supplied
-        */
+         +3 on Ethereum
+         +3 on Base
+         -1 for Across gas fee
+         -(3 * .01) for Across pct fee
+         -0.5 for Ethereum operation fee
+         -0.1 for Base operation fee
+         = 4.37 USDC supplied
+         */
 
         try await testAcceptanceTests(
             test: .init(
@@ -441,13 +451,14 @@ struct MorphoVaultSupplyTests {
                         ),
                         .multicall(
                             [
+                                .quotePay(payment: .amt(0.6, .usdc), payee: .stax, quote: .basic),
                                 .supplyToMorphoVault(
-                                    tokenAmount: .amt(4.37, .usdc),
+                                    tokenAmount: .max(.usdc), // 4.37
                                     vault: .usdc,
                                     network: .base
                                 ),
-                                .quotePay(payment: .amt(0.6, .usdc), payee: .stax, quote: .basic),
-                            ], executionType: .contingent),
+                            ], executionType: .contingent
+                        ),
                     ])
                 )
             )
@@ -497,7 +508,8 @@ struct MorphoVaultSupplyTests {
                                     outputTokenAmount: .amt(2, .usdc)
                                 ),
                                 .quotePay(payment: .amt(0.6, .usdc), payee: .stax, quote: .basic),
-                            ], executionType: .immediate),
+                            ], executionType: .immediate
+                        ),
                         .supplyToMorphoVault(
                             tokenAmount: .amt(5, .usdc),
                             vault: .usdc,
@@ -509,5 +521,4 @@ struct MorphoVaultSupplyTests {
             )
         )
     }
-
 }
