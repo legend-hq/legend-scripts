@@ -2040,4 +2040,9 @@ library Actions {
         QuotePayActionContext[] memory qp = new QuotePayActionContext[](1);
         return qp[0];
     }
+
+    function emptyMultiActionContext() external pure returns (MultiActionContext memory) {
+        MultiActionContext[] memory ma = new MultiActionContext[](1);
+        return ma[0];
+    }
 }
