@@ -377,7 +377,8 @@ struct MigrateSuppliesTests {
                                 bridge: "Across",
                                 srcNetwork: .ethereum,
                                 destinationNetwork: .arbitrum,
-                                inputTokenAmount: .amt(10, .usdc),
+                                // 10
+                                inputTokenAmount: .max(.usdc),
                                 // 10 - 1 Across base fee - (10 * .01) Across pct fee = 8.9
                                 outputTokenAmount: .amt(8.9, .usdc)
                             ),
@@ -390,7 +391,8 @@ struct MigrateSuppliesTests {
                                 bridge: "Across",
                                 srcNetwork: .base,
                                 destinationNetwork: .arbitrum,
-                                inputTokenAmount: .amt(10, .usdc),
+                                // 10
+                                inputTokenAmount: .max(.usdc),
                                 // 10 - 1 Across base fee - (10 * .01) Across pct fee = 8.9
                                 outputTokenAmount: .amt(8.9, .usdc)
                             ),

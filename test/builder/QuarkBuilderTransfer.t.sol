@@ -602,21 +602,21 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             "script address[0] has been wrapped with multicall address"
         );
         address[] memory callContracts = new address[](2);
-        callContracts[0] = transferActionsAddress;
-        callContracts[1] = quotePayAddress;
+        callContracts[0] = quotePayAddress;
+        callContracts[1] = transferActionsAddress;
         bytes[] memory callDatas = new bytes[](2);
-        callDatas[0] = abi.encodeWithSelector(
+        callDatas[0] = abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 1e5, QUOTE_ID);
+        callDatas[1] = abi.encodeWithSelector(
             // Transfer max should be able to adjust to the right max amount to transfer all funds: 10e6 (holding) - 1e5 (max cost) = 9.9e6
             TransferActions.transferERC20Token.selector,
             usdc_(1),
             address(0xceecee),
-            9.9e6
+            type(uint256).max // 9.9e6
         );
-        callDatas[1] = abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 1e5, QUOTE_ID);
         assertEq(
             result.quarkOperations[0].scriptCalldata,
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
-            "calldata is Multicall.run([transferActionsAddress, quotePayAddress], [TransferActions.transferERC20Token(USDC_1, address(0xceecee), 9.9e6), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 1e5, QUOTE_ID)]);"
+            "calldata is Multicall.run([quotePayAddress, transferActionsAddress], [QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 1e5, QUOTE_ID), TransferActions.transferERC20Token(USDC_1, address(0xceecee), type(uint256).max)]);"
         );
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
@@ -636,18 +636,8 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             result.actions[0].actionContext,
             abi.encode(
                 Actions.MultiActionContext({
-                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_TRANSFER, Actions.ACTION_TYPE_QUOTE_PAY),
+                    actionTypes: Arrays.stringArray(Actions.ACTION_TYPE_QUOTE_PAY, Actions.ACTION_TYPE_TRANSFER),
                     actionContexts: Arrays.bytesArray(
-                        abi.encode(
-                            Actions.TransferActionContext({
-                                amount: 9.9e6,
-                                price: USDC_PRICE,
-                                token: USDC_1,
-                                assetSymbol: "USDC",
-                                chainId: 1,
-                                recipient: address(0xceecee)
-                            })
-                        ),
                         abi.encode(
                             Actions.QuotePayActionContext({
                                 amount: 1e5,
@@ -657,6 +647,16 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
                                 token: USDC_1,
                                 payee: Actions.QUOTE_PAY_RECIPIENT,
                                 quoteId: QUOTE_ID
+                            })
+                        ),
+                        abi.encode(
+                            Actions.TransferActionContext({
+                                amount: 9.9e6,
+                                price: USDC_PRICE,
+                                token: USDC_1,
+                                assetSymbol: "USDC",
+                                chainId: 1,
+                                recipient: address(0xceecee)
                             })
                         )
                     )
@@ -1193,17 +1193,18 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
         );
         address[] memory callContracts = new address[](3);
         callContracts[0] = wrapperActionsAddress;
-        callContracts[1] = transferActionsAddress;
-        callContracts[2] = quotePayAddress;
+        callContracts[1] = quotePayAddress;
+        callContracts[2] = transferActionsAddress;
         bytes[] memory callDatas = new bytes[](3);
         callDatas[0] = abi.encodeWithSelector(WrapperActions.unwrapWETHUpTo.selector, WETH_1, 2e18);
-        callDatas[1] = abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(0xceecee), 2e18);
-        callDatas[2] =
+        callDatas[1] =
             abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 0.1e6, QUOTE_ID);
+        callDatas[2] =
+            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(0xceecee), type(uint256).max);
         assertEq(
             result.quarkOperations[0].scriptCalldata,
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
-            "calldata is Multicall.run([wrapperActionsAddress, transferActionsAddress, quotePayAddress], [WrapperActions.unwrapWETHUpTo(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, 2e18), TransferActions.transferNativeToken(address(0xceecee), 2e18), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.1e6, QUOTE_ID)]);"
+            "calldata is Multicall.run([wrapperActionsAddress, quotePayAddress, transferActionsAddress], [WrapperActions.unwrapWETHUpTo(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, 2e18), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 0.1e6, QUOTE_ID), TransferActions.transferNativeToken(address(0xceecee), 2e18)]);"
         );
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
@@ -1224,7 +1225,7 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
             abi.encode(
                 Actions.MultiActionContext({
                     actionTypes: Arrays.stringArray(
-                        Actions.ACTION_TYPE_UNWRAP, Actions.ACTION_TYPE_TRANSFER, Actions.ACTION_TYPE_QUOTE_PAY
+                        Actions.ACTION_TYPE_UNWRAP, Actions.ACTION_TYPE_QUOTE_PAY, Actions.ACTION_TYPE_TRANSFER
                     ),
                     actionContexts: Arrays.bytesArray(
                         abi.encode(
@@ -1237,16 +1238,6 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
                             })
                         ),
                         abi.encode(
-                            Actions.TransferActionContext({
-                                amount: 2e18,
-                                price: 3500e8,
-                                token: eth_(),
-                                assetSymbol: "ETH",
-                                chainId: 1,
-                                recipient: address(0xceecee)
-                            })
-                        ),
-                        abi.encode(
                             Actions.QuotePayActionContext({
                                 amount: 0.1e6,
                                 assetSymbol: "USDC",
@@ -1255,6 +1246,16 @@ contract QuarkBuilderTransferTest is Test, QuarkBuilderTest {
                                 token: USDC_1,
                                 payee: Actions.QUOTE_PAY_RECIPIENT,
                                 quoteId: QUOTE_ID
+                            })
+                        ),
+                        abi.encode(
+                            Actions.TransferActionContext({
+                                amount: 2e18,
+                                price: 3500e8,
+                                token: eth_(),
+                                assetSymbol: "ETH",
+                                chainId: 1,
+                                recipient: address(0xceecee)
                             })
                         )
                     )

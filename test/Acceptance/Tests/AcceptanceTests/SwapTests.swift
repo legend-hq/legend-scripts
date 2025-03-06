@@ -23,7 +23,8 @@ struct SwapTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            inputTokenAmount: .amt(4_005.0, .usdc),
+                            // 4005
+                            inputTokenAmount: .max(.usdc),
                             outputTokenAmount: .amt(3_963.95, .usdc),
                             executionType: .immediate
                         ),
