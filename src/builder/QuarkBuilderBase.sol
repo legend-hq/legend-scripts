@@ -24,7 +24,7 @@ import {HashMap} from "src/builder/HashMap.sol";
 import {BalanceChanges} from "src/builder/BalanceChanges.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.8.7";
+string constant QUARK_BUILDER_VERSION = "0.8.8";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -391,6 +391,7 @@ contract QuarkBuilderBase {
                     Actions.BridgeOperationInfo({
                         assetSymbol: assetSymbolOut,
                         amountNeededOnDst: amountNeededOnDst,
+                        isMaxBridge: isMaxBridge,
                         dstChainId: actionIntent.chainId,
                         recipient: actionIntent.actor,
                         blockTimestamp: actionIntent.blockTimestamp,
@@ -498,20 +499,19 @@ contract QuarkBuilderBase {
     ) internal pure returns (string memory, IQuarkWallet.QuarkOperation[] memory, Actions.Action[] memory) {
         if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_TRANSFER)) {
             TransferIntent memory intent = abi.decode(actionIntent, (TransferIntent));
-            if (intent.amount == type(uint256).max) {
-                intent.amount = Accounts.getTotalAvailableBalanceOnDst(
-                    chainAccountsList,
-                    payment,
-                    amountsOnDst,
-                    List.addUniqueUint256(chainIdsInvolved, intent.chainId),
-                    intent.assetSymbol
-                );
-            }
+            uint256 maxAmount = Accounts.getTotalAvailableBalanceOnDst(
+                chainAccountsList,
+                payment,
+                amountsOnDst,
+                List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                intent.assetSymbol
+            );
             (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.transferAsset(
                 Actions.TransferAsset({
                     chainAccountsList: chainAccountsList,
                     assetSymbol: intent.assetSymbol,
                     amount: intent.amount,
+                    maxAmount: maxAmount,
                     chainId: intent.chainId,
                     sender: intent.sender,
                     recipient: intent.recipient,

@@ -97,6 +97,7 @@ library Actions {
         Accounts.ChainAccounts[] chainAccountsList;
         string assetSymbol;
         uint256 amount;
+        bool isMaxBridge;
         uint256 srcChainId;
         uint256 srcBalance;
         address sender;
@@ -182,6 +183,7 @@ library Actions {
         string assetSymbol;
         uint256 amount;
         uint256 chainId;
+        uint256 maxAmount;
         address sender;
         address recipient;
         uint256 blockTimestamp;
@@ -271,6 +273,7 @@ library Actions {
     struct BridgeOperationInfo {
         string assetSymbol;
         uint256 amountNeededOnDst;
+        bool isMaxBridge;
         uint256 dstChainId;
         address recipient;
         uint256 blockTimestamp;
@@ -520,29 +523,8 @@ library Actions {
          */
         List.DynamicArray memory actions = List.newList();
         List.DynamicArray memory quarkOperations = List.newList();
-        IQuarkWallet.QuarkOperation memory wrapOrUnwrapOperation;
-        Actions.Action memory wrapOrUnwrapAction;
 
-        // Note: Assumes that the asset uses the same # of decimals on each chain
-        uint256 balanceOnDstChain =
-            Accounts.getBalanceOnChain(bridgeInfo.assetSymbol, bridgeInfo.dstChainId, chainAccountsList);
-        uint256 amountLeftToBridge = bridgeInfo.amountNeededOnDst - balanceOnDstChain;
-
-        // TODO: Need to augment with some logic to handle WETH/ETH if using Across. Also, we need to check if the counterpart token can/should be bridged
-        // Check to see if there are counterpart tokens on the destination chain that can be used. If there are, subtract the balance from `amountLeftToBridge`
-        if (TokenWrapper.hasWrapperContract(bridgeInfo.dstChainId, bridgeInfo.assetSymbol)) {
-            string memory counterpartSymbol =
-                TokenWrapper.getWrapperCounterpartSymbol(bridgeInfo.dstChainId, bridgeInfo.assetSymbol);
-            uint256 counterpartBalanceOnDstChain =
-                Accounts.getBalanceOnChain(counterpartSymbol, bridgeInfo.dstChainId, chainAccountsList);
-            uint256 counterpartTokenAmountToUse =
-                counterpartBalanceOnDstChain >= amountLeftToBridge ? amountLeftToBridge : counterpartBalanceOnDstChain;
-
-            // NOTE: Only adjusts amountLeftToBridge, the real wrapping/unwrapping will be done outside of the construct bridge operation function
-            // Update amountLeftToBridge
-            amountLeftToBridge -= counterpartTokenAmountToUse;
-        }
-
+        uint256 amountLeftToBridge = calculateAmountLeftToBridge(bridgeInfo, chainAccountsList);
         uint256 totalBridgeFees = 0;
         // Iterate chainAccountList and find chains that can provide enough funds to bridge.
         // One optimization is to allow the client to provide optimal routes.
@@ -566,14 +548,11 @@ library Actions {
             string memory counterpartSymbol =
                 TokenWrapper.getWrapperCounterpartSymbol(srcChainAccounts.chainId, bridgeInfo.assetSymbol);
 
-            Accounts.AssetPositions memory srcAssetPositions =
-                Accounts.findAssetPositions(bridgeInfo.assetSymbol, srcChainAccounts.assetPositionsList);
-            Accounts.AccountBalance[] memory srcAccountBalances = srcAssetPositions.accountBalances;
-
-            Accounts.AssetPositions memory srcCounterpartAssetPositions =
-                Accounts.findAssetPositions(counterpartSymbol, srcChainAccounts.assetPositionsList);
+            Accounts.AccountBalance[] memory srcAccountBalances =
+                Accounts.findAssetPositions(bridgeInfo.assetSymbol, srcChainAccounts.assetPositionsList).accountBalances;
             Accounts.AccountBalance[] memory srcCounterpartAccountBalances =
-                srcCounterpartAssetPositions.accountBalances;
+                Accounts.findAssetPositions(counterpartSymbol, srcChainAccounts.assetPositionsList).accountBalances;
+
             // TODO: Make logic smarter. Currently, this uses a greedy algorithm.
             // e.g. Optimize by trying to bridge with the least amount of bridge operations
             for (uint256 j = 0; j < srcAccountBalances.length; ++j) {
@@ -585,11 +564,16 @@ library Actions {
                     amountToBridge = amountLeftToBridge;
                 } else {
                     if (counterpartBalance > 0) {
-                        (wrapOrUnwrapOperation, wrapOrUnwrapAction) = Actions.wrapOrUnwrapAsset(
+                        uint256 amountNeeded = counterpartBalance > amountToBridge ? amountToBridge : counterpartBalance;
+
+                        (
+                            IQuarkWallet.QuarkOperation memory wrapOrUnwrapOperation,
+                            Actions.Action memory wrapOrUnwrapAction
+                        ) = Actions.wrapOrUnwrapAsset(
                             Actions.WrapOrUnwrapAsset({
                                 chainAccountsList: chainAccountsList,
                                 assetSymbol: counterpartSymbol,
-                                amountNeeded: counterpartBalance > amountToBridge ? amountToBridge : counterpartBalance,
+                                amountNeeded: amountNeeded,
                                 balanceOnChain: counterpartBalance,
                                 chainId: srcChainAccounts.chainId,
                                 sender: srcAccountBalances[j].account,
@@ -619,6 +603,7 @@ library Actions {
                             chainAccountsList: chainAccountsList,
                             assetSymbol: bridgeInfo.assetSymbol,
                             amount: amountToBridge,
+                            isMaxBridge: bridgeInfo.isMaxBridge,
                             // where it comes from
                             srcChainId: srcChainAccounts.chainId,
                             srcBalance: srcAccountBalances[j].balance + counterpartBalance,
@@ -644,13 +629,36 @@ library Actions {
             }
         }
 
-        // Convert actions and quark operations to arrays
         return (
             List.toQuarkOperationArray(quarkOperations),
             List.toActionArray(actions),
             amountLeftToBridge,
             totalBridgeFees
         );
+    }
+
+    function calculateAmountLeftToBridge(
+        BridgeOperationInfo memory bridgeInfo,
+        Accounts.ChainAccounts[] memory chainAccountsList
+    ) internal pure returns (uint256) {
+        // Note: Assumes that the asset uses the same # of decimals on each chain
+        uint256 balanceOnDstChain =
+            Accounts.getBalanceOnChain(bridgeInfo.assetSymbol, bridgeInfo.dstChainId, chainAccountsList);
+        uint256 amountLeftToBridge = bridgeInfo.amountNeededOnDst - balanceOnDstChain;
+
+        // Handle counterpart tokens on destination chain
+        if (TokenWrapper.hasWrapperContract(bridgeInfo.dstChainId, bridgeInfo.assetSymbol)) {
+            string memory counterpartSymbol =
+                TokenWrapper.getWrapperCounterpartSymbol(bridgeInfo.dstChainId, bridgeInfo.assetSymbol);
+            uint256 counterpartBalanceOnDstChain =
+                Accounts.getBalanceOnChain(counterpartSymbol, bridgeInfo.dstChainId, chainAccountsList);
+            uint256 counterpartTokenAmountToUse =
+                counterpartBalanceOnDstChain >= amountLeftToBridge ? amountLeftToBridge : counterpartBalanceOnDstChain;
+
+            amountLeftToBridge -= counterpartTokenAmountToUse;
+        }
+
+        return amountLeftToBridge;
     }
 
     function bridgeAsset(BridgeAsset memory bridge, PaymentInfo.Payment memory payment, bool preferAcross)
@@ -704,9 +712,13 @@ library Actions {
             nonce: accountSecret.nonceSecret,
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(CCTP.bridgeScriptSource()),
-            scriptCalldata: CCTP.encodeBridgeUSDC(
-                bridge.srcChainId, bridge.destinationChainId, bridge.amount, bridge.recipient, srcUSDCPositions.asset
-            ),
+            scriptCalldata: CCTP.encodeBridgeUSDC({
+                srcChainId: bridge.srcChainId,
+                dstChainId: bridge.destinationChainId,
+                amount: bridge.isMaxBridge ? type(uint256).max : bridge.amount,
+                recipient: bridge.recipient,
+                usdcAddress: srcUSDCPositions.asset
+            }),
             scriptSources: new bytes[](0),
             expiry: bridge.blockTimestamp + BRIDGE_EXPIRY_BUFFER
         });
@@ -811,6 +823,7 @@ library Actions {
         bool useNativeToken = Strings.stringEqIgnoreCase(srcAssetPositions.symbol, "ETH") ? true : false;
 
         // Construct QuarkOperation
+        uint256 bridgeFee = inputAmount - outputAmount;
         quarkOperation = IQuarkWallet.QuarkOperation({
             nonce: accountSecret.nonceSecret,
             isReplayable: false,
@@ -820,9 +833,10 @@ library Actions {
                 dstChainId: bridge.destinationChainId,
                 inputToken: srcAsset,
                 outputToken: dstAsset,
-                inputAmount: inputAmount,
+                inputAmount: bridge.isMaxBridge ? type(uint256).max : inputAmount,
                 outputAmount: outputAmount,
-                maxFee: inputAmount - outputAmount,
+                // We add a 1% buffer to the max fee for max bridges to account for potential dust
+                maxFee: bridge.isMaxBridge ? bridgeFee * 1.01e18 / 1e18 : bridgeFee,
                 sender: bridge.sender,
                 recipient: bridge.recipient,
                 blockTimestamp: bridge.blockTimestamp,
@@ -1266,7 +1280,7 @@ library Actions {
 
         // Construct Action
         TransferActionContext memory transferActionContext = TransferActionContext({
-            amount: transfer.amount,
+            amount: transfer.amount == type(uint256).max ? transfer.maxAmount : transfer.amount,
             price: assetPositions.usdPrice,
             token: assetPositions.asset,
             assetSymbol: assetPositions.symbol,

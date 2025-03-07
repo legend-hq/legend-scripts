@@ -406,7 +406,8 @@ struct SwapAndSupplyTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            inputTokenAmount: .amt(2000, .usdc),
+                            // 2000
+                            inputTokenAmount: .max(.usdc),
                             // 2000 * (1 - .01) Across pct fee - 1 Across base fee = 1979
                             outputTokenAmount: .amt(1979, .usdc),
                             executionType: .immediate
@@ -463,7 +464,8 @@ struct SwapAndSupplyTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            inputTokenAmount: .amt(2000, .usdc),
+                            // 2000
+                            inputTokenAmount: .max(.usdc),
                             // 2000 * (1 - .01) Across pct fee - 1 Across base fee = 1979
                             outputTokenAmount: .amt(1979, .usdc),
                             executionType: .immediate

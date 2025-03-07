@@ -656,13 +656,13 @@ contract QuarkBuilderCometSupplyTest is Test, QuarkBuilderTest {
                 CCTPBridgeActions.bridgeUSDC,
                 (
                     address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155),
-                    3e6,
+                    type(uint256).max,
                     6,
                     bytes32(uint256(uint160(0xb0b))),
                     usdc_(1)
                 )
             ),
-            "calldata is CCTPBridgeActions.bridgeUSDC(address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155), 3e6, 6, bytes32(uint256(uint160(0xb0b))), usdc_(1)));"
+            "calldata is CCTPBridgeActions.bridgeUSDC(address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155), type(uint256).max, 6, bytes32(uint256(uint160(0xb0b))), usdc_(1)));"
         );
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"

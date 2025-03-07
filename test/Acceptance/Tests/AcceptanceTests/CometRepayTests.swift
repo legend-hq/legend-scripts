@@ -383,7 +383,8 @@ struct CometRepayTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            inputTokenAmount: .amt(10, .usdc),
+                            // 10
+                            inputTokenAmount: .max(.usdc),
                             outputTokenAmount: .amt(8.9, .usdc),
                             executionType: .immediate
                         ),

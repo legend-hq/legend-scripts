@@ -16,6 +16,7 @@ import {QuotecallWrapper} from "src/builder/QuotecallWrapper.sol";
 import {List} from "src/builder/List.sol";
 import {HashMap} from "src/builder/HashMap.sol";
 import {Strings} from "src/builder/Strings.sol";
+import {AcrossActions} from "src/AcrossScripts.sol";
 
 // Helper library to for transforming Quark Operations
 library QuarkOperationHelper {
@@ -90,8 +91,14 @@ library QuarkOperationHelper {
         pure
         returns (IQuarkWallet.QuarkOperation memory, Actions.Action memory)
     {
-        (address[] memory callContracts, bytes[] memory callDatas) = getOrderedCalls(quarkOperations, actions);
+        (quarkOperations, actions) = orderOperationsAndActions(quarkOperations, actions);
 
+        address[] memory callContracts = new address[](quarkOperations.length);
+        bytes[] memory callDatas = new bytes[](quarkOperations.length);
+        for (uint256 i = 0; i < quarkOperations.length; ++i) {
+            callContracts[i] = quarkOperations[i].scriptAddress;
+            callDatas[i] = quarkOperations[i].scriptCalldata;
+        }
         bytes memory multicallCalldata = abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas);
 
         // Construct Quark Operation and Action
@@ -128,18 +135,17 @@ library QuarkOperationHelper {
         return (mergedQuarkOperation, primaryAction);
     }
 
-    // Extracts the list of call contracts and calldatas from the QuarkOperations, while also re-ordering them if needed
-    // Note: The re-ordering rules are as follows:
-    //         - If a max supply is found and a QuotePay is found, insert the QuotePay call before the max supply to ensure tokens aren't
-    //           all sent out before the QuotePay is executed
-    //         - Otherwise, keep the QuotePay last to ensure it can be paid from funds entering the account (e.g. withdraw, swap)
-    function getOrderedCalls(IQuarkWallet.QuarkOperation[] memory quarkOperations, Actions.Action[] memory actions)
-        internal
-        pure
-        returns (address[] memory, bytes[] memory)
-    {
-        address[] memory callContracts = new address[](quarkOperations.length);
-        bytes[] memory callDatas = new bytes[](quarkOperations.length);
+    // Orders the list of QuarkOperations and Actions based on the following rules:
+    //    - If a max action that sends tokens out (e.g. transfer, supply, bridge) is found and a QuotePay is found, insert
+    //      the QuotePay call before the max action to ensure tokens aren't all sent out before the QuotePay is executed
+    //    - Otherwise, keep the QuotePay last to ensure it can be paid from funds entering the account (e.g. withdraw, swap)
+    function orderOperationsAndActions(
+        IQuarkWallet.QuarkOperation[] memory quarkOperations,
+        Actions.Action[] memory actions
+    ) internal pure returns (IQuarkWallet.QuarkOperation[] memory, Actions.Action[] memory) {
+        IQuarkWallet.QuarkOperation[] memory orderedQuarkOperations =
+            new IQuarkWallet.QuarkOperation[](quarkOperations.length);
+        Actions.Action[] memory orderedActions = new Actions.Action[](quarkOperations.length);
 
         // Note: This assumes there is at most only a single QuotePay on a chain
         int256 quotePayIndex = -1;
@@ -151,17 +157,43 @@ library QuarkOperationHelper {
             }
         }
         for (uint256 i = 0; i < quarkOperations.length; ++i) {
-            if (
-                Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_COMET_SUPPLY)
-                    || Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_MORPHO_VAULT_SUPPLY)
-            ) {
-                // TODO: We can sanity check further by verifying the script address matches the CREATE2 address of the script
-                (,, uint256 amount) =
-                    abi.decode(stripSelector(quarkOperations[i].scriptCalldata), (address, address, uint256));
-                if (amount == type(uint256).max) {
-                    maxActionIndex = int256(i);
-                    break;
+            uint256 amount;
+            bytes memory calldataWithoutSelector = stripSelector(quarkOperations[i].scriptCalldata);
+            // TODO: We can sanity check further by verifying the script address matches the CREATE2 address of the script
+            // TODO: Do the same for CometSupplyMultipleAssetsAndBorrow
+            if (Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_COMET_SUPPLY)) {
+                // supply(address comet, address asset, uint256 amount)
+                (,, amount) = abi.decode(calldataWithoutSelector, (address, address, uint256));
+            } else if (Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_MORPHO_VAULT_SUPPLY)) {
+                // deposit(address vault, address asset, uint256 amount)
+                (,, amount) = abi.decode(calldataWithoutSelector, (address, address, uint256));
+            } else if (Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_TRANSFER)) {
+                Actions.TransferActionContext memory transferActionContext =
+                    abi.decode(actions[i].actionContext, (Actions.TransferActionContext));
+                if (Strings.stringEq(transferActionContext.assetSymbol, "ETH")) {
+                    // transferNativeToken(address recipient, uint256 amount)
+                    (, amount) = abi.decode(calldataWithoutSelector, (address, uint256));
+                } else {
+                    // transferERC20Token(address token, address recipient, uint256 amount)
+                    (,, amount) = abi.decode(calldataWithoutSelector, (address, address, uint256));
                 }
+            } else if (Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_BRIDGE)) {
+                Actions.BridgeActionContext memory bridgeActionContext =
+                    abi.decode(actions[i].actionContext, (Actions.BridgeActionContext));
+                if (Strings.stringEq(bridgeActionContext.bridgeType, Actions.BRIDGE_TYPE_ACROSS)) {
+                    // depositV3(address spokePool, DepositV3Params memory params, bytes calldata uniqueIdentifier, bool useNativeToken)
+                    (, AcrossActions.DepositV3Params memory depositParams,,) =
+                        abi.decode(calldataWithoutSelector, (address, AcrossActions.DepositV3Params, bytes, bool));
+                    amount = depositParams.inputAmount;
+                } else if (Strings.stringEq(bridgeActionContext.bridgeType, Actions.BRIDGE_TYPE_CCTP)) {
+                    // bridgeUSDC(address tokenMessenger, uint256 amount, uint32 destinationDomain, bytes32 mintRecipient, address burnToken
+                    (, amount,,,) = abi.decode(calldataWithoutSelector, (address, uint256, uint32, bytes32, address));
+                }
+            }
+
+            if (amount == type(uint256).max) {
+                maxActionIndex = int256(i);
+                break;
             }
         }
         uint256 j = 0;
@@ -169,8 +201,8 @@ library QuarkOperationHelper {
             // Insert quote pay right before the max action
             if (int256(i) == maxActionIndex) {
                 if (quotePayIndex != -1) {
-                    callContracts[j] = quarkOperations[uint256(quotePayIndex)].scriptAddress;
-                    callDatas[j] = quarkOperations[uint256(quotePayIndex)].scriptCalldata;
+                    orderedQuarkOperations[j] = quarkOperations[uint256(quotePayIndex)];
+                    orderedActions[j] = actions[uint256(quotePayIndex)];
                     j++;
                 }
             }
@@ -178,12 +210,12 @@ library QuarkOperationHelper {
             // If a max action was found, we skip re-inserting the QuotePay again (it should have already been inserted)
             if (int256(i) == quotePayIndex && maxActionIndex != -1) continue;
 
-            callContracts[j] = quarkOperations[i].scriptAddress;
-            callDatas[j] = quarkOperations[i].scriptCalldata;
+            orderedQuarkOperations[j] = quarkOperations[i];
+            orderedActions[j] = actions[i];
             j++;
         }
 
-        return (callContracts, callDatas);
+        return (orderedQuarkOperations, orderedActions);
     }
 
     function containsBridgeOperation(Actions.Action[] memory actions) internal pure returns (bool) {

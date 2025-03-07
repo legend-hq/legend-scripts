@@ -201,7 +201,8 @@ struct CometSupplyTests {
                             bridge: "Across",
                             srcNetwork: .base,
                             destinationNetwork: .arbitrum,
-                            inputTokenAmount: .amt(50, .usdc),
+                            // 50
+                            inputTokenAmount: .max(.usdc),
                             outputTokenAmount: .amt(48.5, .usdc),
                             executionType: .immediate
                         ),

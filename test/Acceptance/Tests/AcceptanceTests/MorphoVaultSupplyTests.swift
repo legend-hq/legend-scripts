@@ -22,7 +22,8 @@ struct MorphoVaultSupplyTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            inputTokenAmount: .amt(3, .usdc),
+                            // 3
+                            inputTokenAmount: .max(.usdc),
                             outputTokenAmount: .amt(1.97, .usdc),
                             executionType: .immediate
                         ),
@@ -74,7 +75,8 @@ struct MorphoVaultSupplyTests {
                             bridge: "Across",
                             srcNetwork: .arbitrum,
                             destinationNetwork: .base,
-                            inputTokenAmount: .amt(3, .usdc),
+                            // 3
+                            inputTokenAmount: .max(.usdc),
                             outputTokenAmount: .amt(1.97, .usdc),
                             executionType: .immediate
                         ),
@@ -254,7 +256,8 @@ struct MorphoVaultSupplyTests {
                             bridge: "Across",
                             srcNetwork: .base,
                             destinationNetwork: .ethereum,
-                            inputTokenAmount: .amt(1.5, .usdc),
+                            // 1.5
+                            inputTokenAmount: .max(.usdc),
                             outputTokenAmount: .amt(0.485, .usdc),
                             executionType: .immediate
                         ),
@@ -378,7 +381,8 @@ struct MorphoVaultSupplyTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            inputTokenAmount: .amt(3, .usdc),
+                            // 3
+                            inputTokenAmount: .max(.usdc),
                             outputTokenAmount: .amt(1.97, .usdc),
                             executionType: .immediate
                         ),
@@ -445,7 +449,8 @@ struct MorphoVaultSupplyTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            inputTokenAmount: .amt(3, .usdc),
+                            // 3
+                            inputTokenAmount: .max(.usdc),
                             outputTokenAmount: .amt(1.97, .usdc),
                             executionType: .immediate
                         ),

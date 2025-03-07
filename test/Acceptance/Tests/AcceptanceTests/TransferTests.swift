@@ -145,15 +145,17 @@ struct TransferTests {
                             bridge: "Across",
                             srcNetwork: .base,
                             destinationNetwork: .arbitrum,
-                            inputTokenAmount: .amt(50, .usdc),
+                            // 50
+                            inputTokenAmount: .max(.usdc),
                             outputTokenAmount: .amt(48.5, .usdc),
                             executionType: .immediate
                         ),
                         .multicall([
-                            .transferErc20(
-                                tokenAmount: .amt(98.44, .usdc), recipient: .bob, network: .arbitrum
-                            ),
                             .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
+                            .transferErc20(
+                                // 98.44
+                                tokenAmount: .max(.usdc), recipient: .bob, network: .arbitrum
+                            ),
                         ], executionType: .contingent),
                     ])
                 )
@@ -389,16 +391,17 @@ struct TransferTests {
                             bridge: "Across",
                             srcNetwork: .base,
                             destinationNetwork: .arbitrum,
-                            inputTokenAmount: .amt(100, .usdc),
+                            // 100
+                            inputTokenAmount: .max(.usdc),
                             outputTokenAmount: .amt(98.00, .usdc),
                             executionType: .immediate
                         ),
                         .multicall([
+                            .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                             // Bridge 100 -> 98 arrives on arbitrum - 0.06 quote pay -> 97.94 USDC transfer
                             .transferErc20(
-                                tokenAmount: .amt(97.94, .usdc), recipient: .bob, network: .arbitrum
+                                tokenAmount: .max(.usdc), recipient: .bob, network: .arbitrum
                             ),
-                            .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .contingent),
                     ])
                 )
@@ -424,7 +427,8 @@ struct TransferTests {
                         // Only 50 USDC is transferred because the other 50 USDC is unbridgeable (bridge min is 51 USDC).
                         // Payment is made on Base, where there are unbridgeable funds
                         .transferErc20(
-                            tokenAmount: .amt(50, .usdc), recipient: .bob, network: .arbitrum, executionType: .immediate),
+                            // 50
+                            tokenAmount: .max(.usdc), recipient: .bob, network: .arbitrum, executionType: .immediate),
                         .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic, executionType: .immediate),
                     ])
                 )
@@ -529,11 +533,12 @@ struct TransferTests {
                 expect: .success(
                     .single(
                         .multicall([
+                            .quotePay(payment: .amt(40, .usdc), payee: .stax, quote: .basic),
                             // Only 10 USDC is available to transfer since payment has to be made on Arbitrum
                             // due to unbridgeable funds on Base
                             .transferErc20(
-                                tokenAmount: .amt(10, .usdc), recipient: .bob, network: .arbitrum),
-                            .quotePay(payment: .amt(40, .usdc), payee: .stax, quote: .basic),
+                                // 10
+                                tokenAmount: .max(.usdc), recipient: .bob, network: .arbitrum),
                         ], executionType: .immediate)
                     )
                 )
