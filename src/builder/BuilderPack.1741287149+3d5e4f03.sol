@@ -499,19 +499,6 @@ library Chain {
         }
     }
 
-    /// @dev Wrapped Mountain Protocol USD
-    function wUSDM(uint256 chainId) internal pure returns (KnownAsset memory) {
-        if (chainId == 1) {
-            return EthereumMainnet.wUSDM();
-        } else if (chainId == 42161) {
-            return ArbitrumMainnet.wUSDM();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM();
-        } else {
-            revert NotFound("Asset for Wrapped Mountain Protocol USD not found on chain", chainId);
-        }
-    }
-
     /// @dev Staked FRAX
     function sFRAX(uint256 chainId) internal pure returns (KnownAsset memory) {
         if (chainId == 1) {
@@ -664,6 +651,24 @@ library Chain {
             return ArbitrumMainnet.ZRO();
         } else {
             revert NotFound("Asset for LayerZero not found on chain", chainId);
+        }
+    }
+
+    /// @dev XRP (Universal)
+    function uXRP(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.uXRP();
+        } else {
+            revert NotFound("Asset for XRP (Universal) not found on chain", chainId);
+        }
+    }
+
+    /// @dev Solana (Universal)
+    function uSOL(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.uSOL();
+        } else {
+            revert NotFound("Asset for Solana (Universal) not found on chain", chainId);
         }
     }
 
@@ -1107,17 +1112,6 @@ library Chain {
         }
     }
 
-    /// @dev wUSDM_USDT price feed
-    function wUSDM_USDT(uint256 chainId) internal pure returns (KnownPriceFeed memory) {
-        if (chainId == 1) {
-            return EthereumMainnet.wUSDM_USDT();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM_USDT();
-        } else {
-            revert NotFound("PriceFeed for wUSDM_USDT not found on chain", chainId);
-        }
-    }
-
     /// @dev sFRAX_USDT price feed
     function sFRAX_USDT(uint256 chainId) internal pure returns (KnownPriceFeed memory) {
         if (chainId == 1) {
@@ -1245,17 +1239,6 @@ library Chain {
         }
     }
 
-    /// @dev wUSDM_USD price feed
-    function wUSDM_USD(uint256 chainId) internal pure returns (KnownPriceFeed memory) {
-        if (chainId == 42161) {
-            return ArbitrumMainnet.wUSDM_USD();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM_USD();
-        } else {
-            revert NotFound("PriceFeed for wUSDM_USD not found on chain", chainId);
-        }
-    }
-
     /// @dev ARB_USDT price feed
     function ARB_USDT(uint256 chainId) internal pure returns (KnownPriceFeed memory) {
         if (chainId == 42161) {
@@ -1359,10 +1342,7 @@ library Chain {
         if (chainId == 1) {
             return EthereumMainnet.Morpho_USDC_wstETH();
         } else {
-            revert NotFound(
-                "MorphoMarket for borrowing USD Coin against Wrapped liquid staked Ether 2.0 collateral not found on chain",
-                chainId
-            );
+            revert NotFound("MorphoMarket for borrowing USD Coin against Wrapped liquid staked Ether 2.0 collateral not found on chain", chainId);
         }
     }
 
@@ -1373,10 +1353,7 @@ library Chain {
         } else if (chainId == 8453) {
             return BaseMainnet.Morpho_USDC_cbBTC();
         } else {
-            revert NotFound(
-                "MorphoMarket for borrowing USD Coin against Coinbase Wrapped BTC collateral not found on chain",
-                chainId
-            );
+            revert NotFound("MorphoMarket for borrowing USD Coin against Coinbase Wrapped BTC collateral not found on chain", chainId);
         }
     }
 
@@ -1385,23 +1362,20 @@ library Chain {
         if (chainId == 8453) {
             return BaseMainnet.Morpho_USDC_cbETH();
         } else {
-            revert NotFound(
-                "MorphoMarket for borrowing USD Coin against Coinbase Wrapped Staked ETH collateral not found on chain",
-                chainId
-            );
+            revert NotFound("MorphoMarket for borrowing USD Coin against Coinbase Wrapped Staked ETH collateral not found on chain", chainId);
         }
     }
 
-    /// @dev borrowing USDC against Wrapped Ether collateral
+    /// @dev borrowing USD Coin against Wrapped Ether collateral
     function Morpho_USDC_WETH(uint256 chainId) internal pure returns (KnownMorphoMarket memory) {
-        if (chainId == 11155111) {
+        if (chainId == 8453) {
+            return BaseMainnet.Morpho_USDC_WETH();
+        } else if (chainId == 11155111) {
             return EthereumSepolia.Morpho_USDC_WETH();
         } else if (chainId == 84532) {
             return BaseSepolia.Morpho_USDC_WETH();
         } else {
-            revert NotFound(
-                "MorphoMarket for borrowing USDC against Wrapped Ether collateral not found on chain", chainId
-            );
+            revert NotFound("MorphoMarket for borrowing USD Coin against Wrapped Ether collateral not found on chain", chainId);
         }
     }
 
@@ -1872,16 +1846,6 @@ library EthereumMainnet {
         });
     }
 
-    /// @dev EthereumMainnet Wrapped Mountain Protocol USD
-    function wUSDM() internal pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
-        });
-    }
-
     /// @dev EthereumMainnet Staked FRAX
     function sFRAX() internal pure returns (KnownAsset memory) {
         return KnownAsset({
@@ -2224,16 +2188,6 @@ library EthereumMainnet {
         });
     }
 
-    /// @dev EthereumMainnet wUSDM_USDT price feed
-    function wUSDM_USDT() internal pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USDT",
-            decimals: 8,
-            priceFeed: 0xe3a409eD15CD53aFdEFdd191ad945cEC528A2496
-        });
-    }
-
     /// @dev EthereumMainnet sFRAX_USDT price feed
     function sFRAX_USDT() internal pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -2261,7 +2215,7 @@ library EthereumMainnet {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](8);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0xc00e94Cb662C3520282E6f5717214004A7f26888,
+            asset:  0xc00e94Cb662C3520282E6f5717214004A7f26888,
             supplyCap: 100000000000000000000000,
             priceFeed: 0xdbd020CAeF83eFd542f4De03e3cF0C28A4428bd5,
             liquidationFactor: 7.5e17,
@@ -2270,7 +2224,7 @@ library EthereumMainnet {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
+            asset:  0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
             supplyCap: 1000000000000,
             priceFeed: 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c,
             liquidationFactor: 9e17,
@@ -2279,7 +2233,7 @@ library EthereumMainnet {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
+            asset:  0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
             supplyCap: 500000000000000000000000,
             priceFeed: 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419,
             liquidationFactor: 9.5e17,
@@ -2288,7 +2242,7 @@ library EthereumMainnet {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984,
+            asset:  0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984,
             supplyCap: 2600000000000000000000000,
             priceFeed: 0x553303d460EE0afB37EdFf9bE42922D8FF63220e,
             liquidationFactor: 8.3e17,
@@ -2297,7 +2251,7 @@ library EthereumMainnet {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x514910771AF9Ca656af840dff83E8264EcF986CA,
+            asset:  0x514910771AF9Ca656af840dff83E8264EcF986CA,
             supplyCap: 2000000000000000000000000,
             priceFeed: 0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c,
             liquidationFactor: 8.3e17,
@@ -2306,7 +2260,7 @@ library EthereumMainnet {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
+            asset:  0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
             supplyCap: 40000000000000000000000,
             priceFeed: 0x023ee795361B28cDbB94e302983578486A0A5f1B,
             liquidationFactor: 9.2e17,
@@ -2315,7 +2269,7 @@ library EthereumMainnet {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
+            asset:  0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
             supplyCap: 90000000000,
             priceFeed: 0x0A4F4F9E84Fc4F674F0D209f94d41FaFE5aF887D,
             liquidationFactor: 9.5e17,
@@ -2324,7 +2278,7 @@ library EthereumMainnet {
         });
 
         collaterals[7] = KnownCometCollateral({
-            asset: 0x18084fbA666a33d37592fA2633fD49a74DD93a88,
+            asset:  0x18084fbA666a33d37592fA2633fD49a74DD93a88,
             supplyCap: 570000000000000000000,
             priceFeed: 0xAA9527bf3183A96fe6e55831c96dE5cd988d3484,
             liquidationFactor: 9e17,
@@ -2348,7 +2302,7 @@ library EthereumMainnet {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](12);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704,
+            asset:  0xBe9895146f7AF43049ca1c1AE358B0541Ea49704,
             supplyCap: 10000000000000000000000,
             priceFeed: 0x23a982b74a3236A5F2297856d4391B2edBBB5549,
             liquidationFactor: 9.75e17,
@@ -2357,7 +2311,7 @@ library EthereumMainnet {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
+            asset:  0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
             supplyCap: 64500000000000000000000,
             priceFeed: 0x4F67e4d9BD67eFa28236013288737D39AeF48e79,
             liquidationFactor: 9.75e17,
@@ -2366,7 +2320,7 @@ library EthereumMainnet {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0xae78736Cd615f374D3085123A210448E74Fc6393,
+            asset:  0xae78736Cd615f374D3085123A210448E74Fc6393,
             supplyCap: 30000000000000000000000,
             priceFeed: 0xA3A7fB5963D1d69B95EEC4957f77678EF073Ba08,
             liquidationFactor: 9.75e17,
@@ -2375,7 +2329,7 @@ library EthereumMainnet {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7,
+            asset:  0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7,
             supplyCap: 37000000000000000000000,
             priceFeed: 0xFa454dE61b317b6535A0C462267208E8FdB89f45,
             liquidationFactor: 9.6e17,
@@ -2384,7 +2338,7 @@ library EthereumMainnet {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
+            asset:  0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
             supplyCap: 22500000000000000000000,
             priceFeed: 0x1Ad4CEBa9f8135A557bBe317DB62Aa125C330F26,
             liquidationFactor: 9.6e17,
@@ -2393,7 +2347,7 @@ library EthereumMainnet {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38,
+            asset:  0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38,
             supplyCap: 10000000000000000000000,
             priceFeed: 0x66F5AfDaD14b30816b47b707240D1E8E3344D04d,
             liquidationFactor: 9e17,
@@ -2402,7 +2356,7 @@ library EthereumMainnet {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
+            asset:  0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
             supplyCap: 100000000000,
             priceFeed: 0xd98Be00b5D27fc98112BdE293e487f8D4cA57d07,
             liquidationFactor: 9e17,
@@ -2411,7 +2365,7 @@ library EthereumMainnet {
         });
 
         collaterals[7] = KnownCometCollateral({
-            asset: 0xbf5495Efe5DB9ce00f80364C8B423567e58d2110,
+            asset:  0xbf5495Efe5DB9ce00f80364C8B423567e58d2110,
             supplyCap: 80000000000000000000000,
             priceFeed: 0xdE43600De5016B50752cc2615332d8cCBED6EC1b,
             liquidationFactor: 9.4e17,
@@ -2420,7 +2374,7 @@ library EthereumMainnet {
         });
 
         collaterals[8] = KnownCometCollateral({
-            asset: 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
+            asset:  0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
             supplyCap: 9300000000,
             priceFeed: 0x57A71A9C632b2e6D8b0eB9A157888A3Fc87400D1,
             liquidationFactor: 9.5e17,
@@ -2429,7 +2383,7 @@ library EthereumMainnet {
         });
 
         collaterals[9] = KnownCometCollateral({
-            asset: 0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0,
+            asset:  0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0,
             supplyCap: 1000000000000000000000,
             priceFeed: 0xDd18688Bb75Af704f3Fb1183e459C4d4D41132D9,
             liquidationFactor: 9e17,
@@ -2438,7 +2392,7 @@ library EthereumMainnet {
         });
 
         collaterals[10] = KnownCometCollateral({
-            asset: 0x18084fbA666a33d37592fA2633fD49a74DD93a88,
+            asset:  0x18084fbA666a33d37592fA2633fD49a74DD93a88,
             supplyCap: 315000000000000000000,
             priceFeed: 0x1933F7e5f8B0423fbAb28cE9c8C39C2cC414027B,
             liquidationFactor: 9e17,
@@ -2447,7 +2401,7 @@ library EthereumMainnet {
         });
 
         collaterals[11] = KnownCometCollateral({
-            asset: 0xA35b1B31Ce002FBF2058D22F30f95D405200A15b,
+            asset:  0xA35b1B31Ce002FBF2058D22F30f95D405200A15b,
             supplyCap: 2100000000000000000000,
             priceFeed: 0x9F2F60f38BBc275aF8F88a21c0e2BfE751E97C1f,
             liquidationFactor: 9.5e17,
@@ -2468,10 +2422,10 @@ library EthereumMainnet {
 
     /// @dev EthereumMainnet Compound USDT
     function Comet_cUSDTv3() internal pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](11);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](10);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0xc00e94Cb662C3520282E6f5717214004A7f26888,
+            asset:  0xc00e94Cb662C3520282E6f5717214004A7f26888,
             supplyCap: 100000000000000000000000,
             priceFeed: 0xdbd020CAeF83eFd542f4De03e3cF0C28A4428bd5,
             liquidationFactor: 7.5e17,
@@ -2480,7 +2434,7 @@ library EthereumMainnet {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
+            asset:  0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
             supplyCap: 500000000000000000000000,
             priceFeed: 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419,
             liquidationFactor: 9.5e17,
@@ -2489,7 +2443,7 @@ library EthereumMainnet {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
+            asset:  0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
             supplyCap: 140000000000,
             priceFeed: 0x4E64E54c9f0313852a230782B3ba4B3B0952B499,
             liquidationFactor: 9e17,
@@ -2498,7 +2452,7 @@ library EthereumMainnet {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984,
+            asset:  0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984,
             supplyCap: 1300000000000000000000000,
             priceFeed: 0x553303d460EE0afB37EdFf9bE42922D8FF63220e,
             liquidationFactor: 8.3e17,
@@ -2507,7 +2461,7 @@ library EthereumMainnet {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x514910771AF9Ca656af840dff83E8264EcF986CA,
+            asset:  0x514910771AF9Ca656af840dff83E8264EcF986CA,
             supplyCap: 500000000000000000000000,
             priceFeed: 0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c,
             liquidationFactor: 8.3e17,
@@ -2516,7 +2470,7 @@ library EthereumMainnet {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
+            asset:  0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
             supplyCap: 60000000000000000000000,
             priceFeed: 0x023ee795361B28cDbB94e302983578486A0A5f1B,
             liquidationFactor: 9.5e17,
@@ -2525,7 +2479,7 @@ library EthereumMainnet {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
+            asset:  0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
             supplyCap: 100000000000,
             priceFeed: 0x2D09142Eae60Fd8BD454a276E95AeBdFFD05722d,
             liquidationFactor: 9.5e17,
@@ -2534,7 +2488,7 @@ library EthereumMainnet {
         });
 
         collaterals[7] = KnownCometCollateral({
-            asset: 0x18084fbA666a33d37592fA2633fD49a74DD93a88,
+            asset:  0x18084fbA666a33d37592fA2633fD49a74DD93a88,
             supplyCap: 285000000000000000000,
             priceFeed: 0x7b03a016dBC36dB8e05C480192faDcdB0a06bC37,
             liquidationFactor: 9e17,
@@ -2543,16 +2497,7 @@ library EthereumMainnet {
         });
 
         collaterals[8] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 6500000000000000000000000,
-            priceFeed: 0xe3a409eD15CD53aFdEFdd191ad945cEC528A2496,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
-        });
-
-        collaterals[9] = KnownCometCollateral({
-            asset: 0xA663B02CF0a4b149d2aD41910CB81e23e1c41c32,
+            asset:  0xA663B02CF0a4b149d2aD41910CB81e23e1c41c32,
             supplyCap: 30000000000000000000000000,
             priceFeed: 0x403F2083B6E220147f8a8832f0B284B4Ed5777d1,
             liquidationFactor: 9.5e17,
@@ -2560,8 +2505,8 @@ library EthereumMainnet {
             liquidateCollateralFactor: 9e17
         });
 
-        collaterals[10] = KnownCometCollateral({
-            asset: 0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa,
+        collaterals[9] = KnownCometCollateral({
+            asset:  0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa,
             supplyCap: 4000000000000000000000,
             priceFeed: 0x2f7439252Da796Ab9A93f7E478E70DED43Db5B89,
             liquidationFactor: 9.5e17,
@@ -2625,7 +2570,7 @@ library EthereumMainnet {
 
     /// @dev All EthereumMainnet known assets
     function knownAssets() internal pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](34);
+        KnownAsset[] memory assets = new KnownAsset[](33);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = DAI();
@@ -2657,15 +2602,14 @@ library EthereumMainnet {
         assets[28] = ezETH();
         assets[29] = rswETH();
         assets[30] = ETHx();
-        assets[31] = wUSDM();
-        assets[32] = sFRAX();
-        assets[33] = mETH();
+        assets[31] = sFRAX();
+        assets[32] = mETH();
         return assets;
     }
 
     /// @dev All EthereumMainnet known price feeds
     function knownPriceFeeds() internal pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](35);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](34);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = sUSDe_USD();
@@ -2698,9 +2642,8 @@ library EthereumMainnet {
         priceFeeds[29] = wstETH_USDT();
         priceFeeds[30] = cbBTC_USDT();
         priceFeeds[31] = tBTC_USDT();
-        priceFeeds[32] = wUSDM_USDT();
-        priceFeeds[33] = sFRAX_USDT();
-        priceFeeds[34] = mETH_USDT();
+        priceFeeds[32] = sFRAX_USDT();
+        priceFeeds[33] = mETH_USDT();
         return priceFeeds;
     }
 
@@ -2952,6 +2895,26 @@ library BaseMainnet {
             symbol: "ZRO",
             decimals: 18,
             assetAddress: 0x6985884C4392D348587B19cb9eAAf157F13271cd
+        });
+    }
+
+    /// @dev BaseMainnet XRP (Universal)
+    function uXRP() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"XRP (Universal)",
+            symbol: "uXRP",
+            decimals: 18,
+            assetAddress: 0x2615a94df961278DcbC41Fb0a54fEc5f10a693aE
+        });
+    }
+
+    /// @dev BaseMainnet Solana (Universal)
+    function uSOL() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Solana (Universal)",
+            symbol: "uSOL",
+            decimals: 18,
+            assetAddress: 0x9B8Df6E244526ab5F6e6400d331DB28C8fdDdb55
         });
     }
 
@@ -3214,7 +3177,7 @@ library BaseMainnet {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](4);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22,
+            asset:  0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22,
             supplyCap: 7500000000000000000000,
             priceFeed: 0x4687670f5f01716fAA382E2356C103BaD776752C,
             liquidationFactor: 9e17,
@@ -3223,7 +3186,7 @@ library BaseMainnet {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000006,
+            asset:  0x4200000000000000000000000000000000000006,
             supplyCap: 11000000000000000000000,
             priceFeed: 0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70,
             liquidationFactor: 9.5e17,
@@ -3232,7 +3195,7 @@ library BaseMainnet {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452,
+            asset:  0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452,
             supplyCap: 1400000000000000000000,
             priceFeed: 0x4b5DeE60531a72C1264319Ec6A22678a4D0C8118,
             liquidationFactor: 9e17,
@@ -3241,7 +3204,7 @@ library BaseMainnet {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
+            asset:  0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
             supplyCap: 18000000000,
             priceFeed: 0x8D38A3d6B3c3B7d96D6536DA7Eef94A9d7dbC991,
             liquidationFactor: 9.5e17,
@@ -3265,7 +3228,7 @@ library BaseMainnet {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](7);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22,
+            asset:  0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22,
             supplyCap: 7500000000000000000000,
             priceFeed: 0x59e242D352ae13166B4987aE5c990C232f7f7CD6,
             liquidationFactor: 9.75e17,
@@ -3274,7 +3237,7 @@ library BaseMainnet {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x2416092f143378750bb29b79eD961ab195CcEea5,
+            asset:  0x2416092f143378750bb29b79eD961ab195CcEea5,
             supplyCap: 2000000000000000000000,
             priceFeed: 0x72874CfE957bb47795548e5a9fd740D135ba5E45,
             liquidationFactor: 9.4e17,
@@ -3283,7 +3246,7 @@ library BaseMainnet {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452,
+            asset:  0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452,
             supplyCap: 1200000000000000000000,
             priceFeed: 0x1F71901daf98d70B4BAF40DE080321e5C2676856,
             liquidationFactor: 9.75e17,
@@ -3292,7 +3255,7 @@ library BaseMainnet {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
+            asset:  0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
             supplyCap: 20000000000000,
             priceFeed: 0x2F4eAF29dfeeF4654bD091F7112926E108eF4Ed0,
             liquidationFactor: 9.5e17,
@@ -3301,7 +3264,7 @@ library BaseMainnet {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A,
+            asset:  0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A,
             supplyCap: 15000000000000000000000,
             priceFeed: 0x841e380e3a98E4EE8912046d69731F4E21eFb1D7,
             liquidationFactor: 9.6e17,
@@ -3310,7 +3273,7 @@ library BaseMainnet {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0xEDfa23602D0EC14714057867A78d01e94176BEA0,
+            asset:  0xEDfa23602D0EC14714057867A78d01e94176BEA0,
             supplyCap: 230000000000000000000,
             priceFeed: 0xaeB318360f27748Acb200CE616E389A6C9409a07,
             liquidationFactor: 9.6e17,
@@ -3319,7 +3282,7 @@ library BaseMainnet {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
+            asset:  0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
             supplyCap: 4500000000,
             priceFeed: 0x4cfCE7795bF75dC3795369A953d9A9b8C2679AE4,
             liquidationFactor: 9.5e17,
@@ -3368,6 +3331,20 @@ library BaseMainnet {
         });
     }
 
+    /// @dev BaseMainnet MorphoMarket borrowing USD Coin against Wrapped Ether collateral
+    function Morpho_USDC_WETH() internal pure returns (KnownMorphoMarket memory) {
+        return KnownMorphoMarket({
+            morpho: 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb,
+            marketId: hex"8793cf302b8ffd655ab97bd1c695dbd967807e8367a65cb2f4edaf1380ba1bda",
+            loanToken: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
+            collateralToken: 0x4200000000000000000000000000000000000006,
+            oracle: 0xFEa2D58cEfCb9fcb597723c6bAE66fFE4193aFE4,
+            irm: 0x46415998764C29aB2a25CbeA6254146D50D22687,
+            lltv: 860000000000000000,
+            wad: 1000000000000000000
+        });
+    }
+
     /// @dev KnownMorphoVault constructors
 
     /// @dev BaseMainnet mwUSDC
@@ -3383,7 +3360,7 @@ library BaseMainnet {
 
     /// @dev All BaseMainnet known assets
     function knownAssets() internal pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](29);
+        KnownAsset[] memory assets = new KnownAsset[](31);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = AERO();
@@ -3405,14 +3382,16 @@ library BaseMainnet {
         assets[18] = VIRTUAL();
         assets[19] = VVV();
         assets[20] = ZRO();
-        assets[21] = COMP();
-        assets[22] = cbETH();
-        assets[23] = WETH();
-        assets[24] = wstETH();
-        assets[25] = cbBTC();
-        assets[26] = ezETH();
-        assets[27] = weETH();
-        assets[28] = wrsETH();
+        assets[21] = uXRP();
+        assets[22] = uSOL();
+        assets[23] = COMP();
+        assets[24] = cbETH();
+        assets[25] = WETH();
+        assets[26] = wstETH();
+        assets[27] = cbBTC();
+        assets[28] = ezETH();
+        assets[29] = weETH();
+        assets[30] = wrsETH();
         return assets;
     }
 
@@ -3449,9 +3428,10 @@ library BaseMainnet {
 
     /// @dev All BaseMainnet known morphoMarkets
     function knownMorphoMarkets() internal pure returns (KnownMorphoMarket[] memory) {
-        KnownMorphoMarket[] memory morphoMarkets = new KnownMorphoMarket[](2);
+        KnownMorphoMarket[] memory morphoMarkets = new KnownMorphoMarket[](3);
         morphoMarkets[0] = Morpho_USDC_cbETH();
         morphoMarkets[1] = Morpho_USDC_cbBTC();
+        morphoMarkets[2] = Morpho_USDC_WETH();
         return morphoMarkets;
     }
 
@@ -3639,16 +3619,6 @@ library ArbitrumMainnet {
         });
     }
 
-    /// @dev ArbitrumMainnet Wrapped Mountain Protocol USD
-    function wUSDM() internal pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
-        });
-    }
-
     /// @dev ArbitrumMainnet Wrapped eETH
     function weETH() internal pure returns (KnownAsset memory) {
         return KnownAsset({
@@ -3821,16 +3791,6 @@ library ArbitrumMainnet {
         });
     }
 
-    /// @dev ArbitrumMainnet wUSDM_USD price feed
-    function wUSDM_USD() internal pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USD",
-            decimals: 8,
-            priceFeed: 0x13cDFB7db5e2F58e122B2e789b59dE13645349C4
-        });
-    }
-
     /// @dev ArbitrumMainnet ARB_USDT price feed
     function ARB_USDT() internal pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -3965,10 +3925,10 @@ library ArbitrumMainnet {
 
     /// @dev ArbitrumMainnet Compound USDC
     function Comet_cUSDCv3() internal pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](7);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](6);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x912CE59144191C1204E64559FE8253a0e49E6548,
+            asset:  0x912CE59144191C1204E64559FE8253a0e49E6548,
             supplyCap: 16000000000000000000000000,
             priceFeed: 0xb2A824043730FE05F3DA2efaFa1CBbe83fa548D6,
             liquidationFactor: 9e17,
@@ -3977,7 +3937,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a,
+            asset:  0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a,
             supplyCap: 120000000000000000000000,
             priceFeed: 0xDB98056FecFff59D032aB628337A4887110df3dB,
             liquidationFactor: 8.5e17,
@@ -3986,7 +3946,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,
+            asset:  0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,
             supplyCap: 40000000000000000000000,
             priceFeed: 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612,
             liquidationFactor: 9.5e17,
@@ -3995,7 +3955,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
+            asset:  0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
             supplyCap: 100000000000,
             priceFeed: 0xd0C7101eACbB49F3deCcCc166d238410D6D46d57,
             liquidationFactor: 9e17,
@@ -4004,7 +3964,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x5979D7b546E38E414F7E9822514be443A4800529,
+            asset:  0x5979D7b546E38E414F7E9822514be443A4800529,
             supplyCap: 8000000000000000000000,
             priceFeed: 0xe165155c34fE4cBfC55Fc554437907BDb1Af7e3e,
             liquidationFactor: 9e17,
@@ -4013,21 +3973,12 @@ library ArbitrumMainnet {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0x2416092f143378750bb29b79eD961ab195CcEea5,
+            asset:  0x2416092f143378750bb29b79eD961ab195CcEea5,
             supplyCap: 1400000000000000000000,
             priceFeed: 0xC49399814452B41dA8a7cd76a159f5515cb3e493,
             liquidationFactor: 9e17,
             borrowCollateralFactor: 8e17,
             liquidateCollateralFactor: 8.5e17
-        });
-
-        collaterals[6] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 4500000000000000000000000,
-            priceFeed: 0x13cDFB7db5e2F58e122B2e789b59dE13645349C4,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
         });
 
         return KnownComet({
@@ -4046,7 +3997,7 @@ library ArbitrumMainnet {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](5);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x912CE59144191C1204E64559FE8253a0e49E6548,
+            asset:  0x912CE59144191C1204E64559FE8253a0e49E6548,
             supplyCap: 7500000000000000000000000,
             priceFeed: 0xb2A824043730FE05F3DA2efaFa1CBbe83fa548D6,
             liquidationFactor: 9e17,
@@ -4055,7 +4006,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,
+            asset:  0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,
             supplyCap: 20000000000000000000000,
             priceFeed: 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612,
             liquidationFactor: 9.5e17,
@@ -4064,7 +4015,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x5979D7b546E38E414F7E9822514be443A4800529,
+            asset:  0x5979D7b546E38E414F7E9822514be443A4800529,
             supplyCap: 16000000000000000000000,
             priceFeed: 0xe165155c34fE4cBfC55Fc554437907BDb1Af7e3e,
             liquidationFactor: 9e17,
@@ -4073,7 +4024,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
+            asset:  0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
             supplyCap: 100000000000,
             priceFeed: 0xd0C7101eACbB49F3deCcCc166d238410D6D46d57,
             liquidationFactor: 9e17,
@@ -4082,7 +4033,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a,
+            asset:  0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a,
             supplyCap: 100000000000000000000000,
             priceFeed: 0xDB98056FecFff59D032aB628337A4887110df3dB,
             liquidationFactor: 8e17,
@@ -4106,7 +4057,7 @@ library ArbitrumMainnet {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](8);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe,
+            asset:  0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe,
             supplyCap: 24000000000000000000000,
             priceFeed: 0xd3cf278F135D9831D2bF28F6672a4575906CA724,
             liquidationFactor: 9.6e17,
@@ -4115,7 +4066,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8,
+            asset:  0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8,
             supplyCap: 7500000000000000000000,
             priceFeed: 0x970FfD8E335B8fa4cd5c869c7caC3a90671d5Dc3,
             liquidationFactor: 9.7e17,
@@ -4124,7 +4075,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x5979D7b546E38E414F7E9822514be443A4800529,
+            asset:  0x5979D7b546E38E414F7E9822514be443A4800529,
             supplyCap: 10000000000000000000000,
             priceFeed: 0x6C987dDE50dB1dcDd32Cd4175778C2a291978E2a,
             liquidationFactor: 9.7e17,
@@ -4133,7 +4084,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
+            asset:  0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
             supplyCap: 100000000000,
             priceFeed: 0xFa454dE61b317b6535A0C462267208E8FdB89f45,
             liquidationFactor: 9e17,
@@ -4142,7 +4093,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x4186BFC76E2E237523CBC30FD220FE055156b41F,
+            asset:  0x4186BFC76E2E237523CBC30FD220FE055156b41F,
             supplyCap: 3500000000000000000000,
             priceFeed: 0x3870FAc3De911c12A57E5a2532D15aD8Ca275A60,
             liquidationFactor: 9.6e17,
@@ -4151,7 +4102,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9,
+            asset:  0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9,
             supplyCap: 20000000000000,
             priceFeed: 0x84E93EC6170ED630f5ebD89A1AAE72d4F63f2713,
             liquidationFactor: 9.5e17,
@@ -4160,7 +4111,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831,
+            asset:  0xaf88d065e77c8cC2239327C5EDb3A432268e5831,
             supplyCap: 30000000000000,
             priceFeed: 0x443EA0340cb75a160F31A440722dec7b5bc3C2E9,
             liquidationFactor: 9.5e17,
@@ -4169,7 +4120,7 @@ library ArbitrumMainnet {
         });
 
         collaterals[7] = KnownCometCollateral({
-            asset: 0x2416092f143378750bb29b79eD961ab195CcEea5,
+            asset:  0x2416092f143378750bb29b79eD961ab195CcEea5,
             supplyCap: 12000000000000000000000,
             priceFeed: 0x72e9B6F907365d76C6192aD49C0C5ba356b7Fa48,
             liquidationFactor: 9.4e17,
@@ -4194,7 +4145,7 @@ library ArbitrumMainnet {
 
     /// @dev All ArbitrumMainnet known assets
     function knownAssets() internal pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](20);
+        KnownAsset[] memory assets = new KnownAsset[](19);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = USDT();
@@ -4211,16 +4162,15 @@ library ArbitrumMainnet {
         assets[13] = WETH();
         assets[14] = wstETH();
         assets[15] = ezETH();
-        assets[16] = wUSDM();
-        assets[17] = weETH();
-        assets[18] = rETH();
-        assets[19] = rsETH();
+        assets[16] = weETH();
+        assets[17] = rETH();
+        assets[18] = rsETH();
         return assets;
     }
 
     /// @dev All ArbitrumMainnet known price feeds
     function knownPriceFeeds() internal pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](28);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](27);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = USDT_USD();
@@ -4235,20 +4185,19 @@ library ArbitrumMainnet {
         priceFeeds[11] = WETH_USD();
         priceFeeds[12] = wstETH_USD();
         priceFeeds[13] = ezETH_USD();
-        priceFeeds[14] = wUSDM_USD();
-        priceFeeds[15] = ARB_USDT();
-        priceFeeds[16] = WETH_USDT();
-        priceFeeds[17] = wstETH_USDT();
-        priceFeeds[18] = WBTC_USDT();
-        priceFeeds[19] = GMX_USDT();
-        priceFeeds[20] = weETH_WETH();
-        priceFeeds[21] = rETH_WETH();
-        priceFeeds[22] = wstETH_WETH();
-        priceFeeds[23] = WBTC_WETH();
-        priceFeeds[24] = rsETH_WETH();
-        priceFeeds[25] = USDT_WETH();
-        priceFeeds[26] = USDC_WETH();
-        priceFeeds[27] = ezETH_WETH();
+        priceFeeds[14] = ARB_USDT();
+        priceFeeds[15] = WETH_USDT();
+        priceFeeds[16] = wstETH_USDT();
+        priceFeeds[17] = WBTC_USDT();
+        priceFeeds[18] = GMX_USDT();
+        priceFeeds[19] = weETH_WETH();
+        priceFeeds[20] = rETH_WETH();
+        priceFeeds[21] = wstETH_WETH();
+        priceFeeds[22] = WBTC_WETH();
+        priceFeeds[23] = rsETH_WETH();
+        priceFeeds[24] = USDT_WETH();
+        priceFeeds[25] = USDC_WETH();
+        priceFeeds[26] = ezETH_WETH();
         return priceFeeds;
     }
 
@@ -4367,16 +4316,6 @@ library OptimismMainnet {
             symbol: "wstETH",
             decimals: 18,
             assetAddress: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb
-        });
-    }
-
-    /// @dev OptimismMainnet Wrapped Mountain Protocol USD
-    function wUSDM() internal pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
         });
     }
 
@@ -4502,16 +4441,6 @@ library OptimismMainnet {
         });
     }
 
-    /// @dev OptimismMainnet wUSDM_USD price feed
-    function wUSDM_USD() internal pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USD",
-            decimals: 8,
-            priceFeed: 0x7E86318Cc4bc539043F204B39Ce0ebeD9F0050Dc
-        });
-    }
-
     /// @dev OptimismMainnet OP_USDT price feed
     function OP_USDT() internal pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -4549,16 +4478,6 @@ library OptimismMainnet {
             symbolOut: "USDT",
             decimals: 8,
             priceFeed: 0x6846Fc014a72198Ee287350ddB6b0180586594E5
-        });
-    }
-
-    /// @dev OptimismMainnet wUSDM_USDT price feed
-    function wUSDM_USDT() internal pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USDT",
-            decimals: 8,
-            priceFeed: 0x66228d797eb83ecf3465297751f6b1D4d42b7627
         });
     }
 
@@ -4646,10 +4565,10 @@ library OptimismMainnet {
 
     /// @dev OptimismMainnet Compound USDC
     function Comet_cUSDCv3() internal pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](5);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](4);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000042,
+            asset:  0x4200000000000000000000000000000000000042,
             supplyCap: 1400000000000000000000000,
             priceFeed: 0x0D276FC14719f9292D5C1eA2198673d1f4269246,
             liquidationFactor: 8e17,
@@ -4658,7 +4577,7 @@ library OptimismMainnet {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000006,
+            asset:  0x4200000000000000000000000000000000000006,
             supplyCap: 2600000000000000000000,
             priceFeed: 0x13e3Ee699D1909E989722E753853AE30b17e08c5,
             liquidationFactor: 9.5e17,
@@ -4667,7 +4586,7 @@ library OptimismMainnet {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x68f180fcCe6836688e9084f035309E29Bf0A2095,
+            asset:  0x68f180fcCe6836688e9084f035309E29Bf0A2095,
             supplyCap: 10000000000,
             priceFeed: 0x718A5788b89454aAE3A028AE9c111A29Be6c2a6F,
             liquidationFactor: 9e17,
@@ -4676,21 +4595,12 @@ library OptimismMainnet {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
+            asset:  0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
             supplyCap: 1200000000000000000000,
             priceFeed: 0x4f90C34dEF3516Ca5bd0a8276e01516fb09fB2Ab,
             liquidationFactor: 9e17,
             borrowCollateralFactor: 8e17,
             liquidateCollateralFactor: 8.5e17
-        });
-
-        collaterals[4] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 1400000000000000000000000,
-            priceFeed: 0x7E86318Cc4bc539043F204B39Ce0ebeD9F0050Dc,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
         });
 
         return KnownComet({
@@ -4706,10 +4616,10 @@ library OptimismMainnet {
 
     /// @dev OptimismMainnet Compound USDT
     function Comet_cUSDTv3() internal pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](5);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](4);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000042,
+            asset:  0x4200000000000000000000000000000000000042,
             supplyCap: 1000000000000000000000000,
             priceFeed: 0x0D276FC14719f9292D5C1eA2198673d1f4269246,
             liquidationFactor: 8e17,
@@ -4718,7 +4628,7 @@ library OptimismMainnet {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000006,
+            asset:  0x4200000000000000000000000000000000000006,
             supplyCap: 2600000000000000000000,
             priceFeed: 0x13e3Ee699D1909E989722E753853AE30b17e08c5,
             liquidationFactor: 9.5e17,
@@ -4727,7 +4637,7 @@ library OptimismMainnet {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x68f180fcCe6836688e9084f035309E29Bf0A2095,
+            asset:  0x68f180fcCe6836688e9084f035309E29Bf0A2095,
             supplyCap: 10000000000,
             priceFeed: 0x718A5788b89454aAE3A028AE9c111A29Be6c2a6F,
             liquidationFactor: 9e17,
@@ -4736,21 +4646,12 @@ library OptimismMainnet {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
+            asset:  0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
             supplyCap: 800000000000000000000,
             priceFeed: 0x6846Fc014a72198Ee287350ddB6b0180586594E5,
             liquidationFactor: 9e17,
             borrowCollateralFactor: 8e17,
             liquidateCollateralFactor: 8.5e17
-        });
-
-        collaterals[4] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 1400000000000000000000000,
-            priceFeed: 0x66228d797eb83ecf3465297751f6b1D4d42b7627,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
         });
 
         return KnownComet({
@@ -4769,7 +4670,7 @@ library OptimismMainnet {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](8);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
+            asset:  0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
             supplyCap: 3900000000000000000000,
             priceFeed: 0x295d9F81298Fc44B4F329CBef57E67266091Cc86,
             liquidationFactor: 9.7e17,
@@ -4778,7 +4679,7 @@ library OptimismMainnet {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x9Bcef72be871e61ED4fBbc7630889beE758eb81D,
+            asset:  0x9Bcef72be871e61ED4fBbc7630889beE758eb81D,
             supplyCap: 3000000000000000000000,
             priceFeed: 0x5D409e56D886231aDAf00c8775665AD0f9897b56,
             liquidationFactor: 9.7e17,
@@ -4787,7 +4688,7 @@ library OptimismMainnet {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x68f180fcCe6836688e9084f035309E29Bf0A2095,
+            asset:  0x68f180fcCe6836688e9084f035309E29Bf0A2095,
             supplyCap: 6000000000,
             priceFeed: 0x4ed39CF78ffA4428DE6bcEDB8d0f5Ff84699e13D,
             liquidationFactor: 9e17,
@@ -4796,7 +4697,7 @@ library OptimismMainnet {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x94b008aA00579c1307B0EF2c499aD98a8ce58e58,
+            asset:  0x94b008aA00579c1307B0EF2c499aD98a8ce58e58,
             supplyCap: 10000000000000,
             priceFeed: 0xDdC326838f2B5E5625306C3cf33318666f3Cf002,
             liquidationFactor: 9.5e17,
@@ -4805,7 +4706,7 @@ library OptimismMainnet {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85,
+            asset:  0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85,
             supplyCap: 15000000000000,
             priceFeed: 0x403F2083B6E220147f8a8832f0B284B4Ed5777d1,
             liquidationFactor: 9.5e17,
@@ -4814,7 +4715,7 @@ library OptimismMainnet {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0x2416092f143378750bb29b79eD961ab195CcEea5,
+            asset:  0x2416092f143378750bb29b79eD961ab195CcEea5,
             supplyCap: 3200000000000000000000,
             priceFeed: 0x69dD37A0EE3D15776A54e34a7297B059e75C94Ab,
             liquidationFactor: 9.4e17,
@@ -4823,7 +4724,7 @@ library OptimismMainnet {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0x5A7fACB970D094B6C7FF1df0eA68D99E6e73CBFF,
+            asset:  0x5A7fACB970D094B6C7FF1df0eA68D99E6e73CBFF,
             supplyCap: 1600000000000000000000,
             priceFeed: 0x5A20166Ed55518520B1F68Cab1Cf127473123814,
             liquidationFactor: 9.6e17,
@@ -4832,7 +4733,7 @@ library OptimismMainnet {
         });
 
         collaterals[7] = KnownCometCollateral({
-            asset: 0x87eEE96D50Fb761AD85B1c982d28A042169d61b1,
+            asset:  0x87eEE96D50Fb761AD85B1c982d28A042169d61b1,
             supplyCap: 1000000000000000000000,
             priceFeed: 0xeE7B99Dc798Eae1957713bBBEde98073098B0E68,
             liquidationFactor: 9.6e17,
@@ -4857,7 +4758,7 @@ library OptimismMainnet {
 
     /// @dev All OptimismMainnet known assets
     function knownAssets() internal pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](13);
+        KnownAsset[] memory assets = new KnownAsset[](12);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = USDT();
@@ -4866,17 +4767,16 @@ library OptimismMainnet {
         assets[5] = COMP();
         assets[6] = WETH();
         assets[7] = wstETH();
-        assets[8] = wUSDM();
-        assets[9] = rETH();
-        assets[10] = ezETH();
-        assets[11] = weETH();
-        assets[12] = wrsETH();
+        assets[8] = rETH();
+        assets[9] = ezETH();
+        assets[10] = weETH();
+        assets[11] = wrsETH();
         return assets;
     }
 
     /// @dev All OptimismMainnet known price feeds
     function knownPriceFeeds() internal pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](22);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](20);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = USDT_USD();
@@ -4885,20 +4785,18 @@ library OptimismMainnet {
         priceFeeds[5] = COMP_USD();
         priceFeeds[6] = WETH_USD();
         priceFeeds[7] = wstETH_USD();
-        priceFeeds[8] = wUSDM_USD();
-        priceFeeds[9] = OP_USDT();
-        priceFeeds[10] = WETH_USDT();
-        priceFeeds[11] = WBTC_USDT();
-        priceFeeds[12] = wstETH_USDT();
-        priceFeeds[13] = wUSDM_USDT();
-        priceFeeds[14] = wstETH_WETH();
-        priceFeeds[15] = rETH_WETH();
-        priceFeeds[16] = WBTC_WETH();
-        priceFeeds[17] = USDT_WETH();
-        priceFeeds[18] = USDC_WETH();
-        priceFeeds[19] = ezETH_WETH();
-        priceFeeds[20] = weETH_WETH();
-        priceFeeds[21] = wrsETH_WETH();
+        priceFeeds[8] = OP_USDT();
+        priceFeeds[9] = WETH_USDT();
+        priceFeeds[10] = WBTC_USDT();
+        priceFeeds[11] = wstETH_USDT();
+        priceFeeds[12] = wstETH_WETH();
+        priceFeeds[13] = rETH_WETH();
+        priceFeeds[14] = WBTC_WETH();
+        priceFeeds[15] = USDT_WETH();
+        priceFeeds[16] = USDC_WETH();
+        priceFeeds[17] = ezETH_WETH();
+        priceFeeds[18] = weETH_WETH();
+        priceFeeds[19] = wrsETH_WETH();
         return priceFeeds;
     }
 
@@ -5089,7 +4987,7 @@ library EthereumSepolia {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](2);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0xb9fa8F5eC3Da13B508F462243Ad0555B46E028df,
+            asset:  0xb9fa8F5eC3Da13B508F462243Ad0555B46E028df,
             supplyCap: 9000000000000000000000,
             priceFeed: 0xBE60803049CA4Aea3B75E4238d664aEbcdDd0773,
             liquidationFactor: 9.5e17,
@@ -5098,7 +4996,7 @@ library EthereumSepolia {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0xB82381A3fBD3FaFA77B3a7bE693342618240067b,
+            asset:  0xB82381A3fBD3FaFA77B3a7bE693342618240067b,
             supplyCap: 80000000000000000000000,
             priceFeed: 0x722c4ba7Eb8A1b0fD360bFF6cf19E5E2AA1C3DdF,
             liquidationFactor: 9.5e17,
@@ -5122,7 +5020,7 @@ library EthereumSepolia {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](3);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0xA6c8D1c55951e8AC44a0EaA959Be5Fd21cc07531,
+            asset:  0xA6c8D1c55951e8AC44a0EaA959Be5Fd21cc07531,
             supplyCap: 500000000000000000000000,
             priceFeed: 0x619db7F74C0061E2917D1D57f834D9D24C5529dA,
             liquidationFactor: 9.2e17,
@@ -5131,7 +5029,7 @@ library EthereumSepolia {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0xa035b9e130F2B1AedC733eEFb1C67Ba4c503491F,
+            asset:  0xa035b9e130F2B1AedC733eEFb1C67Ba4c503491F,
             supplyCap: 3500000000000,
             priceFeed: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43,
             liquidationFactor: 9.3e17,
@@ -5140,7 +5038,7 @@ library EthereumSepolia {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x2D5ee574e710219a521449679A4A7f2B43f046ad,
+            asset:  0x2D5ee574e710219a521449679A4A7f2B43f046ad,
             supplyCap: 1000000000000000000000000,
             priceFeed: 0x694AA1769357215DE4FAC081bf1f309aDC325306,
             liquidationFactor: 9.3e17,
@@ -5376,7 +5274,7 @@ library BaseSepolia {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](1);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x774eD9EDB0C5202dF9A86183804b5D9E99dC6CA3,
+            asset:  0x774eD9EDB0C5202dF9A86183804b5D9E99dC6CA3,
             supplyCap: 7500000000000000000000,
             priceFeed: 0x6490397583a86566C01F467790125F1FED556299,
             liquidationFactor: 9.75e17,
@@ -5400,7 +5298,7 @@ library BaseSepolia {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](2);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x774eD9EDB0C5202dF9A86183804b5D9E99dC6CA3,
+            asset:  0x774eD9EDB0C5202dF9A86183804b5D9E99dC6CA3,
             supplyCap: 800000000000000000000,
             priceFeed: 0x3e7e00F0c81712205A5F6c90D64879663c212873,
             liquidationFactor: 9.3e17,
@@ -5409,7 +5307,7 @@ library BaseSepolia {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000006,
+            asset:  0x4200000000000000000000000000000000000006,
             supplyCap: 1000000000000000000000,
             priceFeed: 0xBD767F0b5925034F4e37D8990FC8fF080F6f92C8,
             liquidationFactor: 9.5e17,
@@ -6034,19 +5932,6 @@ contract ChainContract {
         }
     }
 
-    /// @dev Wrapped Mountain Protocol USD
-    function wUSDM(uint256 chainId) public pure returns (KnownAsset memory) {
-        if (chainId == 1) {
-            return EthereumMainnet.wUSDM();
-        } else if (chainId == 42161) {
-            return ArbitrumMainnet.wUSDM();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM();
-        } else {
-            revert NotFound("Asset for Wrapped Mountain Protocol USD not found on chain", chainId);
-        }
-    }
-
     /// @dev Staked FRAX
     function sFRAX(uint256 chainId) public pure returns (KnownAsset memory) {
         if (chainId == 1) {
@@ -6199,6 +6084,24 @@ contract ChainContract {
             return ArbitrumMainnet.ZRO();
         } else {
             revert NotFound("Asset for LayerZero not found on chain", chainId);
+        }
+    }
+
+    /// @dev XRP (Universal)
+    function uXRP(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.uXRP();
+        } else {
+            revert NotFound("Asset for XRP (Universal) not found on chain", chainId);
+        }
+    }
+
+    /// @dev Solana (Universal)
+    function uSOL(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.uSOL();
+        } else {
+            revert NotFound("Asset for Solana (Universal) not found on chain", chainId);
         }
     }
 
@@ -6642,17 +6545,6 @@ contract ChainContract {
         }
     }
 
-    /// @dev wUSDM_USDT price feed
-    function wUSDM_USDT(uint256 chainId) public pure returns (KnownPriceFeed memory) {
-        if (chainId == 1) {
-            return EthereumMainnet.wUSDM_USDT();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM_USDT();
-        } else {
-            revert NotFound("PriceFeed for wUSDM_USDT not found on chain", chainId);
-        }
-    }
-
     /// @dev sFRAX_USDT price feed
     function sFRAX_USDT(uint256 chainId) public pure returns (KnownPriceFeed memory) {
         if (chainId == 1) {
@@ -6780,17 +6672,6 @@ contract ChainContract {
         }
     }
 
-    /// @dev wUSDM_USD price feed
-    function wUSDM_USD(uint256 chainId) public pure returns (KnownPriceFeed memory) {
-        if (chainId == 42161) {
-            return ArbitrumMainnet.wUSDM_USD();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM_USD();
-        } else {
-            revert NotFound("PriceFeed for wUSDM_USD not found on chain", chainId);
-        }
-    }
-
     /// @dev ARB_USDT price feed
     function ARB_USDT(uint256 chainId) public pure returns (KnownPriceFeed memory) {
         if (chainId == 42161) {
@@ -6894,10 +6775,7 @@ contract ChainContract {
         if (chainId == 1) {
             return EthereumMainnet.Morpho_USDC_wstETH();
         } else {
-            revert NotFound(
-                "MorphoMarket for borrowing USD Coin against Wrapped liquid staked Ether 2.0 collateral not found on chain",
-                chainId
-            );
+            revert NotFound("MorphoMarket for borrowing USD Coin against Wrapped liquid staked Ether 2.0 collateral not found on chain", chainId);
         }
     }
 
@@ -6908,10 +6786,7 @@ contract ChainContract {
         } else if (chainId == 8453) {
             return BaseMainnet.Morpho_USDC_cbBTC();
         } else {
-            revert NotFound(
-                "MorphoMarket for borrowing USD Coin against Coinbase Wrapped BTC collateral not found on chain",
-                chainId
-            );
+            revert NotFound("MorphoMarket for borrowing USD Coin against Coinbase Wrapped BTC collateral not found on chain", chainId);
         }
     }
 
@@ -6920,23 +6795,20 @@ contract ChainContract {
         if (chainId == 8453) {
             return BaseMainnet.Morpho_USDC_cbETH();
         } else {
-            revert NotFound(
-                "MorphoMarket for borrowing USD Coin against Coinbase Wrapped Staked ETH collateral not found on chain",
-                chainId
-            );
+            revert NotFound("MorphoMarket for borrowing USD Coin against Coinbase Wrapped Staked ETH collateral not found on chain", chainId);
         }
     }
 
-    /// @dev borrowing USDC against Wrapped Ether collateral
+    /// @dev borrowing USD Coin against Wrapped Ether collateral
     function Morpho_USDC_WETH(uint256 chainId) public pure returns (KnownMorphoMarket memory) {
-        if (chainId == 11155111) {
+        if (chainId == 8453) {
+            return BaseMainnet.Morpho_USDC_WETH();
+        } else if (chainId == 11155111) {
             return EthereumSepolia.Morpho_USDC_WETH();
         } else if (chainId == 84532) {
             return BaseSepolia.Morpho_USDC_WETH();
         } else {
-            revert NotFound(
-                "MorphoMarket for borrowing USDC against Wrapped Ether collateral not found on chain", chainId
-            );
+            revert NotFound("MorphoMarket for borrowing USD Coin against Wrapped Ether collateral not found on chain", chainId);
         }
     }
 
@@ -7407,16 +7279,6 @@ contract EthereumMainnetContract {
         });
     }
 
-    /// @dev EthereumMainnet Wrapped Mountain Protocol USD
-    function wUSDM() public pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
-        });
-    }
-
     /// @dev EthereumMainnet Staked FRAX
     function sFRAX() public pure returns (KnownAsset memory) {
         return KnownAsset({
@@ -7759,16 +7621,6 @@ contract EthereumMainnetContract {
         });
     }
 
-    /// @dev EthereumMainnet wUSDM_USDT price feed
-    function wUSDM_USDT() public pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USDT",
-            decimals: 8,
-            priceFeed: 0xe3a409eD15CD53aFdEFdd191ad945cEC528A2496
-        });
-    }
-
     /// @dev EthereumMainnet sFRAX_USDT price feed
     function sFRAX_USDT() public pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -7796,7 +7648,7 @@ contract EthereumMainnetContract {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](8);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0xc00e94Cb662C3520282E6f5717214004A7f26888,
+            asset:  0xc00e94Cb662C3520282E6f5717214004A7f26888,
             supplyCap: 100000000000000000000000,
             priceFeed: 0xdbd020CAeF83eFd542f4De03e3cF0C28A4428bd5,
             liquidationFactor: 7.5e17,
@@ -7805,7 +7657,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
+            asset:  0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
             supplyCap: 1000000000000,
             priceFeed: 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c,
             liquidationFactor: 9e17,
@@ -7814,7 +7666,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
+            asset:  0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
             supplyCap: 500000000000000000000000,
             priceFeed: 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419,
             liquidationFactor: 9.5e17,
@@ -7823,7 +7675,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984,
+            asset:  0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984,
             supplyCap: 2600000000000000000000000,
             priceFeed: 0x553303d460EE0afB37EdFf9bE42922D8FF63220e,
             liquidationFactor: 8.3e17,
@@ -7832,7 +7684,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x514910771AF9Ca656af840dff83E8264EcF986CA,
+            asset:  0x514910771AF9Ca656af840dff83E8264EcF986CA,
             supplyCap: 2000000000000000000000000,
             priceFeed: 0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c,
             liquidationFactor: 8.3e17,
@@ -7841,7 +7693,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
+            asset:  0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
             supplyCap: 40000000000000000000000,
             priceFeed: 0x023ee795361B28cDbB94e302983578486A0A5f1B,
             liquidationFactor: 9.2e17,
@@ -7850,7 +7702,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
+            asset:  0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
             supplyCap: 90000000000,
             priceFeed: 0x0A4F4F9E84Fc4F674F0D209f94d41FaFE5aF887D,
             liquidationFactor: 9.5e17,
@@ -7859,7 +7711,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[7] = KnownCometCollateral({
-            asset: 0x18084fbA666a33d37592fA2633fD49a74DD93a88,
+            asset:  0x18084fbA666a33d37592fA2633fD49a74DD93a88,
             supplyCap: 570000000000000000000,
             priceFeed: 0xAA9527bf3183A96fe6e55831c96dE5cd988d3484,
             liquidationFactor: 9e17,
@@ -7883,7 +7735,7 @@ contract EthereumMainnetContract {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](12);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0xBe9895146f7AF43049ca1c1AE358B0541Ea49704,
+            asset:  0xBe9895146f7AF43049ca1c1AE358B0541Ea49704,
             supplyCap: 10000000000000000000000,
             priceFeed: 0x23a982b74a3236A5F2297856d4391B2edBBB5549,
             liquidationFactor: 9.75e17,
@@ -7892,7 +7744,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
+            asset:  0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
             supplyCap: 64500000000000000000000,
             priceFeed: 0x4F67e4d9BD67eFa28236013288737D39AeF48e79,
             liquidationFactor: 9.75e17,
@@ -7901,7 +7753,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0xae78736Cd615f374D3085123A210448E74Fc6393,
+            asset:  0xae78736Cd615f374D3085123A210448E74Fc6393,
             supplyCap: 30000000000000000000000,
             priceFeed: 0xA3A7fB5963D1d69B95EEC4957f77678EF073Ba08,
             liquidationFactor: 9.75e17,
@@ -7910,7 +7762,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7,
+            asset:  0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7,
             supplyCap: 37000000000000000000000,
             priceFeed: 0xFa454dE61b317b6535A0C462267208E8FdB89f45,
             liquidationFactor: 9.6e17,
@@ -7919,7 +7771,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
+            asset:  0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee,
             supplyCap: 22500000000000000000000,
             priceFeed: 0x1Ad4CEBa9f8135A557bBe317DB62Aa125C330F26,
             liquidationFactor: 9.6e17,
@@ -7928,7 +7780,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38,
+            asset:  0xf1C9acDc66974dFB6dEcB12aA385b9cD01190E38,
             supplyCap: 10000000000000000000000,
             priceFeed: 0x66F5AfDaD14b30816b47b707240D1E8E3344D04d,
             liquidationFactor: 9e17,
@@ -7937,7 +7789,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
+            asset:  0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
             supplyCap: 100000000000,
             priceFeed: 0xd98Be00b5D27fc98112BdE293e487f8D4cA57d07,
             liquidationFactor: 9e17,
@@ -7946,7 +7798,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[7] = KnownCometCollateral({
-            asset: 0xbf5495Efe5DB9ce00f80364C8B423567e58d2110,
+            asset:  0xbf5495Efe5DB9ce00f80364C8B423567e58d2110,
             supplyCap: 80000000000000000000000,
             priceFeed: 0xdE43600De5016B50752cc2615332d8cCBED6EC1b,
             liquidationFactor: 9.4e17,
@@ -7955,7 +7807,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[8] = KnownCometCollateral({
-            asset: 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
+            asset:  0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
             supplyCap: 9300000000,
             priceFeed: 0x57A71A9C632b2e6D8b0eB9A157888A3Fc87400D1,
             liquidationFactor: 9.5e17,
@@ -7964,7 +7816,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[9] = KnownCometCollateral({
-            asset: 0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0,
+            asset:  0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0,
             supplyCap: 1000000000000000000000,
             priceFeed: 0xDd18688Bb75Af704f3Fb1183e459C4d4D41132D9,
             liquidationFactor: 9e17,
@@ -7973,7 +7825,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[10] = KnownCometCollateral({
-            asset: 0x18084fbA666a33d37592fA2633fD49a74DD93a88,
+            asset:  0x18084fbA666a33d37592fA2633fD49a74DD93a88,
             supplyCap: 315000000000000000000,
             priceFeed: 0x1933F7e5f8B0423fbAb28cE9c8C39C2cC414027B,
             liquidationFactor: 9e17,
@@ -7982,7 +7834,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[11] = KnownCometCollateral({
-            asset: 0xA35b1B31Ce002FBF2058D22F30f95D405200A15b,
+            asset:  0xA35b1B31Ce002FBF2058D22F30f95D405200A15b,
             supplyCap: 2100000000000000000000,
             priceFeed: 0x9F2F60f38BBc275aF8F88a21c0e2BfE751E97C1f,
             liquidationFactor: 9.5e17,
@@ -8003,10 +7855,10 @@ contract EthereumMainnetContract {
 
     /// @dev EthereumMainnet Compound USDT
     function Comet_cUSDTv3() public pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](11);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](10);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0xc00e94Cb662C3520282E6f5717214004A7f26888,
+            asset:  0xc00e94Cb662C3520282E6f5717214004A7f26888,
             supplyCap: 100000000000000000000000,
             priceFeed: 0xdbd020CAeF83eFd542f4De03e3cF0C28A4428bd5,
             liquidationFactor: 7.5e17,
@@ -8015,7 +7867,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
+            asset:  0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
             supplyCap: 500000000000000000000000,
             priceFeed: 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419,
             liquidationFactor: 9.5e17,
@@ -8024,7 +7876,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
+            asset:  0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
             supplyCap: 140000000000,
             priceFeed: 0x4E64E54c9f0313852a230782B3ba4B3B0952B499,
             liquidationFactor: 9e17,
@@ -8033,7 +7885,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984,
+            asset:  0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984,
             supplyCap: 1300000000000000000000000,
             priceFeed: 0x553303d460EE0afB37EdFf9bE42922D8FF63220e,
             liquidationFactor: 8.3e17,
@@ -8042,7 +7894,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x514910771AF9Ca656af840dff83E8264EcF986CA,
+            asset:  0x514910771AF9Ca656af840dff83E8264EcF986CA,
             supplyCap: 500000000000000000000000,
             priceFeed: 0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c,
             liquidationFactor: 8.3e17,
@@ -8051,7 +7903,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
+            asset:  0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
             supplyCap: 60000000000000000000000,
             priceFeed: 0x023ee795361B28cDbB94e302983578486A0A5f1B,
             liquidationFactor: 9.5e17,
@@ -8060,7 +7912,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
+            asset:  0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
             supplyCap: 100000000000,
             priceFeed: 0x2D09142Eae60Fd8BD454a276E95AeBdFFD05722d,
             liquidationFactor: 9.5e17,
@@ -8069,7 +7921,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[7] = KnownCometCollateral({
-            asset: 0x18084fbA666a33d37592fA2633fD49a74DD93a88,
+            asset:  0x18084fbA666a33d37592fA2633fD49a74DD93a88,
             supplyCap: 285000000000000000000,
             priceFeed: 0x7b03a016dBC36dB8e05C480192faDcdB0a06bC37,
             liquidationFactor: 9e17,
@@ -8078,16 +7930,7 @@ contract EthereumMainnetContract {
         });
 
         collaterals[8] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 6500000000000000000000000,
-            priceFeed: 0xe3a409eD15CD53aFdEFdd191ad945cEC528A2496,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
-        });
-
-        collaterals[9] = KnownCometCollateral({
-            asset: 0xA663B02CF0a4b149d2aD41910CB81e23e1c41c32,
+            asset:  0xA663B02CF0a4b149d2aD41910CB81e23e1c41c32,
             supplyCap: 30000000000000000000000000,
             priceFeed: 0x403F2083B6E220147f8a8832f0B284B4Ed5777d1,
             liquidationFactor: 9.5e17,
@@ -8095,8 +7938,8 @@ contract EthereumMainnetContract {
             liquidateCollateralFactor: 9e17
         });
 
-        collaterals[10] = KnownCometCollateral({
-            asset: 0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa,
+        collaterals[9] = KnownCometCollateral({
+            asset:  0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa,
             supplyCap: 4000000000000000000000,
             priceFeed: 0x2f7439252Da796Ab9A93f7E478E70DED43Db5B89,
             liquidationFactor: 9.5e17,
@@ -8160,7 +8003,7 @@ contract EthereumMainnetContract {
 
     /// @dev All EthereumMainnet known assets
     function knownAssets() public pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](34);
+        KnownAsset[] memory assets = new KnownAsset[](33);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = DAI();
@@ -8192,15 +8035,14 @@ contract EthereumMainnetContract {
         assets[28] = ezETH();
         assets[29] = rswETH();
         assets[30] = ETHx();
-        assets[31] = wUSDM();
-        assets[32] = sFRAX();
-        assets[33] = mETH();
+        assets[31] = sFRAX();
+        assets[32] = mETH();
         return assets;
     }
 
     /// @dev All EthereumMainnet known price feeds
     function knownPriceFeeds() public pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](35);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](34);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = sUSDe_USD();
@@ -8233,9 +8075,8 @@ contract EthereumMainnetContract {
         priceFeeds[29] = wstETH_USDT();
         priceFeeds[30] = cbBTC_USDT();
         priceFeeds[31] = tBTC_USDT();
-        priceFeeds[32] = wUSDM_USDT();
-        priceFeeds[33] = sFRAX_USDT();
-        priceFeeds[34] = mETH_USDT();
+        priceFeeds[32] = sFRAX_USDT();
+        priceFeeds[33] = mETH_USDT();
         return priceFeeds;
     }
 
@@ -8487,6 +8328,26 @@ contract BaseMainnetContract {
             symbol: "ZRO",
             decimals: 18,
             assetAddress: 0x6985884C4392D348587B19cb9eAAf157F13271cd
+        });
+    }
+
+    /// @dev BaseMainnet XRP (Universal)
+    function uXRP() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"XRP (Universal)",
+            symbol: "uXRP",
+            decimals: 18,
+            assetAddress: 0x2615a94df961278DcbC41Fb0a54fEc5f10a693aE
+        });
+    }
+
+    /// @dev BaseMainnet Solana (Universal)
+    function uSOL() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Solana (Universal)",
+            symbol: "uSOL",
+            decimals: 18,
+            assetAddress: 0x9B8Df6E244526ab5F6e6400d331DB28C8fdDdb55
         });
     }
 
@@ -8749,7 +8610,7 @@ contract BaseMainnetContract {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](4);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22,
+            asset:  0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22,
             supplyCap: 7500000000000000000000,
             priceFeed: 0x4687670f5f01716fAA382E2356C103BaD776752C,
             liquidationFactor: 9e17,
@@ -8758,7 +8619,7 @@ contract BaseMainnetContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000006,
+            asset:  0x4200000000000000000000000000000000000006,
             supplyCap: 11000000000000000000000,
             priceFeed: 0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70,
             liquidationFactor: 9.5e17,
@@ -8767,7 +8628,7 @@ contract BaseMainnetContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452,
+            asset:  0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452,
             supplyCap: 1400000000000000000000,
             priceFeed: 0x4b5DeE60531a72C1264319Ec6A22678a4D0C8118,
             liquidationFactor: 9e17,
@@ -8776,7 +8637,7 @@ contract BaseMainnetContract {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
+            asset:  0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
             supplyCap: 18000000000,
             priceFeed: 0x8D38A3d6B3c3B7d96D6536DA7Eef94A9d7dbC991,
             liquidationFactor: 9.5e17,
@@ -8800,7 +8661,7 @@ contract BaseMainnetContract {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](7);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22,
+            asset:  0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22,
             supplyCap: 7500000000000000000000,
             priceFeed: 0x59e242D352ae13166B4987aE5c990C232f7f7CD6,
             liquidationFactor: 9.75e17,
@@ -8809,7 +8670,7 @@ contract BaseMainnetContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x2416092f143378750bb29b79eD961ab195CcEea5,
+            asset:  0x2416092f143378750bb29b79eD961ab195CcEea5,
             supplyCap: 2000000000000000000000,
             priceFeed: 0x72874CfE957bb47795548e5a9fd740D135ba5E45,
             liquidationFactor: 9.4e17,
@@ -8818,7 +8679,7 @@ contract BaseMainnetContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452,
+            asset:  0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452,
             supplyCap: 1200000000000000000000,
             priceFeed: 0x1F71901daf98d70B4BAF40DE080321e5C2676856,
             liquidationFactor: 9.75e17,
@@ -8827,7 +8688,7 @@ contract BaseMainnetContract {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
+            asset:  0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
             supplyCap: 20000000000000,
             priceFeed: 0x2F4eAF29dfeeF4654bD091F7112926E108eF4Ed0,
             liquidationFactor: 9.5e17,
@@ -8836,7 +8697,7 @@ contract BaseMainnetContract {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A,
+            asset:  0x04C0599Ae5A44757c0af6F9eC3b93da8976c150A,
             supplyCap: 15000000000000000000000,
             priceFeed: 0x841e380e3a98E4EE8912046d69731F4E21eFb1D7,
             liquidationFactor: 9.6e17,
@@ -8845,7 +8706,7 @@ contract BaseMainnetContract {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0xEDfa23602D0EC14714057867A78d01e94176BEA0,
+            asset:  0xEDfa23602D0EC14714057867A78d01e94176BEA0,
             supplyCap: 230000000000000000000,
             priceFeed: 0xaeB318360f27748Acb200CE616E389A6C9409a07,
             liquidationFactor: 9.6e17,
@@ -8854,7 +8715,7 @@ contract BaseMainnetContract {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
+            asset:  0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
             supplyCap: 4500000000,
             priceFeed: 0x4cfCE7795bF75dC3795369A953d9A9b8C2679AE4,
             liquidationFactor: 9.5e17,
@@ -8903,6 +8764,20 @@ contract BaseMainnetContract {
         });
     }
 
+    /// @dev BaseMainnet MorphoMarket borrowing USD Coin against Wrapped Ether collateral
+    function Morpho_USDC_WETH() public pure returns (KnownMorphoMarket memory) {
+        return KnownMorphoMarket({
+            morpho: 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb,
+            marketId: hex"8793cf302b8ffd655ab97bd1c695dbd967807e8367a65cb2f4edaf1380ba1bda",
+            loanToken: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
+            collateralToken: 0x4200000000000000000000000000000000000006,
+            oracle: 0xFEa2D58cEfCb9fcb597723c6bAE66fFE4193aFE4,
+            irm: 0x46415998764C29aB2a25CbeA6254146D50D22687,
+            lltv: 860000000000000000,
+            wad: 1000000000000000000
+        });
+    }
+
     /// @dev KnownMorphoVault constructors
 
     /// @dev BaseMainnet mwUSDC
@@ -8918,7 +8793,7 @@ contract BaseMainnetContract {
 
     /// @dev All BaseMainnet known assets
     function knownAssets() public pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](29);
+        KnownAsset[] memory assets = new KnownAsset[](31);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = AERO();
@@ -8940,14 +8815,16 @@ contract BaseMainnetContract {
         assets[18] = VIRTUAL();
         assets[19] = VVV();
         assets[20] = ZRO();
-        assets[21] = COMP();
-        assets[22] = cbETH();
-        assets[23] = WETH();
-        assets[24] = wstETH();
-        assets[25] = cbBTC();
-        assets[26] = ezETH();
-        assets[27] = weETH();
-        assets[28] = wrsETH();
+        assets[21] = uXRP();
+        assets[22] = uSOL();
+        assets[23] = COMP();
+        assets[24] = cbETH();
+        assets[25] = WETH();
+        assets[26] = wstETH();
+        assets[27] = cbBTC();
+        assets[28] = ezETH();
+        assets[29] = weETH();
+        assets[30] = wrsETH();
         return assets;
     }
 
@@ -8984,9 +8861,10 @@ contract BaseMainnetContract {
 
     /// @dev All BaseMainnet known morphoMarkets
     function knownMorphoMarkets() public pure returns (KnownMorphoMarket[] memory) {
-        KnownMorphoMarket[] memory morphoMarkets = new KnownMorphoMarket[](2);
+        KnownMorphoMarket[] memory morphoMarkets = new KnownMorphoMarket[](3);
         morphoMarkets[0] = Morpho_USDC_cbETH();
         morphoMarkets[1] = Morpho_USDC_cbBTC();
+        morphoMarkets[2] = Morpho_USDC_WETH();
         return morphoMarkets;
     }
 
@@ -9174,16 +9052,6 @@ contract ArbitrumMainnetContract {
         });
     }
 
-    /// @dev ArbitrumMainnet Wrapped Mountain Protocol USD
-    function wUSDM() public pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
-        });
-    }
-
     /// @dev ArbitrumMainnet Wrapped eETH
     function weETH() public pure returns (KnownAsset memory) {
         return KnownAsset({
@@ -9356,16 +9224,6 @@ contract ArbitrumMainnetContract {
         });
     }
 
-    /// @dev ArbitrumMainnet wUSDM_USD price feed
-    function wUSDM_USD() public pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USD",
-            decimals: 8,
-            priceFeed: 0x13cDFB7db5e2F58e122B2e789b59dE13645349C4
-        });
-    }
-
     /// @dev ArbitrumMainnet ARB_USDT price feed
     function ARB_USDT() public pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -9500,10 +9358,10 @@ contract ArbitrumMainnetContract {
 
     /// @dev ArbitrumMainnet Compound USDC
     function Comet_cUSDCv3() public pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](7);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](6);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x912CE59144191C1204E64559FE8253a0e49E6548,
+            asset:  0x912CE59144191C1204E64559FE8253a0e49E6548,
             supplyCap: 16000000000000000000000000,
             priceFeed: 0xb2A824043730FE05F3DA2efaFa1CBbe83fa548D6,
             liquidationFactor: 9e17,
@@ -9512,7 +9370,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a,
+            asset:  0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a,
             supplyCap: 120000000000000000000000,
             priceFeed: 0xDB98056FecFff59D032aB628337A4887110df3dB,
             liquidationFactor: 8.5e17,
@@ -9521,7 +9379,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,
+            asset:  0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,
             supplyCap: 40000000000000000000000,
             priceFeed: 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612,
             liquidationFactor: 9.5e17,
@@ -9530,7 +9388,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
+            asset:  0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
             supplyCap: 100000000000,
             priceFeed: 0xd0C7101eACbB49F3deCcCc166d238410D6D46d57,
             liquidationFactor: 9e17,
@@ -9539,7 +9397,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x5979D7b546E38E414F7E9822514be443A4800529,
+            asset:  0x5979D7b546E38E414F7E9822514be443A4800529,
             supplyCap: 8000000000000000000000,
             priceFeed: 0xe165155c34fE4cBfC55Fc554437907BDb1Af7e3e,
             liquidationFactor: 9e17,
@@ -9548,21 +9406,12 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0x2416092f143378750bb29b79eD961ab195CcEea5,
+            asset:  0x2416092f143378750bb29b79eD961ab195CcEea5,
             supplyCap: 1400000000000000000000,
             priceFeed: 0xC49399814452B41dA8a7cd76a159f5515cb3e493,
             liquidationFactor: 9e17,
             borrowCollateralFactor: 8e17,
             liquidateCollateralFactor: 8.5e17
-        });
-
-        collaterals[6] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 4500000000000000000000000,
-            priceFeed: 0x13cDFB7db5e2F58e122B2e789b59dE13645349C4,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
         });
 
         return KnownComet({
@@ -9581,7 +9430,7 @@ contract ArbitrumMainnetContract {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](5);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x912CE59144191C1204E64559FE8253a0e49E6548,
+            asset:  0x912CE59144191C1204E64559FE8253a0e49E6548,
             supplyCap: 7500000000000000000000000,
             priceFeed: 0xb2A824043730FE05F3DA2efaFa1CBbe83fa548D6,
             liquidationFactor: 9e17,
@@ -9590,7 +9439,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,
+            asset:  0x82aF49447D8a07e3bd95BD0d56f35241523fBab1,
             supplyCap: 20000000000000000000000,
             priceFeed: 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612,
             liquidationFactor: 9.5e17,
@@ -9599,7 +9448,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x5979D7b546E38E414F7E9822514be443A4800529,
+            asset:  0x5979D7b546E38E414F7E9822514be443A4800529,
             supplyCap: 16000000000000000000000,
             priceFeed: 0xe165155c34fE4cBfC55Fc554437907BDb1Af7e3e,
             liquidationFactor: 9e17,
@@ -9608,7 +9457,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
+            asset:  0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
             supplyCap: 100000000000,
             priceFeed: 0xd0C7101eACbB49F3deCcCc166d238410D6D46d57,
             liquidationFactor: 9e17,
@@ -9617,7 +9466,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a,
+            asset:  0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a,
             supplyCap: 100000000000000000000000,
             priceFeed: 0xDB98056FecFff59D032aB628337A4887110df3dB,
             liquidationFactor: 8e17,
@@ -9641,7 +9490,7 @@ contract ArbitrumMainnetContract {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](8);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe,
+            asset:  0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe,
             supplyCap: 24000000000000000000000,
             priceFeed: 0xd3cf278F135D9831D2bF28F6672a4575906CA724,
             liquidationFactor: 9.6e17,
@@ -9650,7 +9499,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8,
+            asset:  0xEC70Dcb4A1EFa46b8F2D97C310C9c4790ba5ffA8,
             supplyCap: 7500000000000000000000,
             priceFeed: 0x970FfD8E335B8fa4cd5c869c7caC3a90671d5Dc3,
             liquidationFactor: 9.7e17,
@@ -9659,7 +9508,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x5979D7b546E38E414F7E9822514be443A4800529,
+            asset:  0x5979D7b546E38E414F7E9822514be443A4800529,
             supplyCap: 10000000000000000000000,
             priceFeed: 0x6C987dDE50dB1dcDd32Cd4175778C2a291978E2a,
             liquidationFactor: 9.7e17,
@@ -9668,7 +9517,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
+            asset:  0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f,
             supplyCap: 100000000000,
             priceFeed: 0xFa454dE61b317b6535A0C462267208E8FdB89f45,
             liquidationFactor: 9e17,
@@ -9677,7 +9526,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x4186BFC76E2E237523CBC30FD220FE055156b41F,
+            asset:  0x4186BFC76E2E237523CBC30FD220FE055156b41F,
             supplyCap: 3500000000000000000000,
             priceFeed: 0x3870FAc3De911c12A57E5a2532D15aD8Ca275A60,
             liquidationFactor: 9.6e17,
@@ -9686,7 +9535,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9,
+            asset:  0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9,
             supplyCap: 20000000000000,
             priceFeed: 0x84E93EC6170ED630f5ebD89A1AAE72d4F63f2713,
             liquidationFactor: 9.5e17,
@@ -9695,7 +9544,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831,
+            asset:  0xaf88d065e77c8cC2239327C5EDb3A432268e5831,
             supplyCap: 30000000000000,
             priceFeed: 0x443EA0340cb75a160F31A440722dec7b5bc3C2E9,
             liquidationFactor: 9.5e17,
@@ -9704,7 +9553,7 @@ contract ArbitrumMainnetContract {
         });
 
         collaterals[7] = KnownCometCollateral({
-            asset: 0x2416092f143378750bb29b79eD961ab195CcEea5,
+            asset:  0x2416092f143378750bb29b79eD961ab195CcEea5,
             supplyCap: 12000000000000000000000,
             priceFeed: 0x72e9B6F907365d76C6192aD49C0C5ba356b7Fa48,
             liquidationFactor: 9.4e17,
@@ -9729,7 +9578,7 @@ contract ArbitrumMainnetContract {
 
     /// @dev All ArbitrumMainnet known assets
     function knownAssets() public pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](20);
+        KnownAsset[] memory assets = new KnownAsset[](19);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = USDT();
@@ -9746,16 +9595,15 @@ contract ArbitrumMainnetContract {
         assets[13] = WETH();
         assets[14] = wstETH();
         assets[15] = ezETH();
-        assets[16] = wUSDM();
-        assets[17] = weETH();
-        assets[18] = rETH();
-        assets[19] = rsETH();
+        assets[16] = weETH();
+        assets[17] = rETH();
+        assets[18] = rsETH();
         return assets;
     }
 
     /// @dev All ArbitrumMainnet known price feeds
     function knownPriceFeeds() public pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](28);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](27);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = USDT_USD();
@@ -9770,20 +9618,19 @@ contract ArbitrumMainnetContract {
         priceFeeds[11] = WETH_USD();
         priceFeeds[12] = wstETH_USD();
         priceFeeds[13] = ezETH_USD();
-        priceFeeds[14] = wUSDM_USD();
-        priceFeeds[15] = ARB_USDT();
-        priceFeeds[16] = WETH_USDT();
-        priceFeeds[17] = wstETH_USDT();
-        priceFeeds[18] = WBTC_USDT();
-        priceFeeds[19] = GMX_USDT();
-        priceFeeds[20] = weETH_WETH();
-        priceFeeds[21] = rETH_WETH();
-        priceFeeds[22] = wstETH_WETH();
-        priceFeeds[23] = WBTC_WETH();
-        priceFeeds[24] = rsETH_WETH();
-        priceFeeds[25] = USDT_WETH();
-        priceFeeds[26] = USDC_WETH();
-        priceFeeds[27] = ezETH_WETH();
+        priceFeeds[14] = ARB_USDT();
+        priceFeeds[15] = WETH_USDT();
+        priceFeeds[16] = wstETH_USDT();
+        priceFeeds[17] = WBTC_USDT();
+        priceFeeds[18] = GMX_USDT();
+        priceFeeds[19] = weETH_WETH();
+        priceFeeds[20] = rETH_WETH();
+        priceFeeds[21] = wstETH_WETH();
+        priceFeeds[22] = WBTC_WETH();
+        priceFeeds[23] = rsETH_WETH();
+        priceFeeds[24] = USDT_WETH();
+        priceFeeds[25] = USDC_WETH();
+        priceFeeds[26] = ezETH_WETH();
         return priceFeeds;
     }
 
@@ -9902,16 +9749,6 @@ contract OptimismMainnetContract {
             symbol: "wstETH",
             decimals: 18,
             assetAddress: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb
-        });
-    }
-
-    /// @dev OptimismMainnet Wrapped Mountain Protocol USD
-    function wUSDM() public pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
         });
     }
 
@@ -10037,16 +9874,6 @@ contract OptimismMainnetContract {
         });
     }
 
-    /// @dev OptimismMainnet wUSDM_USD price feed
-    function wUSDM_USD() public pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USD",
-            decimals: 8,
-            priceFeed: 0x7E86318Cc4bc539043F204B39Ce0ebeD9F0050Dc
-        });
-    }
-
     /// @dev OptimismMainnet OP_USDT price feed
     function OP_USDT() public pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -10084,16 +9911,6 @@ contract OptimismMainnetContract {
             symbolOut: "USDT",
             decimals: 8,
             priceFeed: 0x6846Fc014a72198Ee287350ddB6b0180586594E5
-        });
-    }
-
-    /// @dev OptimismMainnet wUSDM_USDT price feed
-    function wUSDM_USDT() public pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USDT",
-            decimals: 8,
-            priceFeed: 0x66228d797eb83ecf3465297751f6b1D4d42b7627
         });
     }
 
@@ -10181,10 +9998,10 @@ contract OptimismMainnetContract {
 
     /// @dev OptimismMainnet Compound USDC
     function Comet_cUSDCv3() public pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](5);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](4);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000042,
+            asset:  0x4200000000000000000000000000000000000042,
             supplyCap: 1400000000000000000000000,
             priceFeed: 0x0D276FC14719f9292D5C1eA2198673d1f4269246,
             liquidationFactor: 8e17,
@@ -10193,7 +10010,7 @@ contract OptimismMainnetContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000006,
+            asset:  0x4200000000000000000000000000000000000006,
             supplyCap: 2600000000000000000000,
             priceFeed: 0x13e3Ee699D1909E989722E753853AE30b17e08c5,
             liquidationFactor: 9.5e17,
@@ -10202,7 +10019,7 @@ contract OptimismMainnetContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x68f180fcCe6836688e9084f035309E29Bf0A2095,
+            asset:  0x68f180fcCe6836688e9084f035309E29Bf0A2095,
             supplyCap: 10000000000,
             priceFeed: 0x718A5788b89454aAE3A028AE9c111A29Be6c2a6F,
             liquidationFactor: 9e17,
@@ -10211,21 +10028,12 @@ contract OptimismMainnetContract {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
+            asset:  0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
             supplyCap: 1200000000000000000000,
             priceFeed: 0x4f90C34dEF3516Ca5bd0a8276e01516fb09fB2Ab,
             liquidationFactor: 9e17,
             borrowCollateralFactor: 8e17,
             liquidateCollateralFactor: 8.5e17
-        });
-
-        collaterals[4] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 1400000000000000000000000,
-            priceFeed: 0x7E86318Cc4bc539043F204B39Ce0ebeD9F0050Dc,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
         });
 
         return KnownComet({
@@ -10241,10 +10049,10 @@ contract OptimismMainnetContract {
 
     /// @dev OptimismMainnet Compound USDT
     function Comet_cUSDTv3() public pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](5);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](4);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000042,
+            asset:  0x4200000000000000000000000000000000000042,
             supplyCap: 1000000000000000000000000,
             priceFeed: 0x0D276FC14719f9292D5C1eA2198673d1f4269246,
             liquidationFactor: 8e17,
@@ -10253,7 +10061,7 @@ contract OptimismMainnetContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000006,
+            asset:  0x4200000000000000000000000000000000000006,
             supplyCap: 2600000000000000000000,
             priceFeed: 0x13e3Ee699D1909E989722E753853AE30b17e08c5,
             liquidationFactor: 9.5e17,
@@ -10262,7 +10070,7 @@ contract OptimismMainnetContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x68f180fcCe6836688e9084f035309E29Bf0A2095,
+            asset:  0x68f180fcCe6836688e9084f035309E29Bf0A2095,
             supplyCap: 10000000000,
             priceFeed: 0x718A5788b89454aAE3A028AE9c111A29Be6c2a6F,
             liquidationFactor: 9e17,
@@ -10271,21 +10079,12 @@ contract OptimismMainnetContract {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
+            asset:  0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
             supplyCap: 800000000000000000000,
             priceFeed: 0x6846Fc014a72198Ee287350ddB6b0180586594E5,
             liquidationFactor: 9e17,
             borrowCollateralFactor: 8e17,
             liquidateCollateralFactor: 8.5e17
-        });
-
-        collaterals[4] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 1400000000000000000000000,
-            priceFeed: 0x66228d797eb83ecf3465297751f6b1D4d42b7627,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
         });
 
         return KnownComet({
@@ -10304,7 +10103,7 @@ contract OptimismMainnetContract {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](8);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
+            asset:  0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb,
             supplyCap: 3900000000000000000000,
             priceFeed: 0x295d9F81298Fc44B4F329CBef57E67266091Cc86,
             liquidationFactor: 9.7e17,
@@ -10313,7 +10112,7 @@ contract OptimismMainnetContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x9Bcef72be871e61ED4fBbc7630889beE758eb81D,
+            asset:  0x9Bcef72be871e61ED4fBbc7630889beE758eb81D,
             supplyCap: 3000000000000000000000,
             priceFeed: 0x5D409e56D886231aDAf00c8775665AD0f9897b56,
             liquidationFactor: 9.7e17,
@@ -10322,7 +10121,7 @@ contract OptimismMainnetContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x68f180fcCe6836688e9084f035309E29Bf0A2095,
+            asset:  0x68f180fcCe6836688e9084f035309E29Bf0A2095,
             supplyCap: 6000000000,
             priceFeed: 0x4ed39CF78ffA4428DE6bcEDB8d0f5Ff84699e13D,
             liquidationFactor: 9e17,
@@ -10331,7 +10130,7 @@ contract OptimismMainnetContract {
         });
 
         collaterals[3] = KnownCometCollateral({
-            asset: 0x94b008aA00579c1307B0EF2c499aD98a8ce58e58,
+            asset:  0x94b008aA00579c1307B0EF2c499aD98a8ce58e58,
             supplyCap: 10000000000000,
             priceFeed: 0xDdC326838f2B5E5625306C3cf33318666f3Cf002,
             liquidationFactor: 9.5e17,
@@ -10340,7 +10139,7 @@ contract OptimismMainnetContract {
         });
 
         collaterals[4] = KnownCometCollateral({
-            asset: 0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85,
+            asset:  0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85,
             supplyCap: 15000000000000,
             priceFeed: 0x403F2083B6E220147f8a8832f0B284B4Ed5777d1,
             liquidationFactor: 9.5e17,
@@ -10349,7 +10148,7 @@ contract OptimismMainnetContract {
         });
 
         collaterals[5] = KnownCometCollateral({
-            asset: 0x2416092f143378750bb29b79eD961ab195CcEea5,
+            asset:  0x2416092f143378750bb29b79eD961ab195CcEea5,
             supplyCap: 3200000000000000000000,
             priceFeed: 0x69dD37A0EE3D15776A54e34a7297B059e75C94Ab,
             liquidationFactor: 9.4e17,
@@ -10358,7 +10157,7 @@ contract OptimismMainnetContract {
         });
 
         collaterals[6] = KnownCometCollateral({
-            asset: 0x5A7fACB970D094B6C7FF1df0eA68D99E6e73CBFF,
+            asset:  0x5A7fACB970D094B6C7FF1df0eA68D99E6e73CBFF,
             supplyCap: 1600000000000000000000,
             priceFeed: 0x5A20166Ed55518520B1F68Cab1Cf127473123814,
             liquidationFactor: 9.6e17,
@@ -10367,7 +10166,7 @@ contract OptimismMainnetContract {
         });
 
         collaterals[7] = KnownCometCollateral({
-            asset: 0x87eEE96D50Fb761AD85B1c982d28A042169d61b1,
+            asset:  0x87eEE96D50Fb761AD85B1c982d28A042169d61b1,
             supplyCap: 1000000000000000000000,
             priceFeed: 0xeE7B99Dc798Eae1957713bBBEde98073098B0E68,
             liquidationFactor: 9.6e17,
@@ -10392,7 +10191,7 @@ contract OptimismMainnetContract {
 
     /// @dev All OptimismMainnet known assets
     function knownAssets() public pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](13);
+        KnownAsset[] memory assets = new KnownAsset[](12);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = USDT();
@@ -10401,17 +10200,16 @@ contract OptimismMainnetContract {
         assets[5] = COMP();
         assets[6] = WETH();
         assets[7] = wstETH();
-        assets[8] = wUSDM();
-        assets[9] = rETH();
-        assets[10] = ezETH();
-        assets[11] = weETH();
-        assets[12] = wrsETH();
+        assets[8] = rETH();
+        assets[9] = ezETH();
+        assets[10] = weETH();
+        assets[11] = wrsETH();
         return assets;
     }
 
     /// @dev All OptimismMainnet known price feeds
     function knownPriceFeeds() public pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](22);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](20);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = USDT_USD();
@@ -10420,20 +10218,18 @@ contract OptimismMainnetContract {
         priceFeeds[5] = COMP_USD();
         priceFeeds[6] = WETH_USD();
         priceFeeds[7] = wstETH_USD();
-        priceFeeds[8] = wUSDM_USD();
-        priceFeeds[9] = OP_USDT();
-        priceFeeds[10] = WETH_USDT();
-        priceFeeds[11] = WBTC_USDT();
-        priceFeeds[12] = wstETH_USDT();
-        priceFeeds[13] = wUSDM_USDT();
-        priceFeeds[14] = wstETH_WETH();
-        priceFeeds[15] = rETH_WETH();
-        priceFeeds[16] = WBTC_WETH();
-        priceFeeds[17] = USDT_WETH();
-        priceFeeds[18] = USDC_WETH();
-        priceFeeds[19] = ezETH_WETH();
-        priceFeeds[20] = weETH_WETH();
-        priceFeeds[21] = wrsETH_WETH();
+        priceFeeds[8] = OP_USDT();
+        priceFeeds[9] = WETH_USDT();
+        priceFeeds[10] = WBTC_USDT();
+        priceFeeds[11] = wstETH_USDT();
+        priceFeeds[12] = wstETH_WETH();
+        priceFeeds[13] = rETH_WETH();
+        priceFeeds[14] = WBTC_WETH();
+        priceFeeds[15] = USDT_WETH();
+        priceFeeds[16] = USDC_WETH();
+        priceFeeds[17] = ezETH_WETH();
+        priceFeeds[18] = weETH_WETH();
+        priceFeeds[19] = wrsETH_WETH();
         return priceFeeds;
     }
 
@@ -10624,7 +10420,7 @@ contract EthereumSepoliaContract {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](2);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0xb9fa8F5eC3Da13B508F462243Ad0555B46E028df,
+            asset:  0xb9fa8F5eC3Da13B508F462243Ad0555B46E028df,
             supplyCap: 9000000000000000000000,
             priceFeed: 0xBE60803049CA4Aea3B75E4238d664aEbcdDd0773,
             liquidationFactor: 9.5e17,
@@ -10633,7 +10429,7 @@ contract EthereumSepoliaContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0xB82381A3fBD3FaFA77B3a7bE693342618240067b,
+            asset:  0xB82381A3fBD3FaFA77B3a7bE693342618240067b,
             supplyCap: 80000000000000000000000,
             priceFeed: 0x722c4ba7Eb8A1b0fD360bFF6cf19E5E2AA1C3DdF,
             liquidationFactor: 9.5e17,
@@ -10657,7 +10453,7 @@ contract EthereumSepoliaContract {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](3);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0xA6c8D1c55951e8AC44a0EaA959Be5Fd21cc07531,
+            asset:  0xA6c8D1c55951e8AC44a0EaA959Be5Fd21cc07531,
             supplyCap: 500000000000000000000000,
             priceFeed: 0x619db7F74C0061E2917D1D57f834D9D24C5529dA,
             liquidationFactor: 9.2e17,
@@ -10666,7 +10462,7 @@ contract EthereumSepoliaContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0xa035b9e130F2B1AedC733eEFb1C67Ba4c503491F,
+            asset:  0xa035b9e130F2B1AedC733eEFb1C67Ba4c503491F,
             supplyCap: 3500000000000,
             priceFeed: 0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43,
             liquidationFactor: 9.3e17,
@@ -10675,7 +10471,7 @@ contract EthereumSepoliaContract {
         });
 
         collaterals[2] = KnownCometCollateral({
-            asset: 0x2D5ee574e710219a521449679A4A7f2B43f046ad,
+            asset:  0x2D5ee574e710219a521449679A4A7f2B43f046ad,
             supplyCap: 1000000000000000000000000,
             priceFeed: 0x694AA1769357215DE4FAC081bf1f309aDC325306,
             liquidationFactor: 9.3e17,
@@ -10911,7 +10707,7 @@ contract BaseSepoliaContract {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](1);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x774eD9EDB0C5202dF9A86183804b5D9E99dC6CA3,
+            asset:  0x774eD9EDB0C5202dF9A86183804b5D9E99dC6CA3,
             supplyCap: 7500000000000000000000,
             priceFeed: 0x6490397583a86566C01F467790125F1FED556299,
             liquidationFactor: 9.75e17,
@@ -10935,7 +10731,7 @@ contract BaseSepoliaContract {
         KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](2);
 
         collaterals[0] = KnownCometCollateral({
-            asset: 0x774eD9EDB0C5202dF9A86183804b5D9E99dC6CA3,
+            asset:  0x774eD9EDB0C5202dF9A86183804b5D9E99dC6CA3,
             supplyCap: 800000000000000000000,
             priceFeed: 0x3e7e00F0c81712205A5F6c90D64879663c212873,
             liquidationFactor: 9.3e17,
@@ -10944,7 +10740,7 @@ contract BaseSepoliaContract {
         });
 
         collaterals[1] = KnownCometCollateral({
-            asset: 0x4200000000000000000000000000000000000006,
+            asset:  0x4200000000000000000000000000000000000006,
             supplyCap: 1000000000000000000000,
             priceFeed: 0xBD767F0b5925034F4e37D8990FC8fF080F6f92C8,
             liquidationFactor: 9.5e17,
