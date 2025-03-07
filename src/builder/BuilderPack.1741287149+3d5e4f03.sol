@@ -499,19 +499,6 @@ library Chain {
         }
     }
 
-    /// @dev Wrapped Mountain Protocol USD
-    function wUSDM(uint256 chainId) internal pure returns (KnownAsset memory) {
-        if (chainId == 1) {
-            return EthereumMainnet.wUSDM();
-        } else if (chainId == 42161) {
-            return ArbitrumMainnet.wUSDM();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM();
-        } else {
-            revert NotFound("Asset for Wrapped Mountain Protocol USD not found on chain", chainId);
-        }
-    }
-
     /// @dev Staked FRAX
     function sFRAX(uint256 chainId) internal pure returns (KnownAsset memory) {
         if (chainId == 1) {
@@ -664,6 +651,24 @@ library Chain {
             return ArbitrumMainnet.ZRO();
         } else {
             revert NotFound("Asset for LayerZero not found on chain", chainId);
+        }
+    }
+
+    /// @dev XRP (Universal)
+    function uXRP(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.uXRP();
+        } else {
+            revert NotFound("Asset for XRP (Universal) not found on chain", chainId);
+        }
+    }
+
+    /// @dev Solana (Universal)
+    function uSOL(uint256 chainId) internal pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.uSOL();
+        } else {
+            revert NotFound("Asset for Solana (Universal) not found on chain", chainId);
         }
     }
 
@@ -1107,17 +1112,6 @@ library Chain {
         }
     }
 
-    /// @dev wUSDM_USDT price feed
-    function wUSDM_USDT(uint256 chainId) internal pure returns (KnownPriceFeed memory) {
-        if (chainId == 1) {
-            return EthereumMainnet.wUSDM_USDT();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM_USDT();
-        } else {
-            revert NotFound("PriceFeed for wUSDM_USDT not found on chain", chainId);
-        }
-    }
-
     /// @dev sFRAX_USDT price feed
     function sFRAX_USDT(uint256 chainId) internal pure returns (KnownPriceFeed memory) {
         if (chainId == 1) {
@@ -1242,17 +1236,6 @@ library Chain {
             return ArbitrumMainnet.ezETH_USD();
         } else {
             revert NotFound("PriceFeed for ezETH_USD not found on chain", chainId);
-        }
-    }
-
-    /// @dev wUSDM_USD price feed
-    function wUSDM_USD(uint256 chainId) internal pure returns (KnownPriceFeed memory) {
-        if (chainId == 42161) {
-            return ArbitrumMainnet.wUSDM_USD();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM_USD();
-        } else {
-            revert NotFound("PriceFeed for wUSDM_USD not found on chain", chainId);
         }
     }
 
@@ -1392,15 +1375,17 @@ library Chain {
         }
     }
 
-    /// @dev borrowing USDC against Wrapped Ether collateral
+    /// @dev borrowing USD Coin against Wrapped Ether collateral
     function Morpho_USDC_WETH(uint256 chainId) internal pure returns (KnownMorphoMarket memory) {
-        if (chainId == 11155111) {
+        if (chainId == 8453) {
+            return BaseMainnet.Morpho_USDC_WETH();
+        } else if (chainId == 11155111) {
             return EthereumSepolia.Morpho_USDC_WETH();
         } else if (chainId == 84532) {
             return BaseSepolia.Morpho_USDC_WETH();
         } else {
             revert NotFound(
-                "MorphoMarket for borrowing USDC against Wrapped Ether collateral not found on chain", chainId
+                "MorphoMarket for borrowing USD Coin against Wrapped Ether collateral not found on chain", chainId
             );
         }
     }
@@ -1872,16 +1857,6 @@ library EthereumMainnet {
         });
     }
 
-    /// @dev EthereumMainnet Wrapped Mountain Protocol USD
-    function wUSDM() internal pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
-        });
-    }
-
     /// @dev EthereumMainnet Staked FRAX
     function sFRAX() internal pure returns (KnownAsset memory) {
         return KnownAsset({
@@ -2224,16 +2199,6 @@ library EthereumMainnet {
         });
     }
 
-    /// @dev EthereumMainnet wUSDM_USDT price feed
-    function wUSDM_USDT() internal pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USDT",
-            decimals: 8,
-            priceFeed: 0xe3a409eD15CD53aFdEFdd191ad945cEC528A2496
-        });
-    }
-
     /// @dev EthereumMainnet sFRAX_USDT price feed
     function sFRAX_USDT() internal pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -2468,7 +2433,7 @@ library EthereumMainnet {
 
     /// @dev EthereumMainnet Compound USDT
     function Comet_cUSDTv3() internal pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](11);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](10);
 
         collaterals[0] = KnownCometCollateral({
             asset: 0xc00e94Cb662C3520282E6f5717214004A7f26888,
@@ -2543,15 +2508,6 @@ library EthereumMainnet {
         });
 
         collaterals[8] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 6500000000000000000000000,
-            priceFeed: 0xe3a409eD15CD53aFdEFdd191ad945cEC528A2496,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
-        });
-
-        collaterals[9] = KnownCometCollateral({
             asset: 0xA663B02CF0a4b149d2aD41910CB81e23e1c41c32,
             supplyCap: 30000000000000000000000000,
             priceFeed: 0x403F2083B6E220147f8a8832f0B284B4Ed5777d1,
@@ -2560,7 +2516,7 @@ library EthereumMainnet {
             liquidateCollateralFactor: 9e17
         });
 
-        collaterals[10] = KnownCometCollateral({
+        collaterals[9] = KnownCometCollateral({
             asset: 0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa,
             supplyCap: 4000000000000000000000,
             priceFeed: 0x2f7439252Da796Ab9A93f7E478E70DED43Db5B89,
@@ -2625,7 +2581,7 @@ library EthereumMainnet {
 
     /// @dev All EthereumMainnet known assets
     function knownAssets() internal pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](34);
+        KnownAsset[] memory assets = new KnownAsset[](33);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = DAI();
@@ -2657,15 +2613,14 @@ library EthereumMainnet {
         assets[28] = ezETH();
         assets[29] = rswETH();
         assets[30] = ETHx();
-        assets[31] = wUSDM();
-        assets[32] = sFRAX();
-        assets[33] = mETH();
+        assets[31] = sFRAX();
+        assets[32] = mETH();
         return assets;
     }
 
     /// @dev All EthereumMainnet known price feeds
     function knownPriceFeeds() internal pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](35);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](34);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = sUSDe_USD();
@@ -2698,9 +2653,8 @@ library EthereumMainnet {
         priceFeeds[29] = wstETH_USDT();
         priceFeeds[30] = cbBTC_USDT();
         priceFeeds[31] = tBTC_USDT();
-        priceFeeds[32] = wUSDM_USDT();
-        priceFeeds[33] = sFRAX_USDT();
-        priceFeeds[34] = mETH_USDT();
+        priceFeeds[32] = sFRAX_USDT();
+        priceFeeds[33] = mETH_USDT();
         return priceFeeds;
     }
 
@@ -2952,6 +2906,26 @@ library BaseMainnet {
             symbol: "ZRO",
             decimals: 18,
             assetAddress: 0x6985884C4392D348587B19cb9eAAf157F13271cd
+        });
+    }
+
+    /// @dev BaseMainnet XRP (Universal)
+    function uXRP() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"XRP (Universal)",
+            symbol: "uXRP",
+            decimals: 18,
+            assetAddress: 0x2615a94df961278DcbC41Fb0a54fEc5f10a693aE
+        });
+    }
+
+    /// @dev BaseMainnet Solana (Universal)
+    function uSOL() internal pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Solana (Universal)",
+            symbol: "uSOL",
+            decimals: 18,
+            assetAddress: 0x9B8Df6E244526ab5F6e6400d331DB28C8fdDdb55
         });
     }
 
@@ -3368,6 +3342,20 @@ library BaseMainnet {
         });
     }
 
+    /// @dev BaseMainnet MorphoMarket borrowing USD Coin against Wrapped Ether collateral
+    function Morpho_USDC_WETH() internal pure returns (KnownMorphoMarket memory) {
+        return KnownMorphoMarket({
+            morpho: 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb,
+            marketId: hex"8793cf302b8ffd655ab97bd1c695dbd967807e8367a65cb2f4edaf1380ba1bda",
+            loanToken: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
+            collateralToken: 0x4200000000000000000000000000000000000006,
+            oracle: 0xFEa2D58cEfCb9fcb597723c6bAE66fFE4193aFE4,
+            irm: 0x46415998764C29aB2a25CbeA6254146D50D22687,
+            lltv: 860000000000000000,
+            wad: 1000000000000000000
+        });
+    }
+
     /// @dev KnownMorphoVault constructors
 
     /// @dev BaseMainnet mwUSDC
@@ -3383,7 +3371,7 @@ library BaseMainnet {
 
     /// @dev All BaseMainnet known assets
     function knownAssets() internal pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](29);
+        KnownAsset[] memory assets = new KnownAsset[](31);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = AERO();
@@ -3405,14 +3393,16 @@ library BaseMainnet {
         assets[18] = VIRTUAL();
         assets[19] = VVV();
         assets[20] = ZRO();
-        assets[21] = COMP();
-        assets[22] = cbETH();
-        assets[23] = WETH();
-        assets[24] = wstETH();
-        assets[25] = cbBTC();
-        assets[26] = ezETH();
-        assets[27] = weETH();
-        assets[28] = wrsETH();
+        assets[21] = uXRP();
+        assets[22] = uSOL();
+        assets[23] = COMP();
+        assets[24] = cbETH();
+        assets[25] = WETH();
+        assets[26] = wstETH();
+        assets[27] = cbBTC();
+        assets[28] = ezETH();
+        assets[29] = weETH();
+        assets[30] = wrsETH();
         return assets;
     }
 
@@ -3449,9 +3439,10 @@ library BaseMainnet {
 
     /// @dev All BaseMainnet known morphoMarkets
     function knownMorphoMarkets() internal pure returns (KnownMorphoMarket[] memory) {
-        KnownMorphoMarket[] memory morphoMarkets = new KnownMorphoMarket[](2);
+        KnownMorphoMarket[] memory morphoMarkets = new KnownMorphoMarket[](3);
         morphoMarkets[0] = Morpho_USDC_cbETH();
         morphoMarkets[1] = Morpho_USDC_cbBTC();
+        morphoMarkets[2] = Morpho_USDC_WETH();
         return morphoMarkets;
     }
 
@@ -3639,16 +3630,6 @@ library ArbitrumMainnet {
         });
     }
 
-    /// @dev ArbitrumMainnet Wrapped Mountain Protocol USD
-    function wUSDM() internal pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
-        });
-    }
-
     /// @dev ArbitrumMainnet Wrapped eETH
     function weETH() internal pure returns (KnownAsset memory) {
         return KnownAsset({
@@ -3821,16 +3802,6 @@ library ArbitrumMainnet {
         });
     }
 
-    /// @dev ArbitrumMainnet wUSDM_USD price feed
-    function wUSDM_USD() internal pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USD",
-            decimals: 8,
-            priceFeed: 0x13cDFB7db5e2F58e122B2e789b59dE13645349C4
-        });
-    }
-
     /// @dev ArbitrumMainnet ARB_USDT price feed
     function ARB_USDT() internal pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -3965,7 +3936,7 @@ library ArbitrumMainnet {
 
     /// @dev ArbitrumMainnet Compound USDC
     function Comet_cUSDCv3() internal pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](7);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](6);
 
         collaterals[0] = KnownCometCollateral({
             asset: 0x912CE59144191C1204E64559FE8253a0e49E6548,
@@ -4019,15 +3990,6 @@ library ArbitrumMainnet {
             liquidationFactor: 9e17,
             borrowCollateralFactor: 8e17,
             liquidateCollateralFactor: 8.5e17
-        });
-
-        collaterals[6] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 4500000000000000000000000,
-            priceFeed: 0x13cDFB7db5e2F58e122B2e789b59dE13645349C4,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
         });
 
         return KnownComet({
@@ -4194,7 +4156,7 @@ library ArbitrumMainnet {
 
     /// @dev All ArbitrumMainnet known assets
     function knownAssets() internal pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](20);
+        KnownAsset[] memory assets = new KnownAsset[](19);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = USDT();
@@ -4211,16 +4173,15 @@ library ArbitrumMainnet {
         assets[13] = WETH();
         assets[14] = wstETH();
         assets[15] = ezETH();
-        assets[16] = wUSDM();
-        assets[17] = weETH();
-        assets[18] = rETH();
-        assets[19] = rsETH();
+        assets[16] = weETH();
+        assets[17] = rETH();
+        assets[18] = rsETH();
         return assets;
     }
 
     /// @dev All ArbitrumMainnet known price feeds
     function knownPriceFeeds() internal pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](28);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](27);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = USDT_USD();
@@ -4235,20 +4196,19 @@ library ArbitrumMainnet {
         priceFeeds[11] = WETH_USD();
         priceFeeds[12] = wstETH_USD();
         priceFeeds[13] = ezETH_USD();
-        priceFeeds[14] = wUSDM_USD();
-        priceFeeds[15] = ARB_USDT();
-        priceFeeds[16] = WETH_USDT();
-        priceFeeds[17] = wstETH_USDT();
-        priceFeeds[18] = WBTC_USDT();
-        priceFeeds[19] = GMX_USDT();
-        priceFeeds[20] = weETH_WETH();
-        priceFeeds[21] = rETH_WETH();
-        priceFeeds[22] = wstETH_WETH();
-        priceFeeds[23] = WBTC_WETH();
-        priceFeeds[24] = rsETH_WETH();
-        priceFeeds[25] = USDT_WETH();
-        priceFeeds[26] = USDC_WETH();
-        priceFeeds[27] = ezETH_WETH();
+        priceFeeds[14] = ARB_USDT();
+        priceFeeds[15] = WETH_USDT();
+        priceFeeds[16] = wstETH_USDT();
+        priceFeeds[17] = WBTC_USDT();
+        priceFeeds[18] = GMX_USDT();
+        priceFeeds[19] = weETH_WETH();
+        priceFeeds[20] = rETH_WETH();
+        priceFeeds[21] = wstETH_WETH();
+        priceFeeds[22] = WBTC_WETH();
+        priceFeeds[23] = rsETH_WETH();
+        priceFeeds[24] = USDT_WETH();
+        priceFeeds[25] = USDC_WETH();
+        priceFeeds[26] = ezETH_WETH();
         return priceFeeds;
     }
 
@@ -4367,16 +4327,6 @@ library OptimismMainnet {
             symbol: "wstETH",
             decimals: 18,
             assetAddress: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb
-        });
-    }
-
-    /// @dev OptimismMainnet Wrapped Mountain Protocol USD
-    function wUSDM() internal pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
         });
     }
 
@@ -4502,16 +4452,6 @@ library OptimismMainnet {
         });
     }
 
-    /// @dev OptimismMainnet wUSDM_USD price feed
-    function wUSDM_USD() internal pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USD",
-            decimals: 8,
-            priceFeed: 0x7E86318Cc4bc539043F204B39Ce0ebeD9F0050Dc
-        });
-    }
-
     /// @dev OptimismMainnet OP_USDT price feed
     function OP_USDT() internal pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -4549,16 +4489,6 @@ library OptimismMainnet {
             symbolOut: "USDT",
             decimals: 8,
             priceFeed: 0x6846Fc014a72198Ee287350ddB6b0180586594E5
-        });
-    }
-
-    /// @dev OptimismMainnet wUSDM_USDT price feed
-    function wUSDM_USDT() internal pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USDT",
-            decimals: 8,
-            priceFeed: 0x66228d797eb83ecf3465297751f6b1D4d42b7627
         });
     }
 
@@ -4646,7 +4576,7 @@ library OptimismMainnet {
 
     /// @dev OptimismMainnet Compound USDC
     function Comet_cUSDCv3() internal pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](5);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](4);
 
         collaterals[0] = KnownCometCollateral({
             asset: 0x4200000000000000000000000000000000000042,
@@ -4684,15 +4614,6 @@ library OptimismMainnet {
             liquidateCollateralFactor: 8.5e17
         });
 
-        collaterals[4] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 1400000000000000000000000,
-            priceFeed: 0x7E86318Cc4bc539043F204B39Ce0ebeD9F0050Dc,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
-        });
-
         return KnownComet({
             name: "Compound USDC",
             symbol: "cUSDCv3",
@@ -4706,7 +4627,7 @@ library OptimismMainnet {
 
     /// @dev OptimismMainnet Compound USDT
     function Comet_cUSDTv3() internal pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](5);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](4);
 
         collaterals[0] = KnownCometCollateral({
             asset: 0x4200000000000000000000000000000000000042,
@@ -4742,15 +4663,6 @@ library OptimismMainnet {
             liquidationFactor: 9e17,
             borrowCollateralFactor: 8e17,
             liquidateCollateralFactor: 8.5e17
-        });
-
-        collaterals[4] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 1400000000000000000000000,
-            priceFeed: 0x66228d797eb83ecf3465297751f6b1D4d42b7627,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
         });
 
         return KnownComet({
@@ -4857,7 +4769,7 @@ library OptimismMainnet {
 
     /// @dev All OptimismMainnet known assets
     function knownAssets() internal pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](13);
+        KnownAsset[] memory assets = new KnownAsset[](12);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = USDT();
@@ -4866,17 +4778,16 @@ library OptimismMainnet {
         assets[5] = COMP();
         assets[6] = WETH();
         assets[7] = wstETH();
-        assets[8] = wUSDM();
-        assets[9] = rETH();
-        assets[10] = ezETH();
-        assets[11] = weETH();
-        assets[12] = wrsETH();
+        assets[8] = rETH();
+        assets[9] = ezETH();
+        assets[10] = weETH();
+        assets[11] = wrsETH();
         return assets;
     }
 
     /// @dev All OptimismMainnet known price feeds
     function knownPriceFeeds() internal pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](22);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](20);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = USDT_USD();
@@ -4885,20 +4796,18 @@ library OptimismMainnet {
         priceFeeds[5] = COMP_USD();
         priceFeeds[6] = WETH_USD();
         priceFeeds[7] = wstETH_USD();
-        priceFeeds[8] = wUSDM_USD();
-        priceFeeds[9] = OP_USDT();
-        priceFeeds[10] = WETH_USDT();
-        priceFeeds[11] = WBTC_USDT();
-        priceFeeds[12] = wstETH_USDT();
-        priceFeeds[13] = wUSDM_USDT();
-        priceFeeds[14] = wstETH_WETH();
-        priceFeeds[15] = rETH_WETH();
-        priceFeeds[16] = WBTC_WETH();
-        priceFeeds[17] = USDT_WETH();
-        priceFeeds[18] = USDC_WETH();
-        priceFeeds[19] = ezETH_WETH();
-        priceFeeds[20] = weETH_WETH();
-        priceFeeds[21] = wrsETH_WETH();
+        priceFeeds[8] = OP_USDT();
+        priceFeeds[9] = WETH_USDT();
+        priceFeeds[10] = WBTC_USDT();
+        priceFeeds[11] = wstETH_USDT();
+        priceFeeds[12] = wstETH_WETH();
+        priceFeeds[13] = rETH_WETH();
+        priceFeeds[14] = WBTC_WETH();
+        priceFeeds[15] = USDT_WETH();
+        priceFeeds[16] = USDC_WETH();
+        priceFeeds[17] = ezETH_WETH();
+        priceFeeds[18] = weETH_WETH();
+        priceFeeds[19] = wrsETH_WETH();
         return priceFeeds;
     }
 
@@ -6034,19 +5943,6 @@ contract ChainContract {
         }
     }
 
-    /// @dev Wrapped Mountain Protocol USD
-    function wUSDM(uint256 chainId) public pure returns (KnownAsset memory) {
-        if (chainId == 1) {
-            return EthereumMainnet.wUSDM();
-        } else if (chainId == 42161) {
-            return ArbitrumMainnet.wUSDM();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM();
-        } else {
-            revert NotFound("Asset for Wrapped Mountain Protocol USD not found on chain", chainId);
-        }
-    }
-
     /// @dev Staked FRAX
     function sFRAX(uint256 chainId) public pure returns (KnownAsset memory) {
         if (chainId == 1) {
@@ -6199,6 +6095,24 @@ contract ChainContract {
             return ArbitrumMainnet.ZRO();
         } else {
             revert NotFound("Asset for LayerZero not found on chain", chainId);
+        }
+    }
+
+    /// @dev XRP (Universal)
+    function uXRP(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.uXRP();
+        } else {
+            revert NotFound("Asset for XRP (Universal) not found on chain", chainId);
+        }
+    }
+
+    /// @dev Solana (Universal)
+    function uSOL(uint256 chainId) public pure returns (KnownAsset memory) {
+        if (chainId == 8453) {
+            return BaseMainnet.uSOL();
+        } else {
+            revert NotFound("Asset for Solana (Universal) not found on chain", chainId);
         }
     }
 
@@ -6642,17 +6556,6 @@ contract ChainContract {
         }
     }
 
-    /// @dev wUSDM_USDT price feed
-    function wUSDM_USDT(uint256 chainId) public pure returns (KnownPriceFeed memory) {
-        if (chainId == 1) {
-            return EthereumMainnet.wUSDM_USDT();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM_USDT();
-        } else {
-            revert NotFound("PriceFeed for wUSDM_USDT not found on chain", chainId);
-        }
-    }
-
     /// @dev sFRAX_USDT price feed
     function sFRAX_USDT(uint256 chainId) public pure returns (KnownPriceFeed memory) {
         if (chainId == 1) {
@@ -6777,17 +6680,6 @@ contract ChainContract {
             return ArbitrumMainnet.ezETH_USD();
         } else {
             revert NotFound("PriceFeed for ezETH_USD not found on chain", chainId);
-        }
-    }
-
-    /// @dev wUSDM_USD price feed
-    function wUSDM_USD(uint256 chainId) public pure returns (KnownPriceFeed memory) {
-        if (chainId == 42161) {
-            return ArbitrumMainnet.wUSDM_USD();
-        } else if (chainId == 10) {
-            return OptimismMainnet.wUSDM_USD();
-        } else {
-            revert NotFound("PriceFeed for wUSDM_USD not found on chain", chainId);
         }
     }
 
@@ -6927,15 +6819,17 @@ contract ChainContract {
         }
     }
 
-    /// @dev borrowing USDC against Wrapped Ether collateral
+    /// @dev borrowing USD Coin against Wrapped Ether collateral
     function Morpho_USDC_WETH(uint256 chainId) public pure returns (KnownMorphoMarket memory) {
-        if (chainId == 11155111) {
+        if (chainId == 8453) {
+            return BaseMainnet.Morpho_USDC_WETH();
+        } else if (chainId == 11155111) {
             return EthereumSepolia.Morpho_USDC_WETH();
         } else if (chainId == 84532) {
             return BaseSepolia.Morpho_USDC_WETH();
         } else {
             revert NotFound(
-                "MorphoMarket for borrowing USDC against Wrapped Ether collateral not found on chain", chainId
+                "MorphoMarket for borrowing USD Coin against Wrapped Ether collateral not found on chain", chainId
             );
         }
     }
@@ -7407,16 +7301,6 @@ contract EthereumMainnetContract {
         });
     }
 
-    /// @dev EthereumMainnet Wrapped Mountain Protocol USD
-    function wUSDM() public pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
-        });
-    }
-
     /// @dev EthereumMainnet Staked FRAX
     function sFRAX() public pure returns (KnownAsset memory) {
         return KnownAsset({
@@ -7759,16 +7643,6 @@ contract EthereumMainnetContract {
         });
     }
 
-    /// @dev EthereumMainnet wUSDM_USDT price feed
-    function wUSDM_USDT() public pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USDT",
-            decimals: 8,
-            priceFeed: 0xe3a409eD15CD53aFdEFdd191ad945cEC528A2496
-        });
-    }
-
     /// @dev EthereumMainnet sFRAX_USDT price feed
     function sFRAX_USDT() public pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -8003,7 +7877,7 @@ contract EthereumMainnetContract {
 
     /// @dev EthereumMainnet Compound USDT
     function Comet_cUSDTv3() public pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](11);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](10);
 
         collaterals[0] = KnownCometCollateral({
             asset: 0xc00e94Cb662C3520282E6f5717214004A7f26888,
@@ -8078,15 +7952,6 @@ contract EthereumMainnetContract {
         });
 
         collaterals[8] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 6500000000000000000000000,
-            priceFeed: 0xe3a409eD15CD53aFdEFdd191ad945cEC528A2496,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
-        });
-
-        collaterals[9] = KnownCometCollateral({
             asset: 0xA663B02CF0a4b149d2aD41910CB81e23e1c41c32,
             supplyCap: 30000000000000000000000000,
             priceFeed: 0x403F2083B6E220147f8a8832f0B284B4Ed5777d1,
@@ -8095,7 +7960,7 @@ contract EthereumMainnetContract {
             liquidateCollateralFactor: 9e17
         });
 
-        collaterals[10] = KnownCometCollateral({
+        collaterals[9] = KnownCometCollateral({
             asset: 0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa,
             supplyCap: 4000000000000000000000,
             priceFeed: 0x2f7439252Da796Ab9A93f7E478E70DED43Db5B89,
@@ -8160,7 +8025,7 @@ contract EthereumMainnetContract {
 
     /// @dev All EthereumMainnet known assets
     function knownAssets() public pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](34);
+        KnownAsset[] memory assets = new KnownAsset[](33);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = DAI();
@@ -8192,15 +8057,14 @@ contract EthereumMainnetContract {
         assets[28] = ezETH();
         assets[29] = rswETH();
         assets[30] = ETHx();
-        assets[31] = wUSDM();
-        assets[32] = sFRAX();
-        assets[33] = mETH();
+        assets[31] = sFRAX();
+        assets[32] = mETH();
         return assets;
     }
 
     /// @dev All EthereumMainnet known price feeds
     function knownPriceFeeds() public pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](35);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](34);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = sUSDe_USD();
@@ -8233,9 +8097,8 @@ contract EthereumMainnetContract {
         priceFeeds[29] = wstETH_USDT();
         priceFeeds[30] = cbBTC_USDT();
         priceFeeds[31] = tBTC_USDT();
-        priceFeeds[32] = wUSDM_USDT();
-        priceFeeds[33] = sFRAX_USDT();
-        priceFeeds[34] = mETH_USDT();
+        priceFeeds[32] = sFRAX_USDT();
+        priceFeeds[33] = mETH_USDT();
         return priceFeeds;
     }
 
@@ -8487,6 +8350,26 @@ contract BaseMainnetContract {
             symbol: "ZRO",
             decimals: 18,
             assetAddress: 0x6985884C4392D348587B19cb9eAAf157F13271cd
+        });
+    }
+
+    /// @dev BaseMainnet XRP (Universal)
+    function uXRP() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"XRP (Universal)",
+            symbol: "uXRP",
+            decimals: 18,
+            assetAddress: 0x2615a94df961278DcbC41Fb0a54fEc5f10a693aE
+        });
+    }
+
+    /// @dev BaseMainnet Solana (Universal)
+    function uSOL() public pure returns (KnownAsset memory) {
+        return KnownAsset({
+            name: unicode"Solana (Universal)",
+            symbol: "uSOL",
+            decimals: 18,
+            assetAddress: 0x9B8Df6E244526ab5F6e6400d331DB28C8fdDdb55
         });
     }
 
@@ -8903,6 +8786,20 @@ contract BaseMainnetContract {
         });
     }
 
+    /// @dev BaseMainnet MorphoMarket borrowing USD Coin against Wrapped Ether collateral
+    function Morpho_USDC_WETH() public pure returns (KnownMorphoMarket memory) {
+        return KnownMorphoMarket({
+            morpho: 0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb,
+            marketId: hex"8793cf302b8ffd655ab97bd1c695dbd967807e8367a65cb2f4edaf1380ba1bda",
+            loanToken: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913,
+            collateralToken: 0x4200000000000000000000000000000000000006,
+            oracle: 0xFEa2D58cEfCb9fcb597723c6bAE66fFE4193aFE4,
+            irm: 0x46415998764C29aB2a25CbeA6254146D50D22687,
+            lltv: 860000000000000000,
+            wad: 1000000000000000000
+        });
+    }
+
     /// @dev KnownMorphoVault constructors
 
     /// @dev BaseMainnet mwUSDC
@@ -8918,7 +8815,7 @@ contract BaseMainnetContract {
 
     /// @dev All BaseMainnet known assets
     function knownAssets() public pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](29);
+        KnownAsset[] memory assets = new KnownAsset[](31);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = AERO();
@@ -8940,14 +8837,16 @@ contract BaseMainnetContract {
         assets[18] = VIRTUAL();
         assets[19] = VVV();
         assets[20] = ZRO();
-        assets[21] = COMP();
-        assets[22] = cbETH();
-        assets[23] = WETH();
-        assets[24] = wstETH();
-        assets[25] = cbBTC();
-        assets[26] = ezETH();
-        assets[27] = weETH();
-        assets[28] = wrsETH();
+        assets[21] = uXRP();
+        assets[22] = uSOL();
+        assets[23] = COMP();
+        assets[24] = cbETH();
+        assets[25] = WETH();
+        assets[26] = wstETH();
+        assets[27] = cbBTC();
+        assets[28] = ezETH();
+        assets[29] = weETH();
+        assets[30] = wrsETH();
         return assets;
     }
 
@@ -8984,9 +8883,10 @@ contract BaseMainnetContract {
 
     /// @dev All BaseMainnet known morphoMarkets
     function knownMorphoMarkets() public pure returns (KnownMorphoMarket[] memory) {
-        KnownMorphoMarket[] memory morphoMarkets = new KnownMorphoMarket[](2);
+        KnownMorphoMarket[] memory morphoMarkets = new KnownMorphoMarket[](3);
         morphoMarkets[0] = Morpho_USDC_cbETH();
         morphoMarkets[1] = Morpho_USDC_cbBTC();
+        morphoMarkets[2] = Morpho_USDC_WETH();
         return morphoMarkets;
     }
 
@@ -9174,16 +9074,6 @@ contract ArbitrumMainnetContract {
         });
     }
 
-    /// @dev ArbitrumMainnet Wrapped Mountain Protocol USD
-    function wUSDM() public pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
-        });
-    }
-
     /// @dev ArbitrumMainnet Wrapped eETH
     function weETH() public pure returns (KnownAsset memory) {
         return KnownAsset({
@@ -9356,16 +9246,6 @@ contract ArbitrumMainnetContract {
         });
     }
 
-    /// @dev ArbitrumMainnet wUSDM_USD price feed
-    function wUSDM_USD() public pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USD",
-            decimals: 8,
-            priceFeed: 0x13cDFB7db5e2F58e122B2e789b59dE13645349C4
-        });
-    }
-
     /// @dev ArbitrumMainnet ARB_USDT price feed
     function ARB_USDT() public pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -9500,7 +9380,7 @@ contract ArbitrumMainnetContract {
 
     /// @dev ArbitrumMainnet Compound USDC
     function Comet_cUSDCv3() public pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](7);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](6);
 
         collaterals[0] = KnownCometCollateral({
             asset: 0x912CE59144191C1204E64559FE8253a0e49E6548,
@@ -9554,15 +9434,6 @@ contract ArbitrumMainnetContract {
             liquidationFactor: 9e17,
             borrowCollateralFactor: 8e17,
             liquidateCollateralFactor: 8.5e17
-        });
-
-        collaterals[6] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 4500000000000000000000000,
-            priceFeed: 0x13cDFB7db5e2F58e122B2e789b59dE13645349C4,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
         });
 
         return KnownComet({
@@ -9729,7 +9600,7 @@ contract ArbitrumMainnetContract {
 
     /// @dev All ArbitrumMainnet known assets
     function knownAssets() public pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](20);
+        KnownAsset[] memory assets = new KnownAsset[](19);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = USDT();
@@ -9746,16 +9617,15 @@ contract ArbitrumMainnetContract {
         assets[13] = WETH();
         assets[14] = wstETH();
         assets[15] = ezETH();
-        assets[16] = wUSDM();
-        assets[17] = weETH();
-        assets[18] = rETH();
-        assets[19] = rsETH();
+        assets[16] = weETH();
+        assets[17] = rETH();
+        assets[18] = rsETH();
         return assets;
     }
 
     /// @dev All ArbitrumMainnet known price feeds
     function knownPriceFeeds() public pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](28);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](27);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = USDT_USD();
@@ -9770,20 +9640,19 @@ contract ArbitrumMainnetContract {
         priceFeeds[11] = WETH_USD();
         priceFeeds[12] = wstETH_USD();
         priceFeeds[13] = ezETH_USD();
-        priceFeeds[14] = wUSDM_USD();
-        priceFeeds[15] = ARB_USDT();
-        priceFeeds[16] = WETH_USDT();
-        priceFeeds[17] = wstETH_USDT();
-        priceFeeds[18] = WBTC_USDT();
-        priceFeeds[19] = GMX_USDT();
-        priceFeeds[20] = weETH_WETH();
-        priceFeeds[21] = rETH_WETH();
-        priceFeeds[22] = wstETH_WETH();
-        priceFeeds[23] = WBTC_WETH();
-        priceFeeds[24] = rsETH_WETH();
-        priceFeeds[25] = USDT_WETH();
-        priceFeeds[26] = USDC_WETH();
-        priceFeeds[27] = ezETH_WETH();
+        priceFeeds[14] = ARB_USDT();
+        priceFeeds[15] = WETH_USDT();
+        priceFeeds[16] = wstETH_USDT();
+        priceFeeds[17] = WBTC_USDT();
+        priceFeeds[18] = GMX_USDT();
+        priceFeeds[19] = weETH_WETH();
+        priceFeeds[20] = rETH_WETH();
+        priceFeeds[21] = wstETH_WETH();
+        priceFeeds[22] = WBTC_WETH();
+        priceFeeds[23] = rsETH_WETH();
+        priceFeeds[24] = USDT_WETH();
+        priceFeeds[25] = USDC_WETH();
+        priceFeeds[26] = ezETH_WETH();
         return priceFeeds;
     }
 
@@ -9902,16 +9771,6 @@ contract OptimismMainnetContract {
             symbol: "wstETH",
             decimals: 18,
             assetAddress: 0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb
-        });
-    }
-
-    /// @dev OptimismMainnet Wrapped Mountain Protocol USD
-    function wUSDM() public pure returns (KnownAsset memory) {
-        return KnownAsset({
-            name: unicode"Wrapped Mountain Protocol USD",
-            symbol: "wUSDM",
-            decimals: 18,
-            assetAddress: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812
         });
     }
 
@@ -10037,16 +9896,6 @@ contract OptimismMainnetContract {
         });
     }
 
-    /// @dev OptimismMainnet wUSDM_USD price feed
-    function wUSDM_USD() public pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USD",
-            decimals: 8,
-            priceFeed: 0x7E86318Cc4bc539043F204B39Ce0ebeD9F0050Dc
-        });
-    }
-
     /// @dev OptimismMainnet OP_USDT price feed
     function OP_USDT() public pure returns (KnownPriceFeed memory) {
         return KnownPriceFeed({
@@ -10084,16 +9933,6 @@ contract OptimismMainnetContract {
             symbolOut: "USDT",
             decimals: 8,
             priceFeed: 0x6846Fc014a72198Ee287350ddB6b0180586594E5
-        });
-    }
-
-    /// @dev OptimismMainnet wUSDM_USDT price feed
-    function wUSDM_USDT() public pure returns (KnownPriceFeed memory) {
-        return KnownPriceFeed({
-            symbolIn: "wUSDM",
-            symbolOut: "USDT",
-            decimals: 8,
-            priceFeed: 0x66228d797eb83ecf3465297751f6b1D4d42b7627
         });
     }
 
@@ -10181,7 +10020,7 @@ contract OptimismMainnetContract {
 
     /// @dev OptimismMainnet Compound USDC
     function Comet_cUSDCv3() public pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](5);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](4);
 
         collaterals[0] = KnownCometCollateral({
             asset: 0x4200000000000000000000000000000000000042,
@@ -10219,15 +10058,6 @@ contract OptimismMainnetContract {
             liquidateCollateralFactor: 8.5e17
         });
 
-        collaterals[4] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 1400000000000000000000000,
-            priceFeed: 0x7E86318Cc4bc539043F204B39Ce0ebeD9F0050Dc,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
-        });
-
         return KnownComet({
             name: "Compound USDC",
             symbol: "cUSDCv3",
@@ -10241,7 +10071,7 @@ contract OptimismMainnetContract {
 
     /// @dev OptimismMainnet Compound USDT
     function Comet_cUSDTv3() public pure returns (KnownComet memory) {
-        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](5);
+        KnownCometCollateral[] memory collaterals = new KnownCometCollateral[](4);
 
         collaterals[0] = KnownCometCollateral({
             asset: 0x4200000000000000000000000000000000000042,
@@ -10277,15 +10107,6 @@ contract OptimismMainnetContract {
             liquidationFactor: 9e17,
             borrowCollateralFactor: 8e17,
             liquidateCollateralFactor: 8.5e17
-        });
-
-        collaterals[4] = KnownCometCollateral({
-            asset: 0x57F5E098CaD7A3D1Eed53991D4d66C45C9AF7812,
-            supplyCap: 1400000000000000000000000,
-            priceFeed: 0x66228d797eb83ecf3465297751f6b1D4d42b7627,
-            liquidationFactor: 9.5e17,
-            borrowCollateralFactor: 8.8e17,
-            liquidateCollateralFactor: 9e17
         });
 
         return KnownComet({
@@ -10392,7 +10213,7 @@ contract OptimismMainnetContract {
 
     /// @dev All OptimismMainnet known assets
     function knownAssets() public pure returns (KnownAsset[] memory) {
-        KnownAsset[] memory assets = new KnownAsset[](13);
+        KnownAsset[] memory assets = new KnownAsset[](12);
         assets[0] = ETH();
         assets[1] = USDC();
         assets[2] = USDT();
@@ -10401,17 +10222,16 @@ contract OptimismMainnetContract {
         assets[5] = COMP();
         assets[6] = WETH();
         assets[7] = wstETH();
-        assets[8] = wUSDM();
-        assets[9] = rETH();
-        assets[10] = ezETH();
-        assets[11] = weETH();
-        assets[12] = wrsETH();
+        assets[8] = rETH();
+        assets[9] = ezETH();
+        assets[10] = weETH();
+        assets[11] = wrsETH();
         return assets;
     }
 
     /// @dev All OptimismMainnet known price feeds
     function knownPriceFeeds() public pure returns (KnownPriceFeed[] memory) {
-        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](22);
+        KnownPriceFeed[] memory priceFeeds = new KnownPriceFeed[](20);
         priceFeeds[0] = ETH_USD();
         priceFeeds[1] = USDC_USD();
         priceFeeds[2] = USDT_USD();
@@ -10420,20 +10240,18 @@ contract OptimismMainnetContract {
         priceFeeds[5] = COMP_USD();
         priceFeeds[6] = WETH_USD();
         priceFeeds[7] = wstETH_USD();
-        priceFeeds[8] = wUSDM_USD();
-        priceFeeds[9] = OP_USDT();
-        priceFeeds[10] = WETH_USDT();
-        priceFeeds[11] = WBTC_USDT();
-        priceFeeds[12] = wstETH_USDT();
-        priceFeeds[13] = wUSDM_USDT();
-        priceFeeds[14] = wstETH_WETH();
-        priceFeeds[15] = rETH_WETH();
-        priceFeeds[16] = WBTC_WETH();
-        priceFeeds[17] = USDT_WETH();
-        priceFeeds[18] = USDC_WETH();
-        priceFeeds[19] = ezETH_WETH();
-        priceFeeds[20] = weETH_WETH();
-        priceFeeds[21] = wrsETH_WETH();
+        priceFeeds[8] = OP_USDT();
+        priceFeeds[9] = WETH_USDT();
+        priceFeeds[10] = WBTC_USDT();
+        priceFeeds[11] = wstETH_USDT();
+        priceFeeds[12] = wstETH_WETH();
+        priceFeeds[13] = rETH_WETH();
+        priceFeeds[14] = WBTC_WETH();
+        priceFeeds[15] = USDT_WETH();
+        priceFeeds[16] = USDC_WETH();
+        priceFeeds[17] = ezETH_WETH();
+        priceFeeds[18] = weETH_WETH();
+        priceFeeds[19] = wrsETH_WETH();
         return priceFeeds;
     }
 
