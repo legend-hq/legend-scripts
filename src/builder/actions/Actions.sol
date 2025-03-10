@@ -2050,6 +2050,11 @@ library Actions {
         return mw[0];
     }
 
+    function emptyWrapOrUnwrapActionContext() external pure returns (WrapOrUnwrapActionContext memory) {
+        WrapOrUnwrapActionContext[] memory ww = new WrapOrUnwrapActionContext[](1);
+        return ww[0];
+    }
+
     function emptyQuotePayActionContext() external pure returns (QuotePayActionContext memory) {
         QuotePayActionContext[] memory qp = new QuotePayActionContext[](1);
         return qp[0];
