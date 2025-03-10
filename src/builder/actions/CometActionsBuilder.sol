@@ -40,16 +40,16 @@ contract CometActionsBuilder is QuarkBuilderBase {
             repayAmount = intent.amount;
         }
 
-        uint256[] memory amountOuts = new uint256[](1);
-        amountOuts[0] = repayAmount;
-        string[] memory assetSymbolOuts = new string[](1);
-        assetSymbolOuts[0] = intent.assetSymbol;
+        uint256[] memory amountsNeeded = new uint256[](1);
+        amountsNeeded[0] = repayAmount;
+        string[] memory assetSymbolsNeeded = new string[](1);
+        assetSymbolsNeeded[0] = intent.assetSymbol;
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.repayer,
-                amountOuts: amountOuts,
-                assetSymbolOuts: assetSymbolOuts,
+                amountsNeeded: amountsNeeded,
+                assetSymbolsNeeded: assetSymbolsNeeded,
                 actionType: Actions.ACTION_TYPE_REPAY,
                 intent: abi.encode(intent),
                 blockTimestamp: intent.blockTimestamp,
@@ -85,8 +85,8 @@ contract CometActionsBuilder is QuarkBuilderBase {
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.borrower,
-                amountOuts: intent.collateralAmounts,
-                assetSymbolOuts: intent.collateralAssetSymbols,
+                amountsNeeded: intent.collateralAmounts,
+                assetSymbolsNeeded: intent.collateralAssetSymbols,
                 actionType: Actions.ACTION_TYPE_BORROW,
                 intent: abi.encode(intent),
                 blockTimestamp: intent.blockTimestamp,
@@ -114,17 +114,17 @@ contract CometActionsBuilder is QuarkBuilderBase {
         PaymentInfo.Payment memory payment =
             Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        uint256[] memory amountOuts = new uint256[](1);
-        amountOuts[0] = intent.amount;
-        string[] memory assetSymbolOuts = new string[](1);
-        assetSymbolOuts[0] = intent.assetSymbol;
+        uint256[] memory amountsNeeded = new uint256[](1);
+        amountsNeeded[0] = intent.amount;
+        string[] memory assetSymbolsNeeded = new string[](1);
+        assetSymbolsNeeded[0] = intent.assetSymbol;
 
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.sender,
-                amountOuts: amountOuts,
-                assetSymbolOuts: assetSymbolOuts,
+                amountsNeeded: amountsNeeded,
+                assetSymbolsNeeded: assetSymbolsNeeded,
                 actionType: Actions.ACTION_TYPE_COMET_SUPPLY,
                 intent: abi.encode(intent),
                 blockTimestamp: intent.blockTimestamp,
@@ -153,15 +153,15 @@ contract CometActionsBuilder is QuarkBuilderBase {
         PaymentInfo.Payment memory payment =
             Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        uint256[] memory amountOuts = new uint256[](0);
-        string[] memory assetSymbolOuts = new string[](0);
+        uint256[] memory amountsNeeded = new uint256[](0);
+        string[] memory assetSymbolsNeeded = new string[](0);
 
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.withdrawer,
-                amountOuts: amountOuts,
-                assetSymbolOuts: assetSymbolOuts,
+                amountsNeeded: amountsNeeded,
+                assetSymbolsNeeded: assetSymbolsNeeded,
                 actionType: Actions.ACTION_TYPE_COMET_WITHDRAW,
                 intent: abi.encode(intent),
                 blockTimestamp: intent.blockTimestamp,
@@ -189,8 +189,8 @@ contract CometActionsBuilder is QuarkBuilderBase {
         PaymentInfo.Payment memory payment =
             Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        uint256[] memory amountOuts = new uint256[](0);
-        string[] memory assetSymbolOuts = new string[](0);
+        uint256[] memory amountsNeeded = new uint256[](0);
+        string[] memory assetSymbolsNeeded = new string[](0);
 
         // TODO: If we take in a list of chain ids, we can iterate over them, and then call constructOperationsAndActions on each chain.
         //       Though to do that, we need to separate out the quote/paycall constructing logic from the action constructing logic
@@ -198,8 +198,8 @@ contract CometActionsBuilder is QuarkBuilderBase {
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.claimer,
-                amountOuts: amountOuts,
-                assetSymbolOuts: assetSymbolOuts,
+                amountsNeeded: amountsNeeded,
+                assetSymbolsNeeded: assetSymbolsNeeded,
                 actionType: Actions.ACTION_TYPE_COMET_CLAIM_REWARDS,
                 intent: abi.encode(intent),
                 blockTimestamp: intent.blockTimestamp,

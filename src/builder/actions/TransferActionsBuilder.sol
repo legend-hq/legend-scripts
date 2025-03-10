@@ -28,17 +28,17 @@ contract TransferActionsBuilder is QuarkBuilderBase {
         PaymentInfo.Payment memory payment =
             Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        uint256[] memory amountOuts = new uint256[](1);
-        amountOuts[0] = intent.amount;
-        string[] memory assetSymbolOuts = new string[](1);
-        assetSymbolOuts[0] = intent.assetSymbol;
+        uint256[] memory amountsNeeded = new uint256[](1);
+        amountsNeeded[0] = intent.amount;
+        string[] memory assetSymbolsNeeded = new string[](1);
+        assetSymbolsNeeded[0] = intent.assetSymbol;
 
         (IQuarkWallet.QuarkOperation[] memory quarkOperationsArray, Actions.Action[] memory actionsArray) =
         constructOperationsAndActions({
             actionIntent: ActionIntent({
                 actor: intent.sender,
-                amountOuts: amountOuts,
-                assetSymbolOuts: assetSymbolOuts,
+                amountsNeeded: amountsNeeded,
+                assetSymbolsNeeded: assetSymbolsNeeded,
                 actionType: Actions.ACTION_TYPE_TRANSFER,
                 intent: abi.encode(intent),
                 blockTimestamp: intent.blockTimestamp,
