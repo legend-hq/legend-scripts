@@ -258,8 +258,8 @@ contract QuarkBuilderBase {
     /**
      * @dev Intent for an action to be executed by the Quark Wallet
      * @param actor The address of the actor who is initiating the action
-     * @param amountOuts The amounts of assets to be transferred out from actor's account
-     * @param assetSymbolOuts The symbols of the assets to be transferred out from actor's account
+     * @param amountsNeeded The amounts of assets required from the actor to execute the intent
+     * @param assetSymbolsNeeded The symbols of the assets required from the actor to execute the intent
      * @param actionType The action type string of the intent
      * @param intent The encoded intent data
      * @param blockTimestamp The block timestamp at which the action is initiated
@@ -268,8 +268,8 @@ contract QuarkBuilderBase {
      */
     struct ActionIntent {
         address actor;
-        uint256[] amountOuts;
-        string[] assetSymbolOuts;
+        uint256[] amountsNeeded;
+        string[] assetSymbolsNeeded;
         string actionType;
         bytes intent;
         uint256 blockTimestamp;
@@ -277,6 +277,7 @@ contract QuarkBuilderBase {
         bool preferAcross;
     }
 
+    // TODO: We don't currently handle transferring assets between accounts to fund actions. We only do that in the bridging flow
     function constructOperationsAndActions(
         ActionIntent memory actionIntent,
         Accounts.ChainAccounts[] memory chainAccountsList,
@@ -341,7 +342,7 @@ contract QuarkBuilderBase {
     {
         // Sanity check on ActionIntent
         if (
-            actionIntent.amountOuts.length != actionIntent.assetSymbolOuts.length
+            actionIntent.amountsNeeded.length != actionIntent.assetSymbolsNeeded.length
                 || existingQuarkOperations.length != existingActions.length
         ) {
             revert InvalidInput();
@@ -354,13 +355,13 @@ contract QuarkBuilderBase {
         HashMap.Map memory amountsOnDst = HashMap.newMap();
         HashMap.Map memory bridgeFees = HashMap.newMap();
 
-        for (uint256 i = 0; i < actionIntent.assetSymbolOuts.length; ++i) {
-            string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
+        for (uint256 i = 0; i < actionIntent.assetSymbolsNeeded.length; ++i) {
+            string memory assetSymbolOut = actionIntent.assetSymbolsNeeded[i];
 
-            bool isMaxBridge = actionIntent.amountOuts[i] == type(uint256).max;
+            bool isMaxBridge = actionIntent.amountsNeeded[i] == type(uint256).max;
             uint256 aggregateAssetBalance =
                 getAggregateAssetBalance(actionIntent.chainId, assetSymbolOut, chainAccountsList);
-            uint256 amountNeededOnDst = isMaxBridge ? aggregateAssetBalance : actionIntent.amountOuts[i];
+            uint256 amountNeededOnDst = isMaxBridge ? aggregateAssetBalance : actionIntent.amountsNeeded[i];
 
             // Assert that there are enough of the intent token to complete the action
             if (aggregateAssetBalance < amountNeededOnDst) {
@@ -428,8 +429,8 @@ contract QuarkBuilderBase {
             }
         }
 
-        for (uint256 i = 0; i < actionIntent.assetSymbolOuts.length; ++i) {
-            string memory assetSymbolOut = actionIntent.assetSymbolOuts[i];
+        for (uint256 i = 0; i < actionIntent.assetSymbolsNeeded.length; ++i) {
+            string memory assetSymbolOut = actionIntent.assetSymbolsNeeded[i];
             uint256 amountOnDst = HashMap.getOrDefaultUint256(amountsOnDst, abi.encode(assetSymbolOut), 0);
 
             (IQuarkWallet.QuarkOperation[] memory wrapOrUnwrapOperations, Actions.Action[] memory wrapOrUnwrapActions) =
@@ -1289,8 +1290,7 @@ contract QuarkBuilderBase {
             uint256 chainId = args.chainAccountsList[i].chainId;
 
             // Calculate the net payment balance on this chain
-            // TODO: Need to be modified when supporting multiple accounts per chain, since this currently assumes all assets are in one account.
-            //       Will need a 2D map for assetsIn/Out to map from chainId -> account
+            // TODO: Needs to be modified when supporting multiple accounts per chain, since this currently assumes all assets are in one account.
             uint256 paymentAssetBalanceOnChain = getStartingAssetBalance({
                 actions: args.actions,
                 chainAccountsList: args.chainAccountsList,
@@ -1349,17 +1349,18 @@ contract QuarkBuilderBase {
         Accounts.ChainAccounts[] memory chainAccountsList,
         address account
     ) internal pure returns (Accounts.ChainAccounts[] memory) {
-        (BalanceChanges.Deltas memory assetsInPerChain, BalanceChanges.Deltas memory assetsOutPerChain) =
+        (BalanceChanges.Deltas memory assetsInPerChainAccount, BalanceChanges.Deltas memory assetsOutPerChainAccount) =
             trackAssetsInAndOut({action: action, chainAccountsList: chainAccountsList, account: account});
 
         // Update ChainAccounts balances by iterating over asset symbols, chain ids, and accounts
-        string[] memory assetInSymbols = BalanceChanges.assetSymbols(assetsInPerChain);
+        string[] memory assetInSymbols = BalanceChanges.assetSymbols(assetsInPerChainAccount);
         for (uint256 i = 0; i < assetInSymbols.length; ++i) {
             string memory assetSymbol = assetInSymbols[i];
-            uint256[] memory assetInChainIds = BalanceChanges.chainIds(assetsInPerChain, assetSymbol);
+            uint256[] memory assetInChainIds = BalanceChanges.chainIds(assetsInPerChainAccount, assetSymbol);
             for (uint256 j = 0; j < assetInChainIds.length; ++j) {
                 uint256 chainId = assetInChainIds[j];
-                address[] memory assetInAccounts = BalanceChanges.accounts(assetsInPerChain, assetSymbol, chainId);
+                address[] memory assetInAccounts =
+                    BalanceChanges.accounts(assetsInPerChainAccount, assetSymbol, chainId);
 
                 Accounts.AssetPositions memory assetPositions =
                     Accounts.findAssetPositions(assetSymbol, chainId, chainAccountsList);
@@ -1367,19 +1368,20 @@ contract QuarkBuilderBase {
                     Accounts.AccountBalance memory accountBalance =
                         Accounts.findAccountBalance(assetInAccounts[k], assetPositions);
                     uint256 assetInAmount =
-                        BalanceChanges.get(assetsInPerChain, assetSymbol, chainId, assetInAccounts[k]);
+                        BalanceChanges.get(assetsInPerChainAccount, assetSymbol, chainId, assetInAccounts[k]);
                     accountBalance.balance += assetInAmount;
                 }
             }
         }
 
-        string[] memory assetOutSymbols = BalanceChanges.assetSymbols(assetsOutPerChain);
+        string[] memory assetOutSymbols = BalanceChanges.assetSymbols(assetsOutPerChainAccount);
         for (uint256 i = 0; i < assetOutSymbols.length; ++i) {
             string memory assetSymbol = assetOutSymbols[i];
-            uint256[] memory assetOutChainIds = BalanceChanges.chainIds(assetsOutPerChain, assetSymbol);
+            uint256[] memory assetOutChainIds = BalanceChanges.chainIds(assetsOutPerChainAccount, assetSymbol);
             for (uint256 j = 0; j < assetOutChainIds.length; ++j) {
                 uint256 chainId = assetOutChainIds[j];
-                address[] memory assetOutAccounts = BalanceChanges.accounts(assetsOutPerChain, assetSymbol, chainId);
+                address[] memory assetOutAccounts =
+                    BalanceChanges.accounts(assetsOutPerChainAccount, assetSymbol, chainId);
 
                 Accounts.AssetPositions memory assetPositions =
                     Accounts.findAssetPositions(assetSymbol, chainId, chainAccountsList);
@@ -1387,7 +1389,7 @@ contract QuarkBuilderBase {
                     Accounts.AccountBalance memory accountBalance =
                         Accounts.findAccountBalance(assetOutAccounts[k], assetPositions);
                     uint256 assetOutAmount =
-                        BalanceChanges.get(assetsOutPerChain, assetSymbol, chainId, assetOutAccounts[k]);
+                        BalanceChanges.get(assetsOutPerChainAccount, assetSymbol, chainId, assetOutAccounts[k]);
                     accountBalance.balance = Math.subtractFlooredAtZero(accountBalance.balance, assetOutAmount);
                 }
             }
@@ -1406,43 +1408,45 @@ contract QuarkBuilderBase {
         uint256 chainId,
         address account
     ) internal pure returns (uint256) {
-        (BalanceChanges.Deltas memory assetsInPerChain, BalanceChanges.Deltas memory assetsOutPerChain) =
+        (BalanceChanges.Deltas memory assetsInPerChainAccount, BalanceChanges.Deltas memory assetsOutPerChainAccount) =
             trackAssetsInAndOut({actions: actions, chainAccountsList: chainAccountsList, account: account});
 
         uint256 assetBalanceOnChain =
             Accounts.sumBalances(Accounts.findAssetPositions(assetSymbol, chainId, chainAccountsList));
 
-        string[] memory assetOutSymbols = BalanceChanges.assetSymbols(assetsOutPerChain);
+        string[] memory assetOutSymbols = BalanceChanges.assetSymbols(assetsOutPerChainAccount);
         for (uint256 i = 0; i < assetOutSymbols.length; ++i) {
             string memory assetOutSymbol = assetOutSymbols[i];
-            uint256[] memory assetOutChainIds = BalanceChanges.chainIds(assetsOutPerChain, assetSymbol);
+            uint256[] memory assetOutChainIds = BalanceChanges.chainIds(assetsOutPerChainAccount, assetSymbol);
             for (uint256 j = 0; j < assetOutChainIds.length; ++j) {
                 uint256 assetOutChainId = assetOutChainIds[j];
-                address[] memory assetOutAccounts = BalanceChanges.accounts(assetsOutPerChain, assetSymbol, chainId);
+                address[] memory assetOutAccounts =
+                    BalanceChanges.accounts(assetsOutPerChainAccount, assetSymbol, chainId);
                 if (assetOutChainId != chainId || !Strings.stringEqIgnoreCase(assetOutSymbol, assetSymbol)) {
                     continue;
                 }
                 for (uint256 k = 0; k < assetOutAccounts.length; ++k) {
                     uint256 assetOutAmount =
-                        BalanceChanges.get(assetsOutPerChain, assetSymbol, chainId, assetOutAccounts[k]);
+                        BalanceChanges.get(assetsOutPerChainAccount, assetSymbol, chainId, assetOutAccounts[k]);
                     assetBalanceOnChain += assetOutAmount;
                 }
             }
         }
 
-        string[] memory assetInSymbols = BalanceChanges.assetSymbols(assetsInPerChain);
+        string[] memory assetInSymbols = BalanceChanges.assetSymbols(assetsInPerChainAccount);
         for (uint256 i = 0; i < assetInSymbols.length; ++i) {
             string memory assetInSymbol = assetInSymbols[i];
-            uint256[] memory assetInChainIds = BalanceChanges.chainIds(assetsInPerChain, assetSymbol);
+            uint256[] memory assetInChainIds = BalanceChanges.chainIds(assetsInPerChainAccount, assetSymbol);
             for (uint256 j = 0; j < assetInChainIds.length; ++j) {
                 uint256 assetInChainId = assetInChainIds[j];
-                address[] memory assetInAccounts = BalanceChanges.accounts(assetsInPerChain, assetSymbol, chainId);
+                address[] memory assetInAccounts =
+                    BalanceChanges.accounts(assetsInPerChainAccount, assetSymbol, chainId);
                 if (assetInChainId != chainId || !Strings.stringEqIgnoreCase(assetInSymbol, assetSymbol)) {
                     continue;
                 }
                 for (uint256 k = 0; k < assetInAccounts.length; ++k) {
                     uint256 assetInAmount =
-                        BalanceChanges.get(assetsInPerChain, assetSymbol, chainId, assetInAccounts[k]);
+                        BalanceChanges.get(assetsInPerChainAccount, assetSymbol, chainId, assetInAccounts[k]);
                     assetBalanceOnChain = Math.subtractFlooredAtZero(assetBalanceOnChain, assetInAmount);
                 }
             }
@@ -1457,18 +1461,18 @@ contract QuarkBuilderBase {
         Accounts.ChainAccounts[] memory chainAccountsList,
         address account
     ) internal pure returns (BalanceChanges.Deltas memory, BalanceChanges.Deltas memory) {
-        BalanceChanges.Deltas memory assetsInPerChain;
-        BalanceChanges.Deltas memory assetsOutPerChain;
+        BalanceChanges.Deltas memory assetsInPerChainAccount;
+        BalanceChanges.Deltas memory assetsOutPerChainAccount;
         for (uint256 i = 0; i < actions.length; ++i) {
-            (assetsInPerChain, assetsOutPerChain) = trackAssetsInAndOut({
-                assetsInPerChain: assetsInPerChain,
-                assetsOutPerChain: assetsOutPerChain,
+            (assetsInPerChainAccount, assetsOutPerChainAccount) = trackAssetsInAndOut({
+                assetsInPerChainAccount: assetsInPerChainAccount,
+                assetsOutPerChainAccount: assetsOutPerChainAccount,
                 action: actions[i],
                 chainAccountsList: chainAccountsList,
                 account: account
             });
         }
-        return (assetsInPerChain, assetsOutPerChain);
+        return (assetsInPerChainAccount, assetsOutPerChainAccount);
     }
 
     function trackAssetsInAndOut(
@@ -1476,26 +1480,26 @@ contract QuarkBuilderBase {
         Accounts.ChainAccounts[] memory chainAccountsList,
         address account
     ) internal pure returns (BalanceChanges.Deltas memory, BalanceChanges.Deltas memory) {
-        BalanceChanges.Deltas memory assetsInPerChain;
-        BalanceChanges.Deltas memory assetsOutPerChain;
-        (assetsInPerChain, assetsOutPerChain) = trackAssetsInAndOut({
-            assetsInPerChain: assetsInPerChain,
-            assetsOutPerChain: assetsOutPerChain,
+        BalanceChanges.Deltas memory assetsInPerChainAccount;
+        BalanceChanges.Deltas memory assetsOutPerChainAccount;
+        (assetsInPerChainAccount, assetsOutPerChainAccount) = trackAssetsInAndOut({
+            assetsInPerChainAccount: assetsInPerChainAccount,
+            assetsOutPerChainAccount: assetsOutPerChainAccount,
             action: action,
             chainAccountsList: chainAccountsList,
             account: account
         });
-        return (assetsInPerChain, assetsOutPerChain);
+        return (assetsInPerChainAccount, assetsOutPerChainAccount);
     }
 
     function trackAssetsInAndOut(
-        BalanceChanges.Deltas memory assetsInPerChain,
-        BalanceChanges.Deltas memory assetsOutPerChain,
+        BalanceChanges.Deltas memory assetsInPerChainAccount,
+        BalanceChanges.Deltas memory assetsOutPerChainAccount,
         Actions.Action memory action,
         Accounts.ChainAccounts[] memory chainAccountsList,
         address account
     ) internal pure returns (BalanceChanges.Deltas memory, BalanceChanges.Deltas memory) {
-        // Depending on the action type, update the `assetsInPerChain` and/or `assetsOutPerChain` maps
+        // Depending on the action type, update the `assetsInPerChainAccount` and/or `assetsOutPerChainAccount` maps
         if (Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_BRIDGE)) {
             Actions.BridgeActionContext memory bridgeActionContext =
                 abi.decode(action.actionContext, (Actions.BridgeActionContext));
@@ -1517,14 +1521,14 @@ contract QuarkBuilderBase {
             }
 
             BalanceChanges.addOrPutUint256(
-                assetsInPerChain,
+                assetsInPerChainAccount,
                 outAssetSymbol,
                 bridgeActionContext.destinationChainId,
                 bridgeActionContext.recipient,
                 bridgeActionContext.outputAmount
             );
             BalanceChanges.addOrPutUint256(
-                assetsOutPerChain,
+                assetsOutPerChainAccount,
                 bridgeActionContext.assetSymbol,
                 bridgeActionContext.chainId,
                 action.quarkAccount,
@@ -1534,7 +1538,7 @@ contract QuarkBuilderBase {
             Actions.BorrowActionContext memory borrowActionContext =
                 abi.decode(action.actionContext, (Actions.BorrowActionContext));
             BalanceChanges.addOrPutUint256(
-                assetsInPerChain,
+                assetsInPerChainAccount,
                 borrowActionContext.assetSymbol,
                 borrowActionContext.chainId,
                 action.quarkAccount,
@@ -1543,7 +1547,7 @@ contract QuarkBuilderBase {
 
             for (uint256 j = 0; j < borrowActionContext.collateralAssetSymbols.length; ++j) {
                 BalanceChanges.addOrPutUint256(
-                    assetsOutPerChain,
+                    assetsOutPerChainAccount,
                     borrowActionContext.collateralAssetSymbols[j],
                     borrowActionContext.chainId,
                     action.quarkAccount,
@@ -1554,14 +1558,14 @@ contract QuarkBuilderBase {
             Actions.MorphoBorrowActionContext memory borrowActionContext =
                 abi.decode(action.actionContext, (Actions.MorphoBorrowActionContext));
             BalanceChanges.addOrPutUint256(
-                assetsInPerChain,
+                assetsInPerChainAccount,
                 borrowActionContext.assetSymbol,
                 borrowActionContext.chainId,
                 action.quarkAccount,
                 borrowActionContext.amount
             );
             BalanceChanges.addOrPutUint256(
-                assetsOutPerChain,
+                assetsOutPerChainAccount,
                 borrowActionContext.collateralAssetSymbol,
                 borrowActionContext.chainId,
                 action.quarkAccount,
@@ -1572,7 +1576,7 @@ contract QuarkBuilderBase {
                 abi.decode(action.actionContext, (Actions.CometClaimRewardsActionContext));
             for (uint256 i = 0; i < claimRewardActionContext.assetSymbols.length; ++i) {
                 BalanceChanges.addOrPutUint256(
-                    assetsInPerChain,
+                    assetsInPerChainAccount,
                     claimRewardActionContext.assetSymbols[i],
                     claimRewardActionContext.chainId,
                     action.quarkAccount,
@@ -1584,7 +1588,7 @@ contract QuarkBuilderBase {
                 abi.decode(action.actionContext, (Actions.MorphoClaimRewardsActionContext));
             for (uint256 i = 0; i < claimRewardActionContext.assetSymbols.length; ++i) {
                 BalanceChanges.addOrPutUint256(
-                    assetsInPerChain,
+                    assetsInPerChainAccount,
                     claimRewardActionContext.assetSymbols[i],
                     claimRewardActionContext.chainId,
                     action.quarkAccount,
@@ -1607,14 +1611,14 @@ contract QuarkBuilderBase {
                 repayAmount = morphoRepayActionContext.amount;
             }
             BalanceChanges.addOrPutUint256(
-                assetsOutPerChain,
+                assetsOutPerChainAccount,
                 morphoRepayActionContext.assetSymbol,
                 morphoRepayActionContext.chainId,
                 action.quarkAccount,
                 repayAmount
             );
             BalanceChanges.addOrPutUint256(
-                assetsInPerChain,
+                assetsInPerChainAccount,
                 morphoRepayActionContext.collateralAssetSymbol,
                 morphoRepayActionContext.chainId,
                 action.quarkAccount,
@@ -1632,7 +1636,7 @@ contract QuarkBuilderBase {
                 repayAmount = cometRepayActionContext.amount;
             }
             BalanceChanges.addOrPutUint256(
-                assetsOutPerChain,
+                assetsOutPerChainAccount,
                 cometRepayActionContext.assetSymbol,
                 cometRepayActionContext.chainId,
                 action.quarkAccount,
@@ -1641,7 +1645,7 @@ contract QuarkBuilderBase {
 
             for (uint256 j = 0; j < cometRepayActionContext.collateralAssetSymbols.length; ++j) {
                 BalanceChanges.addOrPutUint256(
-                    assetsInPerChain,
+                    assetsInPerChainAccount,
                     cometRepayActionContext.collateralAssetSymbols[j],
                     cometRepayActionContext.chainId,
                     action.quarkAccount,
@@ -1652,7 +1656,7 @@ contract QuarkBuilderBase {
             Actions.CometSupplyActionContext memory cometSupplyActionContext =
                 abi.decode(action.actionContext, (Actions.CometSupplyActionContext));
             BalanceChanges.addOrPutUint256(
-                assetsOutPerChain,
+                assetsOutPerChainAccount,
                 cometSupplyActionContext.assetSymbol,
                 cometSupplyActionContext.chainId,
                 action.quarkAccount,
@@ -1662,7 +1666,7 @@ contract QuarkBuilderBase {
             Actions.MorphoVaultSupplyActionContext memory morphoVaultSupplyActionContext =
                 abi.decode(action.actionContext, (Actions.MorphoVaultSupplyActionContext));
             BalanceChanges.addOrPutUint256(
-                assetsOutPerChain,
+                assetsOutPerChainAccount,
                 morphoVaultSupplyActionContext.assetSymbol,
                 morphoVaultSupplyActionContext.chainId,
                 action.quarkAccount,
@@ -1672,14 +1676,14 @@ contract QuarkBuilderBase {
             Actions.SwapActionContext memory swapActionContext =
                 abi.decode(action.actionContext, (Actions.SwapActionContext));
             BalanceChanges.addOrPutUint256(
-                assetsOutPerChain,
+                assetsOutPerChainAccount,
                 swapActionContext.inputAssetSymbol,
                 swapActionContext.chainId,
                 action.quarkAccount,
                 swapActionContext.inputAmount
             );
             BalanceChanges.addOrPutUint256(
-                assetsInPerChain,
+                assetsInPerChainAccount,
                 swapActionContext.outputAssetSymbol,
                 swapActionContext.chainId,
                 action.quarkAccount,
@@ -1689,14 +1693,14 @@ contract QuarkBuilderBase {
             Actions.RecurringSwapActionContext memory recurringSwapActionContext =
                 abi.decode(action.actionContext, (Actions.RecurringSwapActionContext));
             BalanceChanges.addOrPutUint256(
-                assetsOutPerChain,
+                assetsOutPerChainAccount,
                 recurringSwapActionContext.inputAssetSymbol,
                 recurringSwapActionContext.chainId,
                 action.quarkAccount,
                 recurringSwapActionContext.inputAmount
             );
             BalanceChanges.addOrPutUint256(
-                assetsInPerChain,
+                assetsInPerChainAccount,
                 recurringSwapActionContext.outputAssetSymbol,
                 recurringSwapActionContext.chainId,
                 action.quarkAccount,
@@ -1706,12 +1710,13 @@ contract QuarkBuilderBase {
             Actions.TransferActionContext memory transferActionContext =
                 abi.decode(action.actionContext, (Actions.TransferActionContext));
             BalanceChanges.addOrPutUint256(
-                assetsOutPerChain,
+                assetsOutPerChainAccount,
                 transferActionContext.assetSymbol,
                 transferActionContext.chainId,
                 action.quarkAccount,
                 transferActionContext.amount
             );
+            // TODO: If recipient is an existing account, add to its balance
         } else if (
             Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_UNWRAP)
                 || Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_WRAP)
@@ -1719,14 +1724,14 @@ contract QuarkBuilderBase {
             Actions.WrapOrUnwrapActionContext memory wrapOrUnwrapActionContext =
                 abi.decode(action.actionContext, (Actions.WrapOrUnwrapActionContext));
             BalanceChanges.addOrPutUint256(
-                assetsInPerChain,
+                assetsInPerChainAccount,
                 wrapOrUnwrapActionContext.toAssetSymbol,
                 wrapOrUnwrapActionContext.chainId,
                 action.quarkAccount,
                 wrapOrUnwrapActionContext.amount
             );
             BalanceChanges.addOrPutUint256(
-                assetsOutPerChain,
+                assetsOutPerChainAccount,
                 wrapOrUnwrapActionContext.fromAssetSymbol,
                 wrapOrUnwrapActionContext.chainId,
                 action.quarkAccount,
@@ -1742,7 +1747,7 @@ contract QuarkBuilderBase {
                 )
                 : withdrawActionContext.amount;
             BalanceChanges.addOrPutUint256(
-                assetsInPerChain,
+                assetsInPerChainAccount,
                 withdrawActionContext.assetSymbol,
                 withdrawActionContext.chainId,
                 action.quarkAccount,
@@ -1758,7 +1763,7 @@ contract QuarkBuilderBase {
                 )
                 : withdrawActionContext.amount;
             BalanceChanges.addOrPutUint256(
-                assetsInPerChain,
+                assetsInPerChainAccount,
                 withdrawActionContext.assetSymbol,
                 withdrawActionContext.chainId,
                 action.quarkAccount,
@@ -1768,9 +1773,11 @@ contract QuarkBuilderBase {
             Actions.QuotePayActionContext memory quotePayActionContext =
                 abi.decode(action.actionContext, (Actions.QuotePayActionContext));
             BalanceChanges.addOrPutUint256(
-                assetsOutPerChain,
+                assetsOutPerChainAccount,
                 quotePayActionContext.assetSymbol,
                 quotePayActionContext.chainId,
+                // TODO: May need to be adjusted in a multi account world, since the QuotePay can be sourced from any other
+                // account.
                 action.quarkAccount,
                 quotePayActionContext.amount
             );
@@ -1778,7 +1785,7 @@ contract QuarkBuilderBase {
             revert InvalidActionType();
         }
 
-        return (assetsInPerChain, assetsOutPerChain);
+        return (assetsInPerChainAccount, assetsOutPerChainAccount);
     }
 
     function getWrapperCounterpartBalance(

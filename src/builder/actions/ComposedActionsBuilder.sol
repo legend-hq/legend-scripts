@@ -28,19 +28,19 @@ contract ComposedActionsBuilder is QuarkBuilderBase {
         PaymentInfo.Payment memory payment =
             Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        uint256[] memory swapAmountOuts = Arrays.uintArray(intent.swapIntent.sellAmount);
-        string[] memory swapAssetSymbolOuts = Arrays.stringArray(
+        uint256[] memory swapamountsNeeded = Arrays.uintArray(intent.swapIntent.sellAmount);
+        string[] memory swapAssetSymbolsNeeded = Arrays.stringArray(
             Accounts.findAssetPositions(intent.swapIntent.sellToken, intent.swapIntent.chainId, chainAccountsList)
                 .symbol
         );
-        uint256[] memory supplyAmountOuts = Arrays.uintArray(intent.supplyIntent.amount);
-        string[] memory supplyAssetSymbolOuts = Arrays.stringArray(intent.supplyIntent.assetSymbol);
+        uint256[] memory supplyamountsNeeded = Arrays.uintArray(intent.supplyIntent.amount);
+        string[] memory supplyAssetSymbolsNeeded = Arrays.stringArray(intent.supplyIntent.assetSymbol);
 
         ActionIntent[] memory actionIntents = new ActionIntent[](2);
         actionIntents[0] = ActionIntent({
             actor: intent.swapIntent.sender,
-            amountOuts: swapAmountOuts,
-            assetSymbolOuts: swapAssetSymbolOuts,
+            amountsNeeded: swapamountsNeeded,
+            assetSymbolsNeeded: swapAssetSymbolsNeeded,
             actionType: Actions.ACTION_TYPE_SWAP,
             intent: abi.encode(intent.swapIntent),
             blockTimestamp: intent.swapIntent.blockTimestamp,
@@ -49,8 +49,8 @@ contract ComposedActionsBuilder is QuarkBuilderBase {
         });
         actionIntents[1] = ActionIntent({
             actor: intent.supplyIntent.sender,
-            amountOuts: supplyAmountOuts,
-            assetSymbolOuts: supplyAssetSymbolOuts,
+            amountsNeeded: supplyamountsNeeded,
+            assetSymbolsNeeded: supplyAssetSymbolsNeeded,
             actionType: Actions.ACTION_TYPE_SUPPLY,
             intent: abi.encode(intent.supplyIntent),
             blockTimestamp: intent.supplyIntent.blockTimestamp,
@@ -82,11 +82,11 @@ contract ComposedActionsBuilder is QuarkBuilderBase {
         PaymentInfo.Payment memory payment =
             Quotes.getPaymentFromQuotesAndSymbol(chainAccountsList, quote, intent.paymentAssetSymbol);
 
-        uint256[] memory withdrawAmountOuts = new uint256[](0);
-        string[] memory withdrawAssetSymbolOuts = new string[](0);
+        uint256[] memory withdrawamountsNeeded = new uint256[](0);
+        string[] memory withdrawAssetSymbolsNeeded = new string[](0);
 
-        uint256[] memory supplyAmountOuts = Arrays.uintArray(intent.supplyIntent.amount);
-        string[] memory supplyAssetSymbolOuts = Arrays.stringArray(intent.supplyIntent.assetSymbol);
+        uint256[] memory supplyamountsNeeded = Arrays.uintArray(intent.supplyIntent.amount);
+        string[] memory supplyAssetSymbolsNeeded = Arrays.stringArray(intent.supplyIntent.assetSymbol);
 
         uint256 numIntents = intent.withdrawIntents.length + 1;
         ActionIntent[] memory actionIntents = new ActionIntent[](numIntents);
@@ -94,8 +94,8 @@ contract ComposedActionsBuilder is QuarkBuilderBase {
             WithdrawIntent memory withdrawIntent = intent.withdrawIntents[i];
             actionIntents[i] = ActionIntent({
                 actor: withdrawIntent.withdrawer,
-                amountOuts: withdrawAmountOuts,
-                assetSymbolOuts: withdrawAssetSymbolOuts,
+                amountsNeeded: withdrawamountsNeeded,
+                assetSymbolsNeeded: withdrawAssetSymbolsNeeded,
                 actionType: Actions.ACTION_TYPE_WITHDRAW,
                 intent: abi.encode(withdrawIntent),
                 blockTimestamp: withdrawIntent.blockTimestamp,
@@ -105,8 +105,8 @@ contract ComposedActionsBuilder is QuarkBuilderBase {
         }
         actionIntents[numIntents - 1] = ActionIntent({
             actor: intent.supplyIntent.sender,
-            amountOuts: supplyAmountOuts,
-            assetSymbolOuts: supplyAssetSymbolOuts,
+            amountsNeeded: supplyamountsNeeded,
+            assetSymbolsNeeded: supplyAssetSymbolsNeeded,
             actionType: Actions.ACTION_TYPE_SUPPLY,
             intent: abi.encode(intent.supplyIntent),
             blockTimestamp: intent.supplyIntent.blockTimestamp,
