@@ -412,6 +412,49 @@ struct MigrateSuppliesTests {
         )
     }
 
+    @Test("Alice migrates USDC with bridge amount adjusted to be the min bridge amount")
+    func testMigrateWithBridgeAdjustingAmount() async throws {
+        try await testAcceptanceTests(
+            test: .init(
+                given: [
+                    .cometSupply(.alice, .amt(10, .usdc), .cusdcv3, .ethereum),
+                    .tokenBalance(.alice, .amt(10, .usdc), .base),
+                    .quote(.basic),
+                    .acrossQuoteWithMin(.amt(1, .usdc), 0.01, .amt(5, .usdc)),
+                ],
+                when: .migrateSupplies(
+                    withdraw: [
+                        (from: .alice, market: .comet(.cusdcv3), amount: .max(.usdc), on: .ethereum),
+                    ],
+                    supply: (from: .alice, market: .comet(.cusdcv3), amount: .amt(10.01, .usdc), on: .base)
+                ),
+                expect: .success(
+                    .multi([
+                        .multicall([
+                            .withdrawFromComet(
+                                tokenAmount: .max(.usdc), market: .cusdcv3, network: .ethereum
+                            ),
+                            .bridge(
+                                bridge: "Across",
+                                srcNetwork: .ethereum,
+                                destinationNetwork: .base,
+                                inputTokenAmount: .amt(5, .usdc),
+                                // 5 - 1 Across base fee - (5 * .01) Across pct fee = 3.95
+                                outputTokenAmount: .amt(3.95, .usdc)
+                            ),
+                            .quotePay(
+                                payment: .amt(0.12, .usdc), payee: .stax, quote: .basic
+                            ),
+                        ], executionType: .immediate),
+                        .supplyToComet(
+                            tokenAmount: .amt(10.01, .usdc), market: .cusdcv3, network: .base, executionType: .contingent
+                        ),
+                    ])
+                )
+            )
+        )
+    }
+
     @Test("Alice migrates, but the withdrawn amount cannot cover the supply")
     func testMigratesButNotEnoughToSupply() async throws {
         try await testAcceptanceTests(
