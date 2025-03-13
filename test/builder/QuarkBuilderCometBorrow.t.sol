@@ -745,7 +745,8 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
             2e6, // 2e6 supplied
             6,
             bytes32(uint256(uint160(0xa11ce))),
-            usdc_(1)
+            usdc_(1),
+            false
         );
         // Covers the quote for both chains
         callDatas[1] =
@@ -753,7 +754,7 @@ contract QuarkBuilderCometBorrowTest is Test, QuarkBuilderTest {
         assertEq(
             result.quarkOperations[0].scriptCalldata,
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
-            "calldata is Multicall.run([cctpBridgeActionsAddress, quotePayAddress], [CCTPBridgeActions.bridgeUSDC(0xBd3fa81B58Ba92a82136038B25aDec7066af3155, 2.2e6, 6, 0xa11ce, USDC_1), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT, USDC_1, 0.3e6, QUOTE_ID)]);"
+            "calldata is Multicall.run([cctpBridgeActionsAddress, quotePayAddress], [CCTPBridgeActions.bridgeUSDC(0xBd3fa81B58Ba92a82136038B25aDec7066af3155, 2.2e6, 6, 0xa11ce, USDC_1, false), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT, USDC_1, 0.3e6, QUOTE_ID)]);"
         );
         assertEq(result.quarkOperations[0].scriptSources.length, 0);
         assertEq(

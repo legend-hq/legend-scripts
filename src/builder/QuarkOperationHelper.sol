@@ -158,6 +158,7 @@ library QuarkOperationHelper {
         }
         for (uint256 i = 0; i < quarkOperations.length; ++i) {
             uint256 amount;
+            bool cappedMax;
             bytes memory calldataWithoutSelector = stripSelector(quarkOperations[i].scriptCalldata);
             // TODO: We can sanity check further by verifying the script address matches the CREATE2 address of the script
             // TODO: Do the same for CometSupplyMultipleAssetsAndBorrow
@@ -168,34 +169,30 @@ library QuarkOperationHelper {
                 // deposit(address vault, address asset, uint256 amount)
                 (,, amount) = abi.decode(calldataWithoutSelector, (address, address, uint256));
             } else if (Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_TRANSFER)) {
-                bool cappedMax;
                 Actions.TransferActionContext memory transferActionContext =
                     abi.decode(actions[i].actionContext, (Actions.TransferActionContext));
                 if (Strings.stringEq(transferActionContext.assetSymbol, "ETH")) {
                     // transferNativeToken(address recipient, uint256 amount)
-                    (, amount, cappedMax) = abi.decode(calldataWithoutSelector, (address, uint256, bool));
+                    (,, cappedMax) = abi.decode(calldataWithoutSelector, (address, uint256, bool));
                 } else {
                     // transferERC20Token(address token, address recipient, uint256 amount)
-                    (,, amount, cappedMax) = abi.decode(calldataWithoutSelector, (address, address, uint256, bool));
-                }
-                if (cappedMax) {
-                    amount = type(uint256).max;
+                    (,,, cappedMax) = abi.decode(calldataWithoutSelector, (address, address, uint256, bool));
                 }
             } else if (Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_BRIDGE)) {
                 Actions.BridgeActionContext memory bridgeActionContext =
                     abi.decode(actions[i].actionContext, (Actions.BridgeActionContext));
                 if (Strings.stringEq(bridgeActionContext.bridgeType, Actions.BRIDGE_TYPE_ACROSS)) {
                     // depositV3(address spokePool, DepositV3Params memory params, bytes calldata uniqueIdentifier, bool useNativeToken)
-                    (, AcrossActions.DepositV3Params memory depositParams,,) =
-                        abi.decode(calldataWithoutSelector, (address, AcrossActions.DepositV3Params, bytes, bool));
-                    amount = depositParams.inputAmount;
+                    (,,,, cappedMax) =
+                        abi.decode(calldataWithoutSelector, (address, AcrossActions.DepositV3Params, bytes, bool, bool));
                 } else if (Strings.stringEq(bridgeActionContext.bridgeType, Actions.BRIDGE_TYPE_CCTP)) {
                     // bridgeUSDC(address tokenMessenger, uint256 amount, uint32 destinationDomain, bytes32 mintRecipient, address burnToken
-                    (, amount,,,) = abi.decode(calldataWithoutSelector, (address, uint256, uint32, bytes32, address));
+                    (,,,,, cappedMax) =
+                        abi.decode(calldataWithoutSelector, (address, uint256, uint32, bytes32, address, bool));
                 }
             }
 
-            if (amount == type(uint256).max) {
+            if (amount == type(uint256).max || cappedMax) {
                 maxActionIndex = int256(i);
                 break;
             }

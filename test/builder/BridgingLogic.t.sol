@@ -116,7 +116,6 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
                         outputToken: weth_(8453), // outputToken
                         inputAmount: inputAmount, // inputAmount
                         outputAmount: outputAmount, // outputAmount
-                        maxFee: inputAmount - outputAmount, // maxFee
                         destinationChainId: 8453, // destinationChainId
                         exclusiveRelayer: address(0), // exclusiveRelayer
                         quoteTimestamp: uint32(BLOCK_TIMESTAMP) - Across.QUOTE_TIMESTAMP_BUFFER, // quoteTimestamp
@@ -125,7 +124,8 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
                         message: new bytes(0) // message
                     }), // params
                     ACROSS_UNIQUE_ID, // uniqueIdentifier
-                    false // useNativeToken
+                    false, // useNativeToken
+                    false // cappedMax
                 )
             ),
             "calldata is AcrossActions.depositV3(...);"
@@ -284,7 +284,6 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
                         outputToken: address(0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913), // outputToken
                         inputAmount: 2.01e6, // inputAmount
                         outputAmount: 1e6, // outputAmount
-                        maxFee: 1.01e6, // maxFee
                         destinationChainId: 8453, // destinationChainId
                         exclusiveRelayer: address(0), // exclusiveRelayer
                         quoteTimestamp: uint32(BLOCK_TIMESTAMP) - 30 seconds, // quoteTimestamp
@@ -293,7 +292,8 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
                         message: new bytes(0) // message
                     }), // params
                     ACROSS_UNIQUE_ID, // uniqueIdentifier
-                    false // useNativeToken
+                    false, // useNativeToken
+                    false // cappedMax
                 )
             ),
             "calldata is AcrossActions.depositV3(...);"

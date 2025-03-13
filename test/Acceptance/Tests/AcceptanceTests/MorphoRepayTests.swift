@@ -197,7 +197,8 @@ struct MorphoRepayTests {
                                 destinationNetwork: .base,
                                 // 2 USDC bridged + 1 USDC Across fee + (2 * 0.01) Across pct fee = 3.02
                                 inputTokenAmount: .amt(3.02, .usdc),
-                                outputTokenAmount: .amt(2, .usdc)
+                                outputTokenAmount: .amt(2, .usdc),
+                                cappedMax: false
                             ),
                             // one mainnet operation (0.1) + one base operation (0.2)
                             .quotePay(payment: .amt(0.3, .usdc), payee: .stax, quote: .basic),
@@ -290,7 +291,8 @@ struct MorphoRepayTests {
                                 // = 11.1101
                                 inputTokenAmount: .amt(11.1101, .usdc),
                                 // 10 + 1% max repay buffer
-                                outputTokenAmount: .amt(10.01, .usdc)
+                                outputTokenAmount: .amt(10.01, .usdc),
+                                cappedMax: false
                             ),
                             // one mainnet operation (0.1) + one base operation (0.1)
                             .quotePay(payment: .amt(0.2, .usdc), payee: .stax, quote: .basic),

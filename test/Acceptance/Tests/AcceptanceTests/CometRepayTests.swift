@@ -276,7 +276,8 @@ struct CometRepayTests {
                                     srcNetwork: .ethereum,
                                     destinationNetwork: .base,
                                     inputTokenAmount: .amt(3.02, .usdc),
-                                    outputTokenAmount: .amt(2, .usdc)
+                                    outputTokenAmount: .amt(2, .usdc),
+                                    cappedMax: false
                                 ),
                                 .quotePay(payment: .amt(0.3, .usdc), payee: .stax, quote: .basic),
                             ], executionType: .immediate),
@@ -331,7 +332,8 @@ struct CometRepayTests {
                                     srcNetwork: .ethereum,
                                     destinationNetwork: .base,
                                     inputTokenAmount: .amt(11.1101, .usdc),
-                                    outputTokenAmount: .amt(10.01, .usdc)
+                                    outputTokenAmount: .amt(10.01, .usdc),
+                                    cappedMax: false
                                 ),
                                 .quotePay(payment: .amt(0.2, .usdc), payee: .stax, quote: .basic),
                             ], executionType: .immediate),
@@ -383,9 +385,10 @@ struct CometRepayTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            // 10
-                            inputTokenAmount: .max(.usdc),
+                            // 10 * 1.001 (max amt buffer) = 10.01
+                            inputTokenAmount: .amt(10.01, .usdc),
                             outputTokenAmount: .amt(8.9, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall([

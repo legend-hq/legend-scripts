@@ -21,7 +21,8 @@ struct MultiAccountTests {
                                 srcNetwork: .base,
                                 destinationNetwork: .ethereum,
                                 inputTokenAmount: .amt(11.1, .usdc),
-                                outputTokenAmount: .amt(10, .usdc)
+                                outputTokenAmount: .amt(10, .usdc),
+                                cappedMax: false
                             ),
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),

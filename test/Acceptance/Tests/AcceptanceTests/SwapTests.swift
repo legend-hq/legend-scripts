@@ -23,9 +23,10 @@ struct SwapTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            // 4005
-                            inputTokenAmount: .max(.usdc),
+                            // 4005 * 1.001 (max amt buffer) = 4009.005
+                            inputTokenAmount: .amt(4009.005, .usdc),
                             outputTokenAmount: .amt(3_963.95, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall([
@@ -352,7 +353,8 @@ struct SwapTests {
                                 destinationNetwork: .base,
                                 // 1000 + 1 Across base fee + (1000 * .01) Across pct fee = 1011
                                 inputTokenAmount: .amt(1011, .usdc),
-                                outputTokenAmount: .amt(1000, .usdc)
+                                outputTokenAmount: .amt(1000, .usdc),
+                                cappedMax: false
                             ),
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),
@@ -410,7 +412,8 @@ struct SwapTests {
                                 destinationNetwork: .base,
                                 // 1000 + 1 Across base fee + (1000 * .01) Across pct fee = 1011
                                 inputTokenAmount: .amt(1011, .usdc),
-                                outputTokenAmount: .amt(1000, .usdc)
+                                outputTokenAmount: .amt(1000, .usdc),
+                                cappedMax: false
                             ),
                             .quotePay(payment: .amt(6, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),
@@ -490,7 +493,8 @@ struct SwapTests {
                                 destinationNetwork: .base,
                                 // Normally would bridge 0.1, but bridge min is 1000
                                 inputTokenAmount: .amt(1000, .usdc),
-                                outputTokenAmount: .amt(989, .usdc)
+                                outputTokenAmount: .amt(989, .usdc),
+                                cappedMax: false
                             ),
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),

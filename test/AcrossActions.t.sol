@@ -70,7 +70,6 @@ contract AcrossActionsTest is Test {
                         outputToken: USDC_BASE, // outputToken
                         inputAmount: 100e6, // inputAmount
                         outputAmount: 99.9e6, // outputAmount
-                        maxFee: 0.1e6, // maxFee
                         destinationChainId: 8453, // destinationChainId
                         exclusiveRelayer: address(0), // exclusiveRelayer
                         quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
@@ -79,7 +78,8 @@ contract AcrossActionsTest is Test {
                         message: new bytes(0) // message
                     }), // params
                     UNIQUE_IDENTIFIER, // uniqueIdentifier
-                    false // useNativeToken
+                    false, // useNativeToken
+                    false // cappedMax
                 )
             ),
             ScriptType.ScriptSource
@@ -114,7 +114,6 @@ contract AcrossActionsTest is Test {
                         outputToken: WETH_BASE, // outputToken
                         inputAmount: 10e18, // inputAmount
                         outputAmount: 9.99e18, // outputAmount
-                        maxFee: 0.01e18, // maxFee
                         destinationChainId: 8453, // destinationChainId
                         exclusiveRelayer: address(0), // exclusiveRelayer
                         quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
@@ -123,7 +122,8 @@ contract AcrossActionsTest is Test {
                         message: new bytes(0) // message
                     }), // params
                     UNIQUE_IDENTIFIER, // uniqueIdentifier
-                    true // useNativeToken
+                    true, // useNativeToken
+                    false // cappedMax
                 )
             ),
             ScriptType.ScriptSource
@@ -158,7 +158,6 @@ contract AcrossActionsTest is Test {
                         outputToken: USDC_BASE, // outputToken
                         inputAmount: type(uint256).max, // inputAmount
                         outputAmount: 99.9e6, // outputAmount
-                        maxFee: 0.1e6, // maxFee
                         destinationChainId: 8453, // destinationChainId
                         exclusiveRelayer: address(0), // exclusiveRelayer
                         quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
@@ -167,7 +166,8 @@ contract AcrossActionsTest is Test {
                         message: new bytes(0) // message
                     }), // params
                     UNIQUE_IDENTIFIER, // uniqueIdentifier
-                    false // useNativeToken
+                    false, // useNativeToken
+                    true // cappedMax
                 )
             ),
             ScriptType.ScriptSource
@@ -180,6 +180,50 @@ contract AcrossActionsTest is Test {
         wallet.executeQuarkOperation(op, signature);
 
         assertEq(IERC20(USDC_MAINNET).balanceOf(address(wallet)), 0e6);
+    }
+
+    function testDepositV3MaxButCapped() public {
+        vm.pauseGasMetering();
+        QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
+
+        deal(USDC_MAINNET, address(wallet), 100e6);
+
+        QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
+            wallet,
+            acrossActionsScript,
+            abi.encodeCall(
+                AcrossActions.depositV3,
+                (
+                    ACROSS_SPOKE_POOL, // spokePool
+                    AcrossActions.DepositV3Params({
+                        depositor: address(wallet), // depositor
+                        recipient: address(wallet), // recipient
+                        inputToken: USDC_MAINNET, // inputToken
+                        outputToken: USDC_BASE, // outputToken
+                        inputAmount: 99e6, // inputAmount
+                        outputAmount: 98e6, // outputAmount
+                        destinationChainId: 8453, // destinationChainId
+                        exclusiveRelayer: address(0), // exclusiveRelayer
+                        quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
+                        fillDeadline: uint32(block.timestamp), // fillDeadline
+                        exclusivityDeadline: 0, // exclusivityDeadline
+                        message: new bytes(0) // message
+                    }), // params
+                    UNIQUE_IDENTIFIER, // uniqueIdentifier
+                    false, // useNativeToken
+                    true // cappedMax
+                )
+            ),
+            ScriptType.ScriptSource
+        );
+        bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
+
+        assertEq(IERC20(USDC_MAINNET).balanceOf(address(wallet)), 100e6);
+
+        vm.resumeGasMetering();
+        wallet.executeQuarkOperation(op, signature);
+
+        assertEq(IERC20(USDC_MAINNET).balanceOf(address(wallet)), 1e6);
     }
 
     function testDepositV3RevertsIfInputTokenIsNotWrappedNativeToken() public {
@@ -204,7 +248,6 @@ contract AcrossActionsTest is Test {
                         outputToken: USDC_BASE, // outputToken
                         inputAmount: 100e6, // inputAmount
                         outputAmount: 99.9e6, // outputAmount
-                        maxFee: 0.1e6, // maxFee
                         destinationChainId: 8453, // destinationChainId
                         exclusiveRelayer: address(0), // exclusiveRelayer
                         quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
@@ -213,7 +256,8 @@ contract AcrossActionsTest is Test {
                         message: new bytes(0) // message
                     }), // params
                     UNIQUE_IDENTIFIER, // uniqueIdentifier
-                    true // useNativeToken
+                    true, // useNativeToken
+                    false // cappedMax
                 )
             ),
             ScriptType.ScriptSource
@@ -245,7 +289,6 @@ contract AcrossActionsTest is Test {
                         outputToken: USDC_BASE, // outputToken
                         inputAmount: 100e6, // inputAmount
                         outputAmount: 99.9e6, // outputAmount
-                        maxFee: 0.1e6, // maxFee
                         destinationChainId: 8453, // destinationChainId
                         exclusiveRelayer: address(0), // exclusiveRelayer
                         quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
@@ -254,7 +297,8 @@ contract AcrossActionsTest is Test {
                         message: new bytes(0) // message
                     }), // params
                     UNIQUE_IDENTIFIER, // uniqueIdentifier
-                    false // useNativeToken
+                    false, // useNativeToken
+                    false // cappedMax
                 )
             ),
             ScriptType.ScriptSource
@@ -286,7 +330,6 @@ contract AcrossActionsTest is Test {
                         outputToken: USDC_BASE, // outputToken
                         inputAmount: 100e6, // inputAmount
                         outputAmount: 99.9e6, // outputAmount
-                        maxFee: 0.1e6, // maxFee
                         destinationChainId: 8453, // destinationChainId
                         exclusiveRelayer: address(0), // exclusiveRelayer
                         quoteTimestamp: uint32(block.timestamp - 1_000_000), // quoteTimestamp
@@ -295,7 +338,8 @@ contract AcrossActionsTest is Test {
                         message: new bytes(0) // message
                     }), // params
                     UNIQUE_IDENTIFIER, // uniqueIdentifier
-                    false // useNativeToken
+                    false, // useNativeToken
+                    false // cappedMax
                 )
             ),
             ScriptType.ScriptSource
@@ -327,7 +371,6 @@ contract AcrossActionsTest is Test {
                         outputToken: USDC_BASE, // outputToken
                         inputAmount: 100e6, // inputAmount
                         outputAmount: 99.9e6, // outputAmount
-                        maxFee: 0.1e6, // maxFee
                         destinationChainId: 8453, // destinationChainId
                         exclusiveRelayer: address(0), // exclusiveRelayer
                         quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
@@ -336,7 +379,8 @@ contract AcrossActionsTest is Test {
                         message: new bytes(0) // message
                     }), // params
                     UNIQUE_IDENTIFIER, // uniqueIdentifier
-                    false // useNativeToken
+                    false, // useNativeToken
+                    false // cappedMax
                 )
             ),
             ScriptType.ScriptSource
@@ -345,47 +389,6 @@ contract AcrossActionsTest is Test {
 
         vm.resumeGasMetering();
         vm.expectRevert(abi.encodeWithSignature("InvalidFillDeadline()"));
-        wallet.executeQuarkOperation(op, signature);
-    }
-
-    function testDepositV3RevertsIfBridgeFeeIsTooHigh() public {
-        vm.pauseGasMetering();
-        QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
-
-        deal(USDC_MAINNET, address(wallet), 1_000e6);
-
-        QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
-            wallet,
-            acrossActionsScript,
-            abi.encodeCall(
-                AcrossActions.depositV3,
-                (
-                    ACROSS_SPOKE_POOL, // spokePool
-                    AcrossActions.DepositV3Params({
-                        depositor: address(wallet), // depositor
-                        recipient: address(wallet), // recipient
-                        inputToken: USDC_MAINNET, // inputToken
-                        outputToken: USDC_BASE, // outputToken
-                        inputAmount: 100e6, // inputAmount
-                        outputAmount: 99.8e6, // outputAmount
-                        maxFee: 0.1e6, // maxFee
-                        destinationChainId: 8453, // destinationChainId
-                        exclusiveRelayer: address(0), // exclusiveRelayer
-                        quoteTimestamp: uint32(block.timestamp), // quoteTimestamp
-                        fillDeadline: uint32(block.timestamp), // fillDeadline
-                        exclusivityDeadline: 0, // exclusivityDeadline
-                        message: new bytes(0) // message
-                    }), // params
-                    UNIQUE_IDENTIFIER, // uniqueIdentifier
-                    false // useNativeToken
-                )
-            ),
-            ScriptType.ScriptSource
-        );
-        bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
-
-        vm.resumeGasMetering();
-        vm.expectRevert(abi.encodeWithSelector(AcrossActions.BridgeFeeTooHigh.selector, 0.2e6, 0.1e6));
         wallet.executeQuarkOperation(op, signature);
     }
 }

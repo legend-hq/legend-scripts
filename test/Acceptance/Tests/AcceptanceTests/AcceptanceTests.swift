@@ -13,6 +13,7 @@ enum Call: CustomStringConvertible, Equatable {
         destinationNetwork: Network,
         inputTokenAmount: TokenAmount,
         outputTokenAmount: TokenAmount,
+        cappedMax: Bool,
         executionType: ExecutionType? = nil
     )
     case claimCometRewards(cometRewards: [CometReward], comets: [Comet], accounts: [Account], network: Network, executionType: ExecutionType? = nil)
@@ -87,7 +88,8 @@ enum Call: CustomStringConvertible, Equatable {
                 _,
                 depositV3Params,
                 _,
-                useNativeToken
+                useNativeToken,
+                cappedMax
             ) = try? AcrossActions.depositV3Decode(input: calldata) {
                 let dstNetwork = Network.fromChainId(BigInt(depositV3Params.destinationChainId))
                 let useEthSrcNetwork = useNativeToken && depositV3Params.inputToken == Token.weth.address(network: network)!
@@ -110,6 +112,7 @@ enum Call: CustomStringConvertible, Equatable {
                         network: Network.fromChainId(BigInt(depositV3Params.destinationChainId)),
                         address: outputTokenAddress
                     ),
+                    cappedMax: cappedMax,
                     executionType: executionTypeForCall
                 )
             }
@@ -414,9 +417,9 @@ enum Call: CustomStringConvertible, Equatable {
 
     var description: String {
         switch self {
-        case let .bridge(bridge, chainId, destinationChainId, inputTokenAmount, outputTokenAmount, executionType):
+        case let .bridge(bridge, chainId, destinationChainId, inputTokenAmount, outputTokenAmount, cappedMax, executionType):
             return
-                "bridge(\(bridge), \(inputTokenAmount.amount) \(inputTokenAmount.token.symbol) to receive \(outputTokenAmount.amount) \(outputTokenAmount.token.symbol) from \(chainId.description) to \(destinationChainId.description))\(executionTypeDescription(executionType))"
+                "bridge(\(bridge), \(inputTokenAmount.amount) \(inputTokenAmount.token.symbol) to receive \(outputTokenAmount.amount) \(outputTokenAmount.token.symbol) from \(chainId.description) to \(destinationChainId.description) \(cappedMax ? "with" : "without") max)\(executionTypeDescription(executionType))"
         case let .claimCometRewards(cometRewards, comets, accounts, network, executionType):
             return
                 "claimCometRewards(claiming from \(cometRewards.map { $0.description }.joined(separator: ", ")) for \(comets.map { $0.description }.joined(separator: ", ")) for \(accounts.map { $0.description }.joined(separator: ", ")) on \(network.description))\(executionTypeDescription(executionType))"

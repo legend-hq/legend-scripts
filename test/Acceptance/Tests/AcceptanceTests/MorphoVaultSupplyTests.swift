@@ -22,9 +22,10 @@ struct MorphoVaultSupplyTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            // 3
-                            inputTokenAmount: .max(.usdc),
+                            // 3 * 1.001 (max amt buffer) = 3.003
+                            inputTokenAmount: .amt(3.003, .usdc),
                             outputTokenAmount: .amt(1.97, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall(
@@ -75,9 +76,10 @@ struct MorphoVaultSupplyTests {
                             bridge: "Across",
                             srcNetwork: .arbitrum,
                             destinationNetwork: .base,
-                            // 3
-                            inputTokenAmount: .max(.usdc),
+                            // 3 * 1.001 (max amt buffer) = 3.003
+                            inputTokenAmount: .amt(3.003, .usdc),
                             outputTokenAmount: .amt(1.97, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall(
@@ -256,9 +258,10 @@ struct MorphoVaultSupplyTests {
                             bridge: "Across",
                             srcNetwork: .base,
                             destinationNetwork: .ethereum,
-                            // 1.5
-                            inputTokenAmount: .max(.usdc),
+                            // 1.5 * 1.001 (max amt buffer) = 1.5015
+                            inputTokenAmount: .amt(1.5015, .usdc),
                             outputTokenAmount: .amt(0.485, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall(
@@ -332,7 +335,8 @@ struct MorphoVaultSupplyTests {
                                 srcNetwork: .ethereum,
                                 destinationNetwork: .base,
                                 inputTokenAmount: .amt(3.02, .usdc),
-                                outputTokenAmount: .amt(2, .usdc)
+                                outputTokenAmount: .amt(2, .usdc),
+                                cappedMax: false
                             ),
                             // .1 for mainnet operation + .02 for base operation
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
@@ -381,9 +385,10 @@ struct MorphoVaultSupplyTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            // 3
-                            inputTokenAmount: .max(.usdc),
+                            // 3 * 1.001 (max amt buffer) = 3.003
+                            inputTokenAmount: .amt(3.003, .usdc),
                             outputTokenAmount: .amt(1.97, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall(
@@ -449,9 +454,10 @@ struct MorphoVaultSupplyTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            // 3
-                            inputTokenAmount: .max(.usdc),
+                            // 3 * 1.001 (max amt buffer) = 3.003
+                            inputTokenAmount: .amt(3.003, .usdc),
                             outputTokenAmount: .amt(1.97, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall(
@@ -510,7 +516,8 @@ struct MorphoVaultSupplyTests {
                                     srcNetwork: .ethereum,
                                     destinationNetwork: .base,
                                     inputTokenAmount: .amt(3.02, .usdc),
-                                    outputTokenAmount: .amt(2, .usdc)
+                                    outputTokenAmount: .amt(2, .usdc),
+                                    cappedMax: false
                                 ),
                                 .quotePay(payment: .amt(0.6, .usdc), payee: .stax, quote: .basic),
                             ], executionType: .immediate

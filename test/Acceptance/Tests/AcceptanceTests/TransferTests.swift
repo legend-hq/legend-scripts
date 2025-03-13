@@ -150,9 +150,10 @@ struct TransferTests {
                             bridge: "Across",
                             srcNetwork: .base,
                             destinationNetwork: .arbitrum,
-                            // 50
-                            inputTokenAmount: .max(.usdc),
+                            // 50 * 1.001 (max amt buffer) = 50.05
+                            inputTokenAmount: .amt(50.05, .usdc),
                             outputTokenAmount: .amt(48.5, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall([
@@ -246,7 +247,8 @@ struct TransferTests {
                                 srcNetwork: .base,
                                 destinationNetwork: .arbitrum,
                                 inputTokenAmount: .amt(49.48, .usdc),
-                                outputTokenAmount: .amt(48.00, .usdc)
+                                outputTokenAmount: .amt(48.00, .usdc),
+                                cappedMax: false
                             ),
                             .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),
@@ -314,7 +316,8 @@ struct TransferTests {
                                         srcNetwork: .base,
                                         destinationNetwork: .arbitrum,
                                         inputTokenAmount: .amt(0.717, .eth),
-                                        outputTokenAmount: .amt(0.7, .eth)
+                                        outputTokenAmount: .amt(0.7, .eth),
+                                        cappedMax: false
                                     ),
                                     .quotePay(
                                         payment: .amt(0.06, .usdc),
@@ -366,7 +369,8 @@ struct TransferTests {
                                 srcNetwork: .base,
                                 destinationNetwork: .arbitrum,
                                 inputTokenAmount: .amt(0.313, .weth),
-                                outputTokenAmount: .amt(0.3, .weth)
+                                outputTokenAmount: .amt(0.3, .weth),
+                                cappedMax: false
                             ),
                             // Total quote = 0.02 + 0.04 = 0.06
                             // Amount in terms of ETH = 0.06 / 4000 = 0.000015
@@ -400,9 +404,10 @@ struct TransferTests {
                             bridge: "Across",
                             srcNetwork: .base,
                             destinationNetwork: .arbitrum,
-                            // 100
-                            inputTokenAmount: .max(.usdc),
+                            // 100 * 1.001 (max amt buffer) = 100.1
+                            inputTokenAmount: .amt(100.1, .usdc),
                             outputTokenAmount: .amt(98.00, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall([
@@ -469,7 +474,8 @@ struct TransferTests {
                                 destinationNetwork: .arbitrum,
                                 // Normally would bridge 0.1, but bridge min is 0.5
                                 inputTokenAmount: .amt(0.5, .usdc),
-                                outputTokenAmount: .amt(0.395, .usdc)
+                                outputTokenAmount: .amt(0.395, .usdc),
+                                cappedMax: false
                             ),
                             .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),

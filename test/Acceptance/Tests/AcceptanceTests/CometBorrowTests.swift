@@ -259,6 +259,7 @@ struct CometBorrowTests {
                                 destinationNetwork: .base,
                                 inputTokenAmount: .amt(2.2, .usdc),
                                 outputTokenAmount: .amt(1.178, .usdc),
+                                cappedMax: false,
                                 executionType: .immediate
                             ),
                             .quotePay(
