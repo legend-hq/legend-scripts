@@ -48,9 +48,9 @@ contract EvilReceiver {
             if (attack.attackType == AttackType.REINVOKE_TRANSFER) {
                 // Simply cast the address to Terminal script and call the Transfer function
                 if (isERC20) {
-                    TransferActions(from).transferERC20Token(targetTokenAddress, to, amount);
+                    TransferActions(from).transferERC20Token(targetTokenAddress, to, amount, false);
                 } else {
-                    TransferActions(from).transferNativeToken(attack.destination, attack.amount);
+                    TransferActions(from).transferNativeToken(attack.destination, attack.amount, false);
                 }
             }
 

@@ -70,7 +70,7 @@ contract TransferActionsTest is Test {
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
             transferScript,
-            abi.encodeWithSelector(TransferActions.transferERC20Token.selector, WETH, bob, 10 ether),
+            abi.encodeWithSelector(TransferActions.transferERC20Token.selector, WETH, bob, 10 ether, false),
             ScriptType.ScriptSource
         );
 
@@ -94,7 +94,9 @@ contract TransferActionsTest is Test {
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
             transferScript,
-            abi.encodeWithSelector(TransferActions.transferERC20Token.selector, WETH, address(walletBob), 10 ether),
+            abi.encodeWithSelector(
+                TransferActions.transferERC20Token.selector, WETH, address(walletBob), 10 ether, false
+            ),
             ScriptType.ScriptSource
         );
         bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
@@ -117,7 +119,7 @@ contract TransferActionsTest is Test {
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
             transferScript,
-            abi.encodeWithSelector(TransferActions.transferERC20Token.selector, WETH, bob, type(uint256).max),
+            abi.encodeWithSelector(TransferActions.transferERC20Token.selector, WETH, bob, type(uint256).max, true),
             ScriptType.ScriptSource
         );
 
@@ -126,6 +128,28 @@ contract TransferActionsTest is Test {
         wallet.executeQuarkOperation(op, signature);
         assertEq(IERC20(WETH).balanceOf(address(wallet)), 0 ether);
         assertEq(IERC20(WETH).balanceOf(bob), 10 ether);
+    }
+
+    function testTransferERC20TokenMaxButCapped() public {
+        vm.pauseGasMetering();
+        QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
+
+        deal(WETH, address(wallet), 10 ether);
+
+        assertEq(IERC20(WETH).balanceOf(address(wallet)), 10 ether);
+        assertEq(IERC20(WETH).balanceOf(bob), 0 ether);
+        QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
+            wallet,
+            transferScript,
+            abi.encodeWithSelector(TransferActions.transferERC20Token.selector, WETH, bob, 8 ether, true),
+            ScriptType.ScriptSource
+        );
+
+        bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
+        vm.resumeGasMetering();
+        wallet.executeQuarkOperation(op, signature);
+        assertEq(IERC20(WETH).balanceOf(address(wallet)), 2 ether);
+        assertEq(IERC20(WETH).balanceOf(bob), 8 ether);
     }
 
     function testTransferNativeTokenToEOA() public {
@@ -139,7 +163,7 @@ contract TransferActionsTest is Test {
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
             transferScript,
-            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, bob, 10 ether),
+            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, bob, 10 ether, false),
             ScriptType.ScriptSource
         );
         bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
@@ -160,7 +184,7 @@ contract TransferActionsTest is Test {
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
             transferScript,
-            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(walletBob), 10 ether),
+            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(walletBob), 10 ether, false),
             ScriptType.ScriptSource
         );
         bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
@@ -186,7 +210,7 @@ contract TransferActionsTest is Test {
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
             transferScript,
-            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, bob, type(uint256).max),
+            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, bob, type(uint256).max, true),
             ScriptType.ScriptSource
         );
         bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
@@ -195,6 +219,28 @@ contract TransferActionsTest is Test {
         // assert on native ETH balance
         assertEq(address(wallet).balance, 0 ether);
         assertEq(bob.balance, 10 ether);
+    }
+
+    function testTransferNativeTokenMaxButCapped() public {
+        vm.pauseGasMetering();
+        QuarkWallet wallet = QuarkWallet(factory.create(alice, address(0)));
+
+        deal(address(wallet), 10 ether);
+
+        assertEq(address(wallet).balance, 10 ether);
+        assertEq(bob.balance, 0 ether);
+        QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
+            wallet,
+            transferScript,
+            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, bob, 8 ether, true),
+            ScriptType.ScriptSource
+        );
+        bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
+        vm.resumeGasMetering();
+        wallet.executeQuarkOperation(op, signature);
+        // assert on native ETH balance
+        assertEq(address(wallet).balance, 2 ether);
+        assertEq(bob.balance, 8 ether);
     }
 
     function testTransferReentrancyAttackSuccessWithCallbackEnabled() public {
@@ -214,8 +260,9 @@ contract TransferActionsTest is Test {
         callContracts[0] = allowCallbacksAddress;
         callDatas[0] = abi.encodeWithSelector(AllowCallbacks.run.selector, address(reentrantTransferAddress));
         callContracts[1] = reentrantTransferAddress;
-        callDatas[1] =
-            abi.encodeWithSelector(ReentrantTransfer.transferNativeToken.selector, address(evilReceiver), 1 ether);
+        callDatas[1] = abi.encodeWithSelector(
+            ReentrantTransfer.transferNativeToken.selector, address(evilReceiver), 1 ether, false
+        );
 
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
@@ -254,7 +301,7 @@ contract TransferActionsTest is Test {
         callDatas[0] = abi.encodeWithSelector(AllowCallbacks.run.selector, address(reentrantTransferAddress));
         callContracts[1] = reentrantTransferAddress;
         callDatas[1] = abi.encodeWithSelector(
-            ReentrantTransfer.transferERC20Token.selector, address(victimERC777), address(evilReceiver), 1 ether
+            ReentrantTransfer.transferERC20Token.selector, address(victimERC777), address(evilReceiver), 1 ether, false
         );
 
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
@@ -292,7 +339,7 @@ contract TransferActionsTest is Test {
         callDatas[0] = abi.encodeWithSelector(AllowCallbacks.run.selector, address(transferScriptAddress));
         callContracts[1] = transferScriptAddress;
         callDatas[1] =
-            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(evilReceiver), 1 ether);
+            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(evilReceiver), 1 ether, false);
 
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
@@ -333,7 +380,7 @@ contract TransferActionsTest is Test {
         callDatas[0] = abi.encodeWithSelector(AllowCallbacks.run.selector, address(transferScriptAddress));
         callContracts[1] = transferScriptAddress;
         callDatas[1] = abi.encodeWithSelector(
-            ReentrantTransfer.transferERC20Token.selector, address(victimERC777), address(evilReceiver), 1 ether
+            ReentrantTransfer.transferERC20Token.selector, address(victimERC777), address(evilReceiver), 1 ether, false
         );
 
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
@@ -371,7 +418,7 @@ contract TransferActionsTest is Test {
         callDatas[0] = abi.encodeWithSelector(AllowCallbacks.run.selector, address(transferScriptAddress));
         callContracts[1] = transferScriptAddress;
         callDatas[1] =
-            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(evilReceiver), 1 ether);
+            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(evilReceiver), 1 ether, false);
 
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
@@ -417,7 +464,7 @@ contract TransferActionsTest is Test {
         callDatas[0] = abi.encodeWithSelector(AllowCallbacks.run.selector, address(transferScriptAddress));
         callContracts[1] = transferScriptAddress;
         callDatas[1] = abi.encodeWithSelector(
-            ReentrantTransfer.transferERC20Token.selector, address(victimERC777), address(evilReceiver), 1 ether
+            ReentrantTransfer.transferERC20Token.selector, address(victimERC777), address(evilReceiver), 1 ether, false
         );
 
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
@@ -455,7 +502,7 @@ contract TransferActionsTest is Test {
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
             transferScript,
-            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(evilReceiver), 1 ether),
+            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(evilReceiver), 1 ether, false),
             ScriptType.ScriptSource
         );
         bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);
@@ -481,7 +528,7 @@ contract TransferActionsTest is Test {
         QuarkWallet.QuarkOperation memory op = new QuarkOperationHelper().newBasicOpWithCalldata(
             wallet,
             transferScript,
-            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(evilReceiver), 1 ether),
+            abi.encodeWithSelector(TransferActions.transferNativeToken.selector, address(evilReceiver), 1 ether, false),
             ScriptType.ScriptSource
         );
         bytes memory signature = new SignatureHelper().signOp(alicePrivateKey, wallet, op);

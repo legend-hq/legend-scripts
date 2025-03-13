@@ -82,6 +82,9 @@ library Actions {
     uint256 constant RECURRING_SWAP_MAX_SLIPPAGE = 1e17; // 1%
     uint256 constant RECURRING_SWAP_WINDOW_LENGTH = 1 days;
 
+    uint256 constant MAX_AMOUNT_BUFFER = 1.001e18; // 0.1%
+    uint256 constant BUFFER_SCALE = 1e18;
+
     // TODO: Move to BuilderPack
     address constant QUOTE_PAY_RECIPIENT = 0x7ea8d6119596016935543d90Ee8f5126285060A1;
 
@@ -1256,16 +1259,22 @@ library Actions {
 
         Accounts.QuarkSecret memory accountSecret = Accounts.findQuarkSecret(transfer.sender, accounts.quarkSecrets);
 
+        bool isMax = transfer.amount == type(uint256).max;
+        uint256 transferAmount = isMax ? addMaxBuffer(transfer.maxAmount) : transfer.amount;
         bytes memory scriptCalldata;
         if (Strings.stringEqIgnoreCase(transfer.assetSymbol, "ETH")) {
             // Native token transfer
             scriptCalldata = abi.encodeWithSelector(
-                TransferActions.transferNativeToken.selector, transfer.recipient, transfer.amount
+                TransferActions.transferNativeToken.selector, transfer.recipient, transferAmount, isMax
             );
         } else {
             // ERC20 transfer
             scriptCalldata = abi.encodeWithSelector(
-                TransferActions.transferERC20Token.selector, assetPositions.asset, transfer.recipient, transfer.amount
+                TransferActions.transferERC20Token.selector,
+                assetPositions.asset,
+                transfer.recipient,
+                transferAmount,
+                isMax
             );
         }
         // Construct QuarkOperation
@@ -1280,7 +1289,7 @@ library Actions {
 
         // Construct Action
         TransferActionContext memory transferActionContext = TransferActionContext({
-            amount: transfer.amount == type(uint256).max ? transfer.maxAmount : transfer.amount,
+            amount: isMax ? transfer.maxAmount : transfer.amount,
             price: assetPositions.usdPrice,
             token: assetPositions.asset,
             assetSymbol: assetPositions.symbol,
@@ -1970,6 +1979,10 @@ library Actions {
             secret := mload(ptr) // Load final result
         }
         return secret;
+    }
+
+    function addMaxBuffer(uint256 maxAmount) internal pure returns (uint256) {
+        return maxAmount * MAX_AMOUNT_BUFFER / BUFFER_SCALE;
     }
 
     // These structs are mostly used internally and returned in serialized format as bytes: actionContext

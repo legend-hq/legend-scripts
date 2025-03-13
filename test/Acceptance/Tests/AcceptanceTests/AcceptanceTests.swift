@@ -20,8 +20,8 @@ enum Call: CustomStringConvertible, Equatable {
         distributors: [MorphoDistributor], accounts: [Account], rewardsClaimable: [TokenAmount],
         proofs: [MorphoClaimProof], network: Network, executionType: ExecutionType? = nil
     )
-    case transferErc20(tokenAmount: TokenAmount, recipient: Account, network: Network, executionType: ExecutionType? = nil)
-    case transferNativeToken(tokenAmount: TokenAmount, recipient: Account, network: Network, executionType: ExecutionType? = nil)
+    case transferErc20(tokenAmount: TokenAmount, recipient: Account, cappedMax: Bool, network: Network, executionType: ExecutionType? = nil)
+    case transferNativeToken(tokenAmount: TokenAmount, recipient: Account, cappedMax: Bool, network: Network, executionType: ExecutionType? = nil)
     case supplyToComet(tokenAmount: TokenAmount, market: Comet, network: Network, executionType: ExecutionType? = nil)
     case supplyMultipleAssetsAndBorrowFromComet(
         borrowAmount: TokenAmount,
@@ -116,7 +116,7 @@ enum Call: CustomStringConvertible, Equatable {
         }
 
         if scriptAddress == getScriptAddress(TransferActions.creationCode) {
-            if let (token, recipient, amount) = try? TransferActions.transferERC20TokenDecode(
+            if let (token, recipient, amount, cappedMax) = try? TransferActions.transferERC20TokenDecode(
                 input: calldata)
             {
                 return .transferErc20(
@@ -124,16 +124,18 @@ enum Call: CustomStringConvertible, Equatable {
                         amount: amount, network: network, address: token
                     ),
                     recipient: Account.from(address: recipient),
+                    cappedMax: cappedMax,
                     network: network,
                     executionType: executionTypeForCall
                 )
-            } else if let (recipient, amount) = try? TransferActions.transferNativeTokenDecode(input: calldata) {
+            } else if let (recipient, amount, cappedMax) = try? TransferActions.transferNativeTokenDecode(input: calldata) {
                 return .transferNativeToken(
                     tokenAmount: Token.getTokenAmount(
                         amount: amount, network: network, address: Token.eth.address(network: network)!
                     ),
-                    recipient: Account.from(address: recipient), 
-                    network: network, 
+                    recipient: Account.from(address: recipient),
+                    cappedMax: cappedMax,
+                    network: network,
                     executionType: executionTypeForCall
                 )
             }
@@ -421,12 +423,12 @@ enum Call: CustomStringConvertible, Equatable {
         case let .claimMorphoRewards(distributors, accounts, rewardsClaimable, proofs, network, executionType):
             return
                 "claimMorphoRewards(claiming \(rewardsClaimable.map { $0.token.symbol }.joined(separator: ", ")) from \(distributors.map { $0.description }.joined(separator: ", ")) for \(accounts.map { $0.description }.joined(separator: ", ")) with proofs \(proofs.map { $0.description }.joined(separator: ", ")) on \(network.description))\(executionTypeDescription(executionType))"
-        case let .transferErc20(tokenAmount, recipient, network, executionType):
+        case let .transferErc20(tokenAmount, recipient, cappedMax, network, executionType):
             return
-                "transferErc20(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(recipient.description) on \(network.description))\(executionTypeDescription(executionType))"
-        case let .transferNativeToken(tokenAmount, recipient, network, executionType):
+                "transferErc20(\(tokenAmount.amount) \(tokenAmount.token.symbol) to \(recipient.description) \(cappedMax ? "with" : "without") max on \(network.description))\(executionTypeDescription(executionType))"
+        case let .transferNativeToken(tokenAmount, recipient, cappedMax, network, executionType):
             return
-                "transferNativeToken(\(tokenAmount) to \(recipient.description) on \(network.description))\(executionTypeDescription(executionType))"
+                "transferNativeToken(\(tokenAmount) to \(recipient.description) \(cappedMax ? "with" : "without") max on \(network.description))\(executionTypeDescription(executionType))"
         case let .quotePay(payment, payee, quoteId, executionType):
             return
                 "quotePay(\(payment.amount) \(payment.token.symbol) to \(payee.description), quoteId: \(quoteId))\(executionTypeDescription(executionType))"
