@@ -13,3 +13,4 @@ quark-core/=lib/quark/src/quark-core/
 quark-factory/=lib/quark/src/quark-factory/
 quark-proxy/=lib/quark/src/quark-proxy/
 src/=src/
+aave-v3-origin/=lib/aave-v3-origin/
