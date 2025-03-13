@@ -1,0 +1,4 @@
+TODO
+
+- Add support for max actions in supply, transfer, swap, etc. so we can move bridging logic to end, since we no longer need to pre-emptively calculate the bridge fees
+  - We can use balance diffs to check how much the max action amount actually is at the end to populate the action context amount
