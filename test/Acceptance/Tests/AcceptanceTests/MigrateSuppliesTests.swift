@@ -322,7 +322,8 @@ struct MigrateSuppliesTests {
                                 destinationNetwork: .arbitrum,
                                 inputTokenAmount: .amt(10, .usdc),
                                 // 10 - 1 Across base fee - (10 * .01) Across pct fee = 8.9
-                                outputTokenAmount: .amt(8.9, .usdc)
+                                outputTokenAmount: .amt(8.9, .usdc),
+                                cappedMax: false
                             ),
                         ], executionType: .immediate),
                         .multicall([
@@ -335,7 +336,8 @@ struct MigrateSuppliesTests {
                                 destinationNetwork: .arbitrum,
                                 // 10 + 1 Across base fee + (10 * .01) Across pct fee = 9.181
                                 inputTokenAmount: .amt(9.181, .usdc),
-                                outputTokenAmount: .amt(8.1, .usdc)
+                                outputTokenAmount: .amt(8.1, .usdc),
+                                cappedMax: false
                             ),
                             .quotePay(
                                 payment: .amt(0.16, .usdc), payee: .stax, quote: .basic
@@ -377,10 +379,11 @@ struct MigrateSuppliesTests {
                                 bridge: "Across",
                                 srcNetwork: .ethereum,
                                 destinationNetwork: .arbitrum,
-                                // 10
-                                inputTokenAmount: .max(.usdc),
+                                // 10 * 1.001 (max amt buffer) = 10.01
+                                inputTokenAmount: .amt(10.01, .usdc),
                                 // 10 - 1 Across base fee - (10 * .01) Across pct fee = 8.9
-                                outputTokenAmount: .amt(8.9, .usdc)
+                                outputTokenAmount: .amt(8.9, .usdc),
+                                cappedMax: true
                             ),
                         ], executionType: .immediate),
                         .multicall([
@@ -391,10 +394,11 @@ struct MigrateSuppliesTests {
                                 bridge: "Across",
                                 srcNetwork: .base,
                                 destinationNetwork: .arbitrum,
-                                // 10
-                                inputTokenAmount: .max(.usdc),
+                                // 10 * 1.001 (max amt buffer) = 10.01
+                                inputTokenAmount: .amt(10.01, .usdc),
                                 // 10 - 1 Across base fee - (10 * .01) Across pct fee = 8.9
-                                outputTokenAmount: .amt(8.9, .usdc)
+                                outputTokenAmount: .amt(8.9, .usdc),
+                                cappedMax: true
                             ),
                         ], executionType: .immediate),
                         .multicall([

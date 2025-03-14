@@ -94,7 +94,8 @@ library CCTP {
         uint256 dstChainId,
         uint256 amount,
         address recipient,
-        address usdcAddress
+        address usdcAddress,
+        bool cappedMax
     ) internal pure returns (bytes memory) {
         return abi.encodeWithSelector(
             CCTPBridgeActions.bridgeUSDC.selector,
@@ -102,7 +103,8 @@ library CCTP {
             amount,
             knownDomainId(dstChainId),
             bytes32(uint256(uint160(recipient))),
-            usdcAddress
+            usdcAddress,
+            cappedMax
         );
     }
 }
@@ -184,11 +186,11 @@ library Across {
         address outputToken,
         uint256 inputAmount,
         uint256 outputAmount,
-        uint256 maxFee,
         address sender,
         address recipient,
         uint256 blockTimestamp,
-        bool useNativeToken
+        bool useNativeToken,
+        bool cappedMax
     ) internal pure returns (bytes memory) {
         return abi.encodeCall(
             AcrossActions.depositV3,
@@ -201,7 +203,6 @@ library Across {
                     outputToken: outputToken,
                     inputAmount: inputAmount,
                     outputAmount: outputAmount,
-                    maxFee: maxFee,
                     destinationChainId: dstChainId,
                     exclusiveRelayer: address(0),
                     quoteTimestamp: uint32(blockTimestamp) - QUOTE_TIMESTAMP_BUFFER,
@@ -210,7 +211,8 @@ library Across {
                     message: new bytes(0)
                 }), // params
                 UNIQUE_IDENTIFIER, // uniqueIdentifier
-                useNativeToken // useNativeToken
+                useNativeToken, // useNativeToken
+                cappedMax // cappedMax
             )
         );
     }

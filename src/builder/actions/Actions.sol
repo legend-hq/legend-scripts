@@ -718,9 +718,10 @@ library Actions {
             scriptCalldata: CCTP.encodeBridgeUSDC({
                 srcChainId: bridge.srcChainId,
                 dstChainId: bridge.destinationChainId,
-                amount: bridge.isMaxBridge ? type(uint256).max : bridge.amount,
+                amount: bridge.isMaxBridge ? addMaxBuffer(bridge.amount) : bridge.amount,
                 recipient: bridge.recipient,
-                usdcAddress: srcUSDCPositions.asset
+                usdcAddress: srcUSDCPositions.asset,
+                cappedMax: bridge.isMaxBridge
             }),
             scriptSources: new bytes[](0),
             expiry: bridge.blockTimestamp + BRIDGE_EXPIRY_BUFFER
@@ -826,7 +827,6 @@ library Actions {
         bool useNativeToken = Strings.stringEqIgnoreCase(srcAssetPositions.symbol, "ETH") ? true : false;
 
         // Construct QuarkOperation
-        uint256 bridgeFee = inputAmount - outputAmount;
         quarkOperation = IQuarkWallet.QuarkOperation({
             nonce: accountSecret.nonceSecret,
             isReplayable: false,
@@ -836,14 +836,13 @@ library Actions {
                 dstChainId: bridge.destinationChainId,
                 inputToken: srcAsset,
                 outputToken: dstAsset,
-                inputAmount: bridge.isMaxBridge ? type(uint256).max : inputAmount,
+                inputAmount: bridge.isMaxBridge ? addMaxBuffer(bridge.amount) : inputAmount,
                 outputAmount: outputAmount,
-                // We add a 1% buffer to the max fee for max bridges to account for potential dust
-                maxFee: bridge.isMaxBridge ? bridgeFee * 1.01e18 / 1e18 : bridgeFee,
                 sender: bridge.sender,
                 recipient: bridge.recipient,
                 blockTimestamp: bridge.blockTimestamp,
-                useNativeToken: useNativeToken
+                useNativeToken: useNativeToken,
+                cappedMax: bridge.isMaxBridge
             }),
             scriptSources: new bytes[](0),
             expiry: bridge.blockTimestamp + BRIDGE_EXPIRY_BUFFER

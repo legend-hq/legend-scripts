@@ -300,7 +300,8 @@ struct SwapAndSupplyTests {
                                 destinationNetwork: .base,
                                 // 1000 + 1 Across base fee + (1000 * .01) Across pct fee = 1011
                                 inputTokenAmount: .amt(1011, .usdc),
-                                outputTokenAmount: .amt(1000, .usdc)
+                                outputTokenAmount: .amt(1000, .usdc),
+                                cappedMax: false
                             ),
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),
@@ -359,7 +360,8 @@ struct SwapAndSupplyTests {
                                 destinationNetwork: .base,
                                 // 1 + 0.01 Across base fee + (1 * .01) Across pct fee = 1011
                                 inputTokenAmount: .amt(1.02, .weth),
-                                outputTokenAmount: .amt(1, .weth)
+                                outputTokenAmount: .amt(1, .weth),
+                                cappedMax: false
                             ),
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),
@@ -406,10 +408,11 @@ struct SwapAndSupplyTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            // 2000
-                            inputTokenAmount: .max(.usdc),
+                            // 2000 * 1.001 (max amt buffer) = 2002
+                            inputTokenAmount: .amt(2002, .usdc),
                             // 2000 * (1 - .01) Across pct fee - 1 Across base fee = 1979
                             outputTokenAmount: .amt(1979, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall([
@@ -464,10 +467,11 @@ struct SwapAndSupplyTests {
                             bridge: "Across",
                             srcNetwork: .ethereum,
                             destinationNetwork: .base,
-                            // 2000
-                            inputTokenAmount: .max(.usdc),
+                            // 2000 * 1.001 (max amt buffer) = 2002
+                            inputTokenAmount: .amt(2002, .usdc),
                             // 2000 * (1 - .01) Across pct fee - 1 Across base fee = 1979
                             outputTokenAmount: .amt(1979, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall([
@@ -524,7 +528,8 @@ struct SwapAndSupplyTests {
                                 destinationNetwork: .base,
                                 // Normally would bridge 0.1, but bridge min is 1000
                                 inputTokenAmount: .amt(1000, .usdc),
-                                outputTokenAmount: .amt(989, .usdc)
+                                outputTokenAmount: .amt(989, .usdc),
+                                cappedMax: false
                             ),
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),

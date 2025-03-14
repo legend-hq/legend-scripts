@@ -10,8 +10,6 @@ contract AcrossActions {
     // To handle non-standard ERC20 tokens (i.e. USDT)
     using SafeERC20 for IERC20;
 
-    error BridgeFeeTooHigh(uint256 bridgeFee, uint256 maxBridgeFee);
-
     // @notice The parameters required for bridging an asset via Across V3
     struct DepositV3Params {
         // @notice The account credited with the deposit.
@@ -31,9 +29,6 @@ contract AcrossActions {
         uint256 inputAmount;
         // @notice The amount of output tokens that the relayer will send to the recipient on the destination.
         uint256 outputAmount;
-        // @notice The maximum fee that can be charged for the bridge.
-        // @dev This value is in terms of the `outputToken` and is only valid when the input and output tokens are the same asset.
-        uint256 maxFee;
         // @notice The destination chain identifier.
         uint256 destinationChainId;
         // @notice The relayer that will be exclusively allowed to fill this deposit before the exclusivity deadline timestamp.
@@ -66,22 +61,20 @@ contract AcrossActions {
      * @param params The parameters required for bridging an asset with Across V3
      * @param uniqueIdentifier The unique identifier given to integrators to track the origination source for deposits
      * @param useNativeToken Whether or not the native token (e.g. ETH) should be used as the input token
+     * @param cappedMax A flag indicating whether to deposit up to the sender's balance, but capped at `params.inputAmount`
      */
     function depositV3(
         address spokePool,
         DepositV3Params memory params,
         bytes calldata uniqueIdentifier,
-        bool useNativeToken
+        bool useNativeToken,
+        bool cappedMax
     ) external payable {
-        if (params.inputAmount == type(uint256).max) {
-            params.inputAmount = IERC20(params.inputToken).balanceOf(address(this));
+        if (cappedMax) {
+            uint256 balance = IERC20(params.inputToken).balanceOf(address(this));
+            params.inputAmount = params.inputAmount <= balance ? params.inputAmount : balance;
         }
         IERC20(params.inputToken).forceApprove(spokePool, params.inputAmount);
-
-        uint256 bridgeFee = params.inputAmount - params.outputAmount;
-        if (bridgeFee > params.maxFee) {
-            revert BridgeFeeTooHigh(bridgeFee, params.maxFee);
-        }
 
         // Encode the function call with all parameters
         bytes memory callData = abi.encodeWithSelector(

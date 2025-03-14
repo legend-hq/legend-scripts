@@ -201,9 +201,10 @@ struct CometSupplyTests {
                             bridge: "Across",
                             srcNetwork: .base,
                             destinationNetwork: .arbitrum,
-                            // 50
-                            inputTokenAmount: .max(.usdc),
+                            // 50 * 1.001 (max amt buffer) = 50.05
+                            inputTokenAmount: .amt(50.05, .usdc),
                             outputTokenAmount: .amt(48.5, .usdc),
+                            cappedMax: true,
                             executionType: .immediate
                         ),
                         .multicall(
@@ -273,7 +274,8 @@ struct CometSupplyTests {
                                 srcNetwork: .optimism,
                                 destinationNetwork: .base,
                                 inputTokenAmount: .amt(1.02, .weth),
-                                outputTokenAmount: .amt(1, .weth)
+                                outputTokenAmount: .amt(1, .weth),
+                                cappedMax: false
                             ),
                             .quotePay(payment: .amt(0.08, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),

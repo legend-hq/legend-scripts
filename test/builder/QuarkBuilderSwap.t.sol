@@ -644,10 +644,11 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
                     1000e6,
                     6,
                     bytes32(uint256(uint160(0xb0b))),
-                    usdc_(1)
+                    usdc_(1),
+                    false
                 )
             ),
-            "calldata is CCTPBridgeActions.bridgeUSDC(address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155), 1000e6, 6, bytes32(uint256(uint160(0xb0b))), usdc_(1)));"
+            "calldata is CCTPBridgeActions.bridgeUSDC(address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155), 1000e6, 6, bytes32(uint256(uint160(0xb0b))), usdc_(1), false));"
         );
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
@@ -787,13 +788,14 @@ contract QuarkBuilderSwapTest is Test, QuarkBuilderTest {
             1000e6,
             6,
             bytes32(uint256(uint160(0xb0b))),
-            usdc_(1)
+            usdc_(1),
+            false
         );
         callDatas[1] = abi.encodeWithSelector(QuotePay.pay.selector, Actions.QUOTE_PAY_RECIPIENT, USDC_1, 6e6, QUOTE_ID);
         assertEq(
             result.quarkOperations[0].scriptCalldata,
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
-            "calldata is Multicall.run([cctpBridgeActionsAddress, quotePayAddress], [CCCTPBridgeActions.bridgeUSDC(address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155), 1000e6, 6, bytes32(uint256(uint160(0xb0b))), usdc_(1))), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 6e6, QUOTE_ID)]);"
+            "calldata is Multicall.run([cctpBridgeActionsAddress, quotePayAddress], [CCCTPBridgeActions.bridgeUSDC(address(0xBd3fa81B58Ba92a82136038B25aDec7066af3155), 1000e6, 6, bytes32(uint256(uint160(0xb0b))), usdc_(1), false)), QuotePay.pay(Actions.QUOTE_PAY_RECIPIENT), USDC_1, 6e6, QUOTE_ID)]);"
         );
         assertEq(
             result.quarkOperations[0].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
