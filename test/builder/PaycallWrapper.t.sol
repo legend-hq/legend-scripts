@@ -41,7 +41,9 @@ contract PaycallWrapperTest is Test {
             nonce: new QuarkOperationHelper().semiRandomNonce(wallet),
             isReplayable: false,
             scriptAddress: CodeJarHelper.getCodeAddress(type(TransferActions).creationCode),
-            scriptCalldata: abi.encodeWithSelector(TransferActions.transferERC20Token.selector, USDC, address(this), 10e6),
+            scriptCalldata: abi.encodeWithSelector(
+                TransferActions.transferERC20Token.selector, USDC, address(this), 10e6, false
+            ),
             scriptSources: scriptSources,
             expiry: 99999999999
         });

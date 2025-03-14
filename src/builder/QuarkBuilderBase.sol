@@ -24,7 +24,7 @@ import {HashMap} from "src/builder/HashMap.sol";
 import {BalanceChanges} from "src/builder/BalanceChanges.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.8.10";
+string constant QUARK_BUILDER_VERSION = "0.8.11";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */

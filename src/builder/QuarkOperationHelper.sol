@@ -168,14 +168,18 @@ library QuarkOperationHelper {
                 // deposit(address vault, address asset, uint256 amount)
                 (,, amount) = abi.decode(calldataWithoutSelector, (address, address, uint256));
             } else if (Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_TRANSFER)) {
+                bool cappedMax;
                 Actions.TransferActionContext memory transferActionContext =
                     abi.decode(actions[i].actionContext, (Actions.TransferActionContext));
                 if (Strings.stringEq(transferActionContext.assetSymbol, "ETH")) {
                     // transferNativeToken(address recipient, uint256 amount)
-                    (, amount) = abi.decode(calldataWithoutSelector, (address, uint256));
+                    (, amount, cappedMax) = abi.decode(calldataWithoutSelector, (address, uint256, bool));
                 } else {
                     // transferERC20Token(address token, address recipient, uint256 amount)
-                    (,, amount) = abi.decode(calldataWithoutSelector, (address, address, uint256));
+                    (,, amount, cappedMax) = abi.decode(calldataWithoutSelector, (address, address, uint256, bool));
+                }
+                if (cappedMax) {
+                    amount = type(uint256).max;
                 }
             } else if (Strings.stringEq(actions[i].actionType, Actions.ACTION_TYPE_BRIDGE)) {
                 Actions.BridgeActionContext memory bridgeActionContext =

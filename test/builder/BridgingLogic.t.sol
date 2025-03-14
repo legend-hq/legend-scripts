@@ -148,11 +148,11 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
         callDatas[0] = abi.encodeWithSelector(
             WrapperActions.wrapAllETH.selector, TokenWrapper.getKnownWrapperTokenPair(8453, "WETH").wrapper
         );
-        callDatas[1] = abi.encodeCall(TransferActions.transferERC20Token, (weth_(8453), address(0xceecee), 1e18));
+        callDatas[1] = abi.encodeCall(TransferActions.transferERC20Token, (weth_(8453), address(0xceecee), 1e18, false));
         assertEq(
             result.quarkOperations[1].scriptCalldata,
             abi.encodeWithSelector(Multicall.run.selector, callContracts, callDatas),
-            "calldata is Multicall.run([wrapperActionsAddress, transferActionsAddress], [WrapperActions.wrapAllETH(USDC_8453),  TransferActions.transferERC20Token(USDC_8453, address(0xceecee), 1e18))"
+            "calldata is Multicall.run([wrapperActionsAddress, transferActionsAddress], [WrapperActions.wrapAllETH(USDC_8453),  TransferActions.transferERC20Token(USDC_8453, address(0xceecee), 1e18, false))"
         );
         assertEq(
             result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"
@@ -326,8 +326,8 @@ contract BridgingLogicTest is Test, QuarkBuilderTest {
         );
         assertEq(
             result.quarkOperations[1].scriptCalldata,
-            abi.encodeCall(TransferActions.transferERC20Token, (usdc_(8453), address(0xceecee), 4e6)),
-            "calldata is TransferActions.transferERC20Token(USDC_8453, address(0xceecee), 4e6);"
+            abi.encodeCall(TransferActions.transferERC20Token, (usdc_(8453), address(0xceecee), 4e6, false)),
+            "calldata is TransferActions.transferERC20Token(USDC_8453, address(0xceecee), 4e6, false);"
         );
         assertEq(
             result.quarkOperations[1].expiry, BLOCK_TIMESTAMP + 7 days, "expiry is current blockTimestamp + 7 days"

@@ -218,10 +218,15 @@ contract TransferActions is QuarkScript {
      * @param token The token address
      * @param recipient The recipient address
      * @param amount The amount to transfer
+     * @param cappedMax A flag indicating whether to deposit up to the sender's balance, but capped at `amount`
      */
-    function transferERC20Token(address token, address recipient, uint256 amount) external nonReentrant {
-        if (amount == type(uint256).max) {
-            amount = IERC20(token).balanceOf(address(this));
+    function transferERC20Token(address token, address recipient, uint256 amount, bool cappedMax)
+        external
+        nonReentrant
+    {
+        if (cappedMax) {
+            uint256 balance = IERC20(token).balanceOf(address(this));
+            amount = amount <= balance ? amount : balance;
         }
         IERC20(token).safeTransfer(recipient, amount);
         emit TransferExecuted(address(this), recipient, token, amount);
@@ -231,10 +236,12 @@ contract TransferActions is QuarkScript {
      * @notice Transfer native token (i.e. ETH)
      * @param recipient The recipient address
      * @param amount The amount to transfer
+     * @param cappedMax A flag indicating whether to deposit up to the sender's balance, but capped at `amount`
      */
-    function transferNativeToken(address recipient, uint256 amount) external nonReentrant {
-        if (amount == type(uint256).max) {
-            amount = address(this).balance;
+    function transferNativeToken(address recipient, uint256 amount, bool cappedMax) external nonReentrant {
+        if (cappedMax) {
+            uint256 balance = address(this).balance;
+            amount = amount <= balance ? amount : balance;
         }
         bool success = payable(recipient).send(amount);
         if (!success) {

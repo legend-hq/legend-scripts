@@ -20,10 +20,12 @@ struct TransferTests {
                         .multicall(
                             [
                                 .transferErc20(
-                                    tokenAmount: .amt(10, .usdc), recipient: .bob,
-                                    network: .ethereum),
+                                    tokenAmount: .amt(10, .usdc), recipient: .bob, cappedMax: false,
+                                    network: .ethereum
+                                ),
                                 .quotePay(payment: .amt(0.10, .usdc), payee: .stax, quote: .basic),
-                            ], executionType: .immediate)
+                            ], executionType: .immediate
+                        )
                     )
                 )
             )
@@ -46,10 +48,12 @@ struct TransferTests {
                         .multicall(
                             [
                                 .transferErc20(
-                                    tokenAmount: .amt(10, .usdc), recipient: .bob,
-                                    network: .arbitrum),
+                                    tokenAmount: .amt(10, .usdc), recipient: .bob, cappedMax: false,
+                                    network: .arbitrum
+                                ),
                                 .quotePay(payment: .amt(0.04, .usdc), payee: .stax, quote: .basic),
-                            ], executionType: .immediate)
+                            ], executionType: .immediate
+                        )
                     )
                 )
             )
@@ -70,8 +74,9 @@ struct TransferTests {
                         .multicall(
                             [
                                 .transferErc20(
-                                    tokenAmount: .amt(10, .usdc), recipient: .bob,
-                                    network: .optimism),
+                                    tokenAmount: .amt(10, .usdc), recipient: .bob, cappedMax: false,
+                                    network: .optimism
+                                ),
                                 .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                             ], executionType: .immediate
                         )
@@ -153,8 +158,8 @@ struct TransferTests {
                         .multicall([
                             .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                             .transferErc20(
-                                // 98.44
-                                tokenAmount: .max(.usdc), recipient: .bob, network: .arbitrum
+                                // 98.44 * 1.001 to account for cappedMax buffer
+                                tokenAmount: .amt(98.53844, .usdc), recipient: .bob, cappedMax: true, network: .arbitrum
                             ),
                         ], executionType: .contingent),
                     ])
@@ -204,7 +209,7 @@ struct TransferTests {
                                 }
                             ),
                             fees: [
-                                .arbitrum: 0.04
+                                .arbitrum: 0.04,
                             ]
                         )
                     ),
@@ -246,7 +251,8 @@ struct TransferTests {
                             .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),
                         .transferErc20(
-                            tokenAmount: .amt(98, .usdc), recipient: .bob, network: .arbitrum, executionType: .contingent),
+                            tokenAmount: .amt(98, .usdc), recipient: .bob, cappedMax: false, network: .arbitrum, executionType: .contingent
+                        ),
                     ])
                 )
             )
@@ -256,7 +262,7 @@ struct TransferTests {
     @Test("Alice transfers ETH. WETH is unwrapped and ETH is transferred")
     func testTransferETH() async throws {
         try await testAcceptanceTests(
-            test:  .init(
+            test: .init(
                 given: [
                     .tokenBalance(.alice, .amt(0.5, .eth), .base),
                     .tokenBalance(.alice, .amt(0.2, .weth), .base),
@@ -274,9 +280,10 @@ struct TransferTests {
                                 .transferNativeToken(
                                     tokenAmount: .amt(0.7, .eth),
                                     recipient: .bob,
+                                    cappedMax: false,
                                     network: .base
                                 ),
-                                .quotePay(payment: .amt(0.02, .usdc), payee: .stax, quote: .basic)
+                                .quotePay(payment: .amt(0.02, .usdc), payee: .stax, quote: .basic),
                             ],
                             executionType: .immediate
                         )
@@ -289,7 +296,7 @@ struct TransferTests {
     @Test("Alice transfers ETH over bridge. WETH is unwrapped and ETH is transferred")
     func testTransferETHOverBridge() async throws {
         try await testAcceptanceTests(
-            test:  .init(
+            test: .init(
                 given: [
                     .tokenBalance(.alice, .amt(0.8, .eth), .base),
                     .tokenBalance(.alice, .amt(5, .usdc), .base),
@@ -313,7 +320,7 @@ struct TransferTests {
                                         payment: .amt(0.06, .usdc),
                                         payee: .stax,
                                         quote: .basic
-                                    )
+                                    ),
                                 ],
                                 executionType: .immediate
                             ),
@@ -325,8 +332,9 @@ struct TransferTests {
                                     .transferNativeToken(
                                         tokenAmount: .amt(0.7, .eth),
                                         recipient: .bob,
+                                        cappedMax: false,
                                         network: .arbitrum
-                                    )
+                                    ),
                                 ],
                                 executionType: .contingent
                             ),
@@ -367,7 +375,8 @@ struct TransferTests {
                         .multicall([
                             .wrapAsset(.eth),
                             .transferErc20(
-                                tokenAmount: .amt(0.3, .weth), recipient: .bob, network: .arbitrum),
+                                tokenAmount: .amt(0.3, .weth), recipient: .bob, cappedMax: false, network: .arbitrum
+                            ),
                         ], executionType: .contingent),
                     ])
                 )
@@ -400,7 +409,8 @@ struct TransferTests {
                             .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                             // Bridge 100 -> 98 arrives on arbitrum - 0.06 quote pay -> 97.94 USDC transfer
                             .transferErc20(
-                                tokenAmount: .max(.usdc), recipient: .bob, network: .arbitrum
+                                // 97.94 * 1.001 to account for cappedMax buffer
+                                tokenAmount: .amt(98.03794, .usdc), recipient: .bob, cappedMax: true, network: .arbitrum
                             ),
                         ], executionType: .contingent),
                     ])
@@ -427,8 +437,9 @@ struct TransferTests {
                         // Only 50 USDC is transferred because the other 50 USDC is unbridgeable (bridge min is 51 USDC).
                         // Payment is made on Base, where there are unbridgeable funds
                         .transferErc20(
-                            // 50
-                            tokenAmount: .max(.usdc), recipient: .bob, network: .arbitrum, executionType: .immediate),
+                            // Multiply amount by 1.001 to account for cappedMax buffer
+                            tokenAmount: .amt(50 * 1.001, .usdc), recipient: .bob, cappedMax: true, network: .arbitrum, executionType: .immediate
+                        ),
                         .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic, executionType: .immediate),
                     ])
                 )
@@ -463,7 +474,8 @@ struct TransferTests {
                             .quotePay(payment: .amt(0.06, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),
                         .transferErc20(
-                            tokenAmount: .amt(50.1, .usdc), recipient: .bob, network: .arbitrum, executionType: .contingent),
+                            tokenAmount: .amt(50.1, .usdc), recipient: .bob, cappedMax: false, network: .arbitrum, executionType: .contingent
+                        ),
                     ])
                 )
             )
@@ -537,13 +549,13 @@ struct TransferTests {
                             // Only 10 USDC is available to transfer since payment has to be made on Arbitrum
                             // due to unbridgeable funds on Base
                             .transferErc20(
-                                // 10
-                                tokenAmount: .max(.usdc), recipient: .bob, network: .arbitrum),
+                                // 10 * 1.001 to account for cappedMax buffer
+                                tokenAmount: .amt(10.01, .usdc), recipient: .bob, cappedMax: true, network: .arbitrum
+                            ),
                         ], executionType: .immediate)
                     )
                 )
             )
         )
     }
-
 }

@@ -17,7 +17,7 @@ struct QuotePayTests {
                         .multicall(
                             [
                                 .transferErc20(
-                                    tokenAmount: .amt(10, .usdc), recipient: .bob,
+                                    tokenAmount: .amt(10, .usdc), recipient: .bob, cappedMax: false,
                                     network: .ethereum),
                                 .quotePay(payment: .amt(0.10, .usdc), payee: .stax, quote: .basic),
                             ], executionType: .immediate
@@ -46,7 +46,7 @@ struct QuotePayTests {
                         .multicall(
                             [
                                 .transferErc20(
-                                    tokenAmount: .amt(10, .usdc), recipient: .bob,
+                                    tokenAmount: .amt(10, .usdc), recipient: .bob, cappedMax: false,
                                     network: .ethereum),
                                 .wrapAsset(.eth),
                                 .quotePay(
@@ -77,7 +77,7 @@ struct QuotePayTests {
                         .multicall([
                             .wrapAsset(.eth),
                             .transferErc20(
-                                tokenAmount: .amt(0.5, .weth), recipient: .bob, network: .ethereum),
+                                tokenAmount: .amt(0.5, .weth), recipient: .bob, cappedMax: false, network: .ethereum),
                             .quotePay(payment: .amt(0.000025, .weth), payee: .stax, quote: .basic),
                         ], executionType: .immediate
                         )

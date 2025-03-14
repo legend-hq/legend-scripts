@@ -26,7 +26,7 @@ struct MultiAccountTests {
                             .quotePay(payment: .amt(0.12, .usdc), payee: .stax, quote: .basic),
                         ], executionType: .immediate),
                         .transferErc20(
-                                tokenAmount: .amt(10, .usdc), recipient: .bob, network: .ethereum, executionType: .contingent)
+                                tokenAmount: .amt(10, .usdc), recipient: .bob, cappedMax: false, network: .ethereum, executionType: .contingent)
                     ])
                 )
             )
