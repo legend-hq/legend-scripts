@@ -7,6 +7,7 @@ import {MorphoVaultActionsBuilder} from "src/builder/actions/MorphoVaultActionsB
 import {MorphoActionsBuilder} from "src/builder/actions/MorphoActionsBuilder.sol";
 import {SwapActionsBuilder} from "src/builder/actions/SwapActionsBuilder.sol";
 import {TransferActionsBuilder} from "src/builder/actions/TransferActionsBuilder.sol";
+import {AaveActionsBuilder} from "src/builder/actions/AaveActionsBuilder.sol";
 
 contract QuarkBuilder is
     CometActionsBuilder,
@@ -14,7 +15,8 @@ contract QuarkBuilder is
     MorphoVaultActionsBuilder,
     MorphoActionsBuilder,
     SwapActionsBuilder,
-    TransferActionsBuilder
+    TransferActionsBuilder,
+    AaveActionsBuilder
 {
 // This contract is a composite of the various scripts that can be used to build a Quark operation
 // It is a convenience for developers to have all the scripts in one place
