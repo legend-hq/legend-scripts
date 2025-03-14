@@ -21,6 +21,7 @@ import {
     TransferActions
 } from "src/DeFiScripts.sol";
 import {Math} from "src/lib/Math.sol";
+import {AaveActions} from "src/AaveScripts.sol";
 import {MorphoActions, MorphoRewardsActions, MorphoVaultActions} from "src/MorphoScripts.sol";
 import {QuotePay} from "src/QuotePay.sol";
 import {RecurringSwap} from "src/RecurringSwap.sol";
@@ -35,6 +36,8 @@ import {List} from "src/builder/List.sol";
 
 library Actions {
     /* ===== Constants ===== */
+    string constant ACTION_TYPE_AAVE_SUPPLY = "AAVE_SUPPLY";
+    string constant ACTION_TYPE_AAVE_WITHDRAW = "AAVE_WITHDRAW";
     // TODO: (LHT-86) Rename ACTION_TYPE_BORROW to ACTION_TYPE_COMET_BORROW, as now we have more than one borrow market
     string constant ACTION_TYPE_BORROW = "BORROW";
     string constant ACTION_TYPE_MORPHO_BORROW = "MORPHO_BORROW";
@@ -258,6 +261,27 @@ library Actions {
         Accounts.ChainAccounts[] chainAccountsList;
         uint256 blockTimestamp;
         address claimer;
+    }
+
+    struct AaveSupply {
+        Accounts.ChainAccounts[] chainAccountsList;
+        string assetSymbol;
+        uint256 amount;
+        uint256 chainId;
+        address aavePool;
+        uint256 maxAmount;
+        address sender;
+        uint256 blockTimestamp;
+    }
+
+    struct AaveWithdraw {
+        Accounts.ChainAccounts[] chainAccountsList;
+        string assetSymbol;
+        uint256 amount;
+        uint256 chainId;
+        address aavePool;
+        address withdrawer;
+        uint256 blockTimestamp;
     }
 
     struct QuotePayInfo {
@@ -505,9 +529,129 @@ library Actions {
         address token;
     }
 
+    struct AaveSupplyActionContext {
+        uint256 amount;
+        string assetSymbol;
+        uint256 chainId;
+        address aavePool;
+        uint256 price;
+        address token;
+    }
+
+    struct AaveWithdrawActionContext {
+        uint256 amount;
+        string assetSymbol;
+        uint256 chainId;
+        address aavePool;
+        uint256 price;
+        address token;
+    }
+
     struct MultiActionContext {
         string[] actionTypes;
         bytes[] actionContexts;
+    }
+
+    function aaveSupply(AaveSupply memory supply, PaymentInfo.Payment memory payment)
+        internal
+        pure
+        returns (IQuarkWallet.QuarkOperation memory, Action memory)
+    {
+        Accounts.ChainAccounts memory accounts = Accounts.findChainAccounts(supply.chainId, supply.chainAccountsList);
+
+        Accounts.AssetPositions memory assetPositions =
+            Accounts.findAssetPositions(supply.assetSymbol, accounts.assetPositionsList);
+
+        Accounts.QuarkSecret memory accountSecret = Accounts.findQuarkSecret(supply.sender, accounts.quarkSecrets);
+
+        bytes memory scriptCalldata =
+            abi.encodeWithSelector(AaveActions.supply.selector, supply.aavePool, assetPositions.asset, supply.amount);
+
+        // Construct QuarkOperation
+        IQuarkWallet.QuarkOperation memory quarkOperation = IQuarkWallet.QuarkOperation({
+            nonce: accountSecret.nonceSecret,
+            isReplayable: false,
+            scriptAddress: CodeJarHelper.getCodeAddress(type(AaveActions).creationCode),
+            scriptCalldata: scriptCalldata,
+            scriptSources: new bytes[](0),
+            expiry: supply.blockTimestamp + STANDARD_EXPIRY_BUFFER
+        });
+
+        // Construct Action
+        AaveSupplyActionContext memory aaveSupplyActionsContext = AaveSupplyActionContext({
+            amount: supply.amount == type(uint256).max ? supply.maxAmount : supply.amount,
+            assetSymbol: assetPositions.symbol,
+            chainId: supply.chainId,
+            aavePool: supply.aavePool,
+            price: assetPositions.usdPrice,
+            token: assetPositions.asset
+        });
+
+        Action memory action = Actions.Action({
+            chainId: supply.chainId,
+            quarkAccount: supply.sender,
+            actionType: ACTION_TYPE_MORPHO_VAULT_SUPPLY,
+            actionContext: abi.encode(aaveSupplyActionsContext),
+            quotePayActionContext: "",
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
+            nonceSecret: accountSecret.nonceSecret,
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
+        });
+
+        return (quarkOperation, action);
+    }
+
+    function aaveWithdraw(AaveWithdraw memory withdraw, PaymentInfo.Payment memory payment)
+        internal
+        pure
+        returns (IQuarkWallet.QuarkOperation memory, Action memory)
+    {
+        Accounts.ChainAccounts memory accounts =
+            Accounts.findChainAccounts(withdraw.chainId, withdraw.chainAccountsList);
+
+        Accounts.AssetPositions memory assetPositions =
+            Accounts.findAssetPositions(withdraw.assetSymbol, accounts.assetPositionsList);
+
+        Accounts.QuarkSecret memory accountSecret = Accounts.findQuarkSecret(withdraw.withdrawer, accounts.quarkSecrets);
+
+        bytes memory scriptCalldata = abi.encodeWithSelector(
+            AaveActions.withdraw.selector, withdraw.aavePool, assetPositions.asset, withdraw.amount
+        );
+
+        // Construct QuarkOperation
+        IQuarkWallet.QuarkOperation memory quarkOperation = IQuarkWallet.QuarkOperation({
+            nonce: accountSecret.nonceSecret,
+            isReplayable: false,
+            scriptAddress: CodeJarHelper.getCodeAddress(type(AaveActions).creationCode),
+            scriptCalldata: scriptCalldata,
+            scriptSources: new bytes[](0),
+            expiry: withdraw.blockTimestamp + STANDARD_EXPIRY_BUFFER
+        });
+
+        // Construct Action
+        AaveWithdrawActionContext memory aaveWithdrawActionsContext = AaveWithdrawActionContext({
+            amount: withdraw.amount,
+            assetSymbol: assetPositions.symbol,
+            chainId: withdraw.chainId,
+            aavePool: withdraw.aavePool,
+            price: assetPositions.usdPrice,
+            token: assetPositions.asset
+        });
+
+        Action memory action = Actions.Action({
+            chainId: withdraw.chainId,
+            quarkAccount: withdraw.withdrawer,
+            actionType: ACTION_TYPE_MORPHO_VAULT_WITHDRAW,
+            actionContext: abi.encode(aaveWithdrawActionsContext),
+            quotePayActionContext: "",
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
+            nonceSecret: accountSecret.nonceSecret,
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
+        });
+
+        return (quarkOperation, action);
     }
 
     function constructBridgeOperations(
@@ -2063,5 +2207,15 @@ library Actions {
     function emptyMultiActionContext() external pure returns (MultiActionContext memory) {
         MultiActionContext[] memory ma = new MultiActionContext[](1);
         return ma[0];
+    }
+
+    function emptyAaveSupplyActionContext() external pure returns (AaveSupplyActionContext memory) {
+        AaveSupplyActionContext[] memory asc = new AaveSupplyActionContext[](1);
+        return asc[0];
+    }
+
+    function emptyAaveWithdrawActionContext() external pure returns (AaveWithdrawActionContext memory) {
+        AaveWithdrawActionContext[] memory asc = new AaveWithdrawActionContext[](1);
+        return asc[0];
     }
 }
