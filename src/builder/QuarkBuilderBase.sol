@@ -65,6 +65,28 @@ contract QuarkBuilderBase {
 
     /* ===== Intents ===== */
 
+    struct AaveSupplyIntent {
+        uint256 amount;
+        string assetSymbol;
+        uint256 blockTimestamp;
+        uint256 chainId;
+        address aavePool;
+        address sender;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
+    struct AaveWithdrawIntent {
+        uint256 amount;
+        string assetSymbol;
+        uint256 blockTimestamp;
+        uint256 chainId;
+        address aavePool;
+        address withdrawer;
+        bool preferAcross;
+        string paymentAssetSymbol;
+    }
+
     struct TransferIntent {
         uint256 chainId;
         string assetSymbol;
@@ -886,6 +908,46 @@ contract QuarkBuilderBase {
                     interval: intent.interval,
                     chainId: intent.chainId,
                     sender: intent.sender,
+                    blockTimestamp: intent.blockTimestamp
+                }),
+                payment
+            );
+            return (Strings.OK, toList(operation), toList(action));
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_AAVE_SUPPLY)) {
+            AaveSupplyIntent memory intent = abi.decode(actionIntent, (AaveSupplyIntent));
+            uint256 maxAmount = Accounts.getTotalAvailableBalanceOnDst(
+                chainAccountsList,
+                payment,
+                amountsOnDst,
+                List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+                intent.assetSymbol
+            );
+
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.aaveSupply(
+                Actions.AaveSupply({
+                    chainAccountsList: chainAccountsList,
+                    assetSymbol: intent.assetSymbol,
+                    amount: intent.amount,
+                    maxAmount: maxAmount,
+                    chainId: intent.chainId,
+                    aavePool: intent.aavePool,
+                    sender: intent.sender,
+                    blockTimestamp: intent.blockTimestamp
+                }),
+                payment
+            );
+            return (Strings.OK, toList(operation), toList(action));
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_AAVE_WITHDRAW)) {
+            AaveWithdrawIntent memory intent = abi.decode(actionIntent, (AaveWithdrawIntent));
+
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.aaveWithdraw(
+                Actions.AaveWithdraw({
+                    chainAccountsList: chainAccountsList,
+                    assetSymbol: intent.assetSymbol,
+                    amount: intent.amount,
+                    chainId: intent.chainId,
+                    aavePool: intent.aavePool,
+                    withdrawer: intent.withdrawer,
                     blockTimestamp: intent.blockTimestamp
                 }),
                 payment
