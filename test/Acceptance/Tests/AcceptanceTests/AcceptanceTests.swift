@@ -62,6 +62,7 @@ enum Call: CustomStringConvertible, Equatable {
         network: Network,
         executionType: ExecutionType? = nil
     )
+    case loopLong(exposureAmount: TokenAmount, backingAmount: TokenAmount, maxSwapBackingAmount: TokenAmount, market: Morpho, network: Network, executionType: ExecutionType? = nil)
     case multicall(_ calls: [Call], executionType: ExecutionType? = nil)
     case withdrawFromComet(tokenAmount: TokenAmount, market: Comet, network: Network, executionType: ExecutionType? = nil)
     case wrapAsset(_ token: Token, executionType: ExecutionType? = nil)
@@ -392,6 +393,28 @@ enum Call: CustomStringConvertible, Equatable {
             }
         }
 
+        if scriptAddress == getScriptAddress(LoopLong.creationCode) {
+            if let (
+                morpho,
+                morphoMarketParams,
+                loopInfo
+            ) = try? LoopLong.loopDecode(input: calldata) {
+                let exposureToken = Token.from(network: network, address: loopInfo.exposureToken)
+                let backingToken = Token.from(
+                    network: network, address: loopInfo.backingToken
+                )
+
+                return .loopLong(
+                    exposureAmount: TokenAmount(fromWei: loopInfo.exposureAmount, ofToken: exposureToken),
+                    backingAmount: TokenAmount(fromWei: loopInfo.initialBackingAmount, ofToken: backingToken),
+                    maxSwapBackingAmount: TokenAmount(fromWei: loopInfo.maxSwapBackingAmount, ofToken: backingToken),
+                    market: Morpho(collateralToken: exposureToken, borrowToken: backingToken),
+                    network: network,
+                    executionType: executionTypeForCall
+                )
+            }
+        }
+
         if scriptAddress == getScriptAddress(WrapperActions.creationCode) {
             if let _ = try? WrapperActions.wrapAllETHDecode(input: calldata) {
                 return .wrapAsset(.eth, executionType: executionTypeForCall)
@@ -473,6 +496,8 @@ enum Call: CustomStringConvertible, Equatable {
             return "repayAndWithdrawCollateralFromMorpho(repay \(repayAmount.amount) \(repayAmount.token.symbol), withdraw \(collateralAmount.amount) \(collateralAmount.token.symbol) from \(market.description) on \(network.description))\(executionTypeDescription(executionType))"
         case let .supplyCollateralAndBorrowFromMorpho(borrowAmount, collateralAmount, market, network, executionType):
             return "supplyCollateralAndBorrowFromMorpho(borrow \(borrowAmount.amount) \(borrowAmount.token.symbol), supply \(collateralAmount.amount) \(collateralAmount.token.symbol) from \(market.description) on \(network.description))\(executionTypeDescription(executionType))"
+        case let .loopLong(exposureAmount, backingAmount, maxSwapBackingAmount, market, network, executionType):
+            return "loopLong(loop \(exposureAmount.amount) \(exposureAmount.token.symbol) of exposure with \(backingAmount.amount) \(backingAmount.token.symbol) (at a max swap price of \(maxSwapBackingAmount.amount) of backing token using \(market.description) on \(network.description))\(executionTypeDescription(executionType))"
         case let .unknownFunctionCall(name, function, value):
             return "unknownFunctionCall(\(name), \(function), \(value))"
         case let .unknownScriptCall(scriptSource, calldata):
@@ -1310,6 +1335,7 @@ indirect enum When {
         withdraw: [(from: Account, market: LendingMarket, amount: TokenAmount, on: Network)],
         supply: (from: Account, market: LendingMarket, amount: TokenAmount, on: Network)
     )
+    case loopLong(from: Account, exposureAmount: TokenAmount, backingAmount: TokenAmount, maxSwapBackingAmount: TokenAmount, on: Network)
     case payWith(currency: Token, When)
 
     var sender: Account {
@@ -1342,6 +1368,8 @@ indirect enum When {
             return swapIntent.from
         case let .migrateSupplies(_, supplyIntent):
             return supplyIntent.from
+        case let .loopLong(from, _, _, _, _):
+            return from
         case let .payWith(_, intent):
             return intent.sender
         }
@@ -2010,6 +2038,32 @@ class Context {
                 intent: .init(
                     withdrawIntents: withdrawIntents,
                     supplyIntent: supplyIntent,
+                    paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
+                ),
+                chainAccountsList: chainAccounts,
+                quote: .init(
+                    quoteId: Hex(
+                        "0x00000000000000000000000000000000000000000000000000000000000000CC"),
+                    issuedAt: 0,
+                    expiresAt: BigUInt(Date(timeIntervalSinceNow: 1_000_000).timeIntervalSince1970),
+                    assetQuotes: assetQuotes,
+                    networkOperationFees: networkOperationFees
+                ),
+                withFunctions: ffis
+            )
+
+        case let .loopLong(from, exposureAmount, backingAmount, maxSwapBackingAmount, network):
+            return try await QuarkBuilder.loopLong(
+                intent: .init(
+                    exposureAssetSymbol: exposureAmount.token.symbol,
+                    backingAssetSymbol: backingAmount.token.symbol,
+                    exposureAmount: exposureAmount.amount,
+                    maxSwapBackingAmount: maxSwapBackingAmount.amount,
+                    initialBackingAmount: backingAmount.amount,
+                    sender: from.address,
+                    chainId: BigUInt(network.chainId),
+                    blockTimestamp: BigUInt(1_000_000),
+                    preferAcross: true,
                     paymentAssetSymbol: paymentToken?.symbol ?? when.paymentAssetSymbol
                 ),
                 chainAccountsList: chainAccounts,

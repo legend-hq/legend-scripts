@@ -6,7 +6,7 @@ script_dir=$(dirname "${BASH_SOURCE[0]}")
 swift_base_dir="$(readlink -f "${script_dir}/..")"
 out_dir="$(readlink -f "${swift_base_dir}/../../out")"
 source_out_dir="$(readlink -f "${swift_base_dir}/Sources/Acceptance/Contracts")"
-contracts=("DeFiScripts" "Multicall" "QuotePay" "QuarkBuilder" "AcrossScripts" "WrapperScripts" "MorphoScripts")
+contracts=("DeFiScripts" "Multicall" "QuotePay" "QuarkBuilder" "AcrossScripts" "WrapperScripts" "MorphoScripts" "LoopLong")
 
 cd "${swift_base_dir}"
 
