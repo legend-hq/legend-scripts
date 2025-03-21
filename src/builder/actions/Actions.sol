@@ -22,6 +22,7 @@ import {
 } from "src/DeFiScripts.sol";
 import {Math} from "src/lib/Math.sol";
 import {MorphoActions, MorphoRewardsActions, MorphoVaultActions} from "src/MorphoScripts.sol";
+import {LoopLong} from "src/LoopLong.sol";
 import {QuotePay} from "src/QuotePay.sol";
 import {RecurringSwap} from "src/RecurringSwap.sol";
 import {WrapperActions} from "src/WrapperScripts.sol";
@@ -55,6 +56,8 @@ library Actions {
     string constant ACTION_TYPE_WITHDRAW = "WITHDRAW";
     string constant ACTION_TYPE_MORPHO_VAULT_WITHDRAW = "MORPHO_VAULT_WITHDRAW";
     string constant ACTION_TYPE_WITHDRAW_AND_BORROW = "WITHDRAW_AND_BORROW";
+    string constant ACTION_TYPE_LOOP_LONG = "LOOP_LONG";
+    string constant ACTION_TYPE_UNLOOP_LONG = "UNLOOP_LONG";
     string constant ACTION_TYPE_WRAP = "WRAP";
     string constant ACTION_TYPE_UNWRAP = "UNWRAP";
     string constant ACTION_TYPE_QUOTE_PAY = "QUOTE_PAY";
@@ -67,6 +70,9 @@ library Actions {
 
     string constant BRIDGE_TYPE_ACROSS = "ACROSS";
     string constant BRIDGE_TYPE_CCTP = "CCTP";
+
+    string constant SWAP_VENUE_UNISWAP_V3 = "UNISWAP_V3";
+    string constant BORROW_VENUE_MORPHO = "MORPHO";
 
     /* expiry buffers */
     uint256 constant STANDARD_EXPIRY_BUFFER = 7 days;
@@ -261,6 +267,18 @@ library Actions {
         Accounts.ChainAccounts[] chainAccountsList;
         uint256 blockTimestamp;
         address claimer;
+    }
+
+    struct LoopLongInput {
+        Accounts.ChainAccounts[] chainAccountsList;
+        string exposureAssetSymbol;
+        string backingAssetSymbol;
+        uint256 exposureAmount;
+        uint256 maxSwapBackingAmount;
+        uint256 initialBackingAmount;
+        uint256 chainId;
+        address sender;
+        uint256 blockTimestamp;
     }
 
     struct QuotePayInfo {
@@ -496,6 +514,21 @@ library Actions {
         uint256 chainId;
         uint256[] prices;
         address[] tokens;
+    }
+
+    struct LoopLongActionContext {
+        string backingAssetSymbol;
+        address backingToken;
+        uint256 backingTokenPrice;
+        uint256 initialBackingAmount;
+        uint256 chainId;
+        uint256 exposureAmount;
+        string exposureAssetSymbol;
+        address exposureToken;
+        uint256 exposureTokenPrice;
+        string swapVenue;
+        string borrowVenue;
+        bytes32 borrowMarketId;
     }
 
     struct QuotePayActionContext {
@@ -1626,6 +1659,80 @@ library Actions {
         }
 
         return (List.toQuarkOperationArray(quarkOperations), List.toActionArray(actions));
+    }
+
+    function loopLong(LoopLongInput memory input, PaymentInfo.Payment memory payment)
+        internal
+        pure
+        returns (IQuarkWallet.QuarkOperation memory, Action memory)
+    {
+        Accounts.ChainAccounts memory accounts = Accounts.findChainAccounts(input.chainId, input.chainAccountsList);
+
+        Accounts.AssetPositions memory exposureAssetPositions =
+            Accounts.findAssetPositions(input.exposureAssetSymbol, accounts.assetPositionsList);
+
+        Accounts.AssetPositions memory backingAssetPositions =
+            Accounts.findAssetPositions(input.backingAssetSymbol, accounts.assetPositionsList);
+
+        Accounts.QuarkSecret memory accountSecret = Accounts.findQuarkSecret(input.sender, accounts.quarkSecrets);
+
+        LoopLong.LoopInfo memory loopInfo = LoopLong.LoopInfo({
+            exposureToken: exposureAssetPositions.asset,
+            backingToken: backingAssetPositions.asset,
+            // TODO: Pull pool fee from BuilderBack
+            poolFee: 500,
+            exposureAmount: input.exposureAmount,
+            maxSwapBackingAmount: input.maxSwapBackingAmount,
+            initialBackingAmount: input.initialBackingAmount
+        });
+
+        bytes memory scriptCalldata = abi.encodeWithSelector(
+            LoopLong.loop.selector,
+            MorphoInfo.getMorphoAddress(input.chainId),
+            MorphoInfo.getMarketParams(input.chainId, input.exposureAssetSymbol, input.backingAssetSymbol),
+            loopInfo
+        );
+        // Construct QuarkOperation
+        IQuarkWallet.QuarkOperation memory quarkOperation = IQuarkWallet.QuarkOperation({
+            nonce: accountSecret.nonceSecret,
+            isReplayable: false,
+            scriptAddress: CodeJarHelper.getCodeAddress(type(LoopLong).creationCode),
+            scriptCalldata: scriptCalldata,
+            scriptSources: new bytes[](0),
+            expiry: input.blockTimestamp + STANDARD_EXPIRY_BUFFER
+        });
+
+        // Construct Action
+        LoopLongActionContext memory loopLongActionContext = LoopLongActionContext({
+            // TODO: handle max. e.g. cometSupply.amount == type(uint256).max ? cometSupply.maxAmount : cometSupply.amount
+            exposureToken: exposureAssetPositions.asset,
+            exposureAssetSymbol: input.exposureAssetSymbol,
+            exposureAmount: input.exposureAmount,
+            exposureTokenPrice: exposureAssetPositions.usdPrice,
+            backingToken: backingAssetPositions.asset,
+            backingAssetSymbol: input.backingAssetSymbol,
+            backingTokenPrice: backingAssetPositions.usdPrice,
+            initialBackingAmount: input.initialBackingAmount,
+            swapVenue: SWAP_VENUE_UNISWAP_V3,
+            borrowVenue: BORROW_VENUE_MORPHO,
+            borrowMarketId: MorphoInfo.marketId(
+                MorphoInfo.getMarketParams(input.chainId, input.exposureAssetSymbol, input.backingAssetSymbol)
+            ),
+            chainId: input.chainId
+        });
+        Action memory action = Actions.Action({
+            chainId: input.chainId,
+            quarkAccount: input.sender,
+            actionType: ACTION_TYPE_LOOP_LONG,
+            actionContext: abi.encode(loopLongActionContext),
+            quotePayActionContext: "",
+            paymentMethod: PaymentInfo.paymentMethodForPayment({payment: payment, isRecurring: false}),
+            nonceSecret: accountSecret.nonceSecret,
+            totalPlays: 1,
+            executionType: EXECUTION_TYPE_IMMEDIATE
+        });
+
+        return (quarkOperation, action);
     }
 
     function quotePay(QuotePayInfo memory quotePayInfo, PaymentInfo.Payment memory payment)

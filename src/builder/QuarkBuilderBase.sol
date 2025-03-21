@@ -24,7 +24,7 @@ import {HashMap} from "src/builder/HashMap.sol";
 import {BalanceChanges} from "src/builder/BalanceChanges.sol";
 import {QuotePay} from "src/QuotePay.sol";
 
-string constant QUARK_BUILDER_VERSION = "0.8.12";
+string constant QUARK_BUILDER_VERSION = "0.8.13";
 
 contract QuarkBuilderBase {
     /* ===== Output Types ===== */
@@ -224,6 +224,19 @@ contract QuarkBuilderBase {
     struct MigrateSuppliesIntent {
         WithdrawIntent[] withdrawIntents;
         SupplyIntent supplyIntent;
+        string paymentAssetSymbol;
+    }
+
+    struct LoopLongIntent {
+        string exposureAssetSymbol;
+        string backingAssetSymbol;
+        uint256 exposureAmount;
+        uint256 maxSwapBackingAmount;
+        uint256 initialBackingAmount;
+        address sender;
+        uint256 chainId;
+        uint256 blockTimestamp;
+        bool preferAcross;
         string paymentAssetSymbol;
     }
 
@@ -884,6 +897,32 @@ contract QuarkBuilderBase {
                     isExactOut: intent.isExactOut,
                     path: intent.path,
                     interval: intent.interval,
+                    chainId: intent.chainId,
+                    sender: intent.sender,
+                    blockTimestamp: intent.blockTimestamp
+                }),
+                payment
+            );
+            return (Strings.OK, toList(operation), toList(action));
+        } else if (Strings.stringEqIgnoreCase(actionType, Actions.ACTION_TYPE_LOOP_LONG)) {
+            LoopLongIntent memory intent = abi.decode(actionIntent, (LoopLongIntent));
+            // TODO: Add once we support capped max
+            // uint256 maxAmount = Accounts.getTotalAvailableBalanceOnDst(
+            //     chainAccountsList,
+            //     payment,
+            //     amountsOnDst,
+            //     List.addUniqueUint256(chainIdsInvolved, intent.chainId),
+            //     intent.assetSymbol
+            // );
+
+            (IQuarkWallet.QuarkOperation memory operation, Actions.Action memory action) = Actions.loopLong(
+                Actions.LoopLongInput({
+                    chainAccountsList: chainAccountsList,
+                    exposureAssetSymbol: intent.exposureAssetSymbol,
+                    backingAssetSymbol: intent.backingAssetSymbol,
+                    exposureAmount: intent.exposureAmount,
+                    maxSwapBackingAmount: intent.maxSwapBackingAmount,
+                    initialBackingAmount: intent.initialBackingAmount,
                     chainId: intent.chainId,
                     sender: intent.sender,
                     blockTimestamp: intent.blockTimestamp
@@ -1763,6 +1802,16 @@ contract QuarkBuilderBase {
                 withdrawActionContext.chainId,
                 action.quarkAccount,
                 withdrawAmount
+            );
+        } else if (Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_LOOP_LONG)) {
+            Actions.LoopLongActionContext memory loopLongActionContext =
+                abi.decode(action.actionContext, (Actions.LoopLongActionContext));
+            BalanceChanges.addOrPutUint256(
+                assetsOutPerChain,
+                loopLongActionContext.backingAssetSymbol,
+                loopLongActionContext.chainId,
+                action.quarkAccount,
+                loopLongActionContext.initialBackingAmount
             );
         } else if (Strings.stringEqIgnoreCase(action.actionType, Actions.ACTION_TYPE_QUOTE_PAY)) {
             Actions.QuotePayActionContext memory quotePayActionContext =
